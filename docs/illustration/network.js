@@ -151,9 +151,9 @@
     const headers = ["Inputs", "ReLU layer 1", "ReLU layer 2", "Output"];
     const countLabel = layer => {
       const n = ys[layer].length;
-      return pruned && state.layer === layer ? `${n-1} retained` : `${n} neurons`;
+      return pruned && state.layer === layer ? `${n-1} retained` : (layer === 1 ? "K₁ = " : "K₂ = ") + n;
     };
-    const subtitles = ["3 predictors", countLabel(1), countLabel(2), "Affine"];
+    const subtitles = ["p = 3", countLabel(1), countLabel(2), "Affine"];
     for (let i = 0; i < headers.length; i++) {
       guide.append(el("text", {x:xs[i],y:20,class:"net-heading","font-size":small ? 12 : 15},headers[i]));
       guide.append(el("text", {x:xs[i],y:38,class:"net-subheading","font-size":small ? 10.5 : 12},subtitles[i]));
@@ -184,8 +184,9 @@
         state.layer===layer && state.unit===j+1, p.removed,onSelect)));
     }
     const out = points[3][0];
-    nodes.append(el("circle",{cx:out.x,cy:out.y,r:out.r,fill:color.white,stroke:color.ink,"stroke-width":1.4}),
-      el("text",{x:out.x,y:out.y,class:"net-output-label",fill:color.ink,"font-size":18},"ŷ"));
+    const readout = el("text",{x:out.x,y:out.y,class:"net-output-label",fill:color.ink,"font-size":17,"font-style":"italic"},"f");
+    readout.append(el("tspan",{"baseline-shift":"sub","font-size":10},"𝒲"));
+    nodes.append(el("circle",{cx:out.x,cy:out.y,r:out.r,fill:color.white,stroke:color.ink,"stroke-width":1.4}),readout);
     biases.forEach(({x,y,r}) => {
       const bias = el("g");
       bias.append(el("title",{},"Constant input 1; its arrow carries a bias coefficient."),

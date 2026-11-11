@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Hidden-unit shrinkage · gltbnn</title>
+  <meta name="description" content="An interactive mathematical companion to the G, GL and GLT hidden-unit priors for Bayesian neural network regression.">
+  <link rel="icon" href="../assets/mark.svg"><link rel="stylesheet" href="style.css">
+  <script defer src="network.js"></script><script defer src="plots.js"></script><script defer src="hierarchy.js"></script><script defer src="app.js"></script>
+</head>
+<body><a class="skip-link" href="#topics">Skip to the mathematical explorer</a><div class="shell">
+<header class="masthead"><a href="../" class="brand"><img class="brandmark" src="../assets/mark.svg" alt=""><span>gltbnn</span></a>
+<nav class="links"><a href="../">R package</a><a href="../prediction/">Fitted example</a><a href="#sources">References</a></nav></header>
+<main><header class="hero"><h1>Shrinkage in a Bayesian neural network</h1>
+<p>Select unit \(k\) in hidden layer \(l\). Its highlighted connections form one vector \(\mathbf w_{kl}\). The three priors differ in how they assign its scale \(\lambda_{kl}\).</p></header>
+<nav class="tabbar" id="topics" aria-label="Mathematical explorer" role="tablist">
+@tabs@
+</nav><noscript><p>Each hidden unit shares one scale across its incoming weights and its bias. G uses \(\lambda_{kl}=\tau_l\), GL uses \(\lambda_{kl}=\tau_l r_{kl}\), and GLT uses \(\lambda_{kl}\mid\tau_l,\xi_l\sim\operatorname{GPD}(\tau_l,\xi_l)\). The <a href="../reference.pdf">R reference manual</a> gives the full hierarchies. Enable JavaScript to explore them interactively.</p></noscript>
+<div class="lab-grid" id="explorer"><section class="network-panel" aria-labelledby="network-title">
+<span class="section-label">Network architecture · Figure 3</span><div class="panel-top"><h2 id="network-title">The incoming weight vector</h2></div>
+<div class="network-wrap"><svg id="network" aria-label="Selectable regression network with two hidden layers"></svg></div>
+<div class="network-summary" aria-live="polite"><strong id="selection-name"></strong><div id="selected-vector" class="selected-math"></div><span id="selection-detail"></span></div>
+<details class="details-box"><summary>From the selected unit to the output</summary>
+<p>The final coordinate of \(\mathbf w_{kl}\) is the bias \(b_{kl}\), attached to the square input \(1\). ReLU returns the positive part of the weighted input. Shrinking one first-layer unit leaves each input connected to the other units. With \(\mathbf h_0(\mathbf x)=\mathbf x\), the hidden activation is</p>
+\[h_{kl}(\mathbf x)=\max\{0,\mathbf w_{kl}^{\mathsf T}\widetilde{\mathbf h}_{l-1}(\mathbf x)\},\]
+<p>where \(\widetilde{\mathbf h}_{l-1}=(\mathbf h_{l-1}^{\mathsf T},1)^{\mathsf T}\). The affine readout \(f_{\mathcal W}(\mathbf x)=\mathbf v^{\mathsf T}\widetilde{\mathbf h}_L(\mathbf x)\) has its own prior \(\mathbf v\mid\kappa\sim\mathcal N(\mathbf0,\kappa^2\mathbf I_{K_L+1})\), with \(\kappa\sim C^+(0,5)\).</p></details>
+</section><aside class="inspector" aria-label="Equations and controls">
+@panel spread@
+<span class="section-label">Gaussian regression · Equation (16)</span><header class="inspector-head"><h2>Conditional weight prior</h2></header>
+<div class="law">\[\mathbf w_{kl}\mid\lambda_{kl},\sigma^2\sim\mathcal N(\mathbf0,\sigma^2\lambda_{kl}^2\mathbf I_{d_l}).\]</div>
+<p>Each of the \(d_l=K_{l-1}+1\) coefficients has conditional standard deviation \(\sigma\lambda_{kl}\). Given the scales, the coefficients are independent. The same \(\sigma^2\) is the observation variance in the likelihood</p>
+\[Y_i\mid\mathbf x_i,\mathcal W,\sigma^2\sim\mathcal N(f_{\mathcal W}(\mathbf x_i),\sigma^2).\]
+<details class="details-box"><summary>Prior on the observation variance</summary><p>The study uses \(p(\sigma^2)\propto1/\sigma^2\) on the standardized response scale. Posterior propriety holds for almost every response direction under the paper’s conditions. For a given data set, a finite variational fit alone cannot establish propriety. To use the supplement’s proper inverse-gamma alternative in R, set <code>noise_prior = c(shape = 2, scale = 1)</code>, or supply other positive hyperparameters.</p></details>
+<div class="range-row"><label for="spread">Observation-error SD \(\sigma\)</label><output for="spread" id="spread-value"></output></div>
+<input type="range" id="spread" min=".25" max="2" step=".05" value="1">
+<svg id="bell-chart" class="chart" aria-label="Conditional Gaussian density for one coordinate"></svg><p class="readout" id="spread-readout"></p>
+<p class="tiny">Both axes stay fixed as \(\sigma\) changes. Change \(\lambda_{kl}\) under Layer &amp; unit scales. Layer width \(K_l\) counts hidden units.</p></section>
+@panel scales@
+<span class="section-label">Conditional scales · Equations (17)–(19)</span><header class="inspector-head"><h2>Scale sharing across hidden units</h2></header>
+@priors@
+<div class="law" id="prior-explainer">@scalelaws@</div>
+<div class="range-row"><label for="layer-scale">Layer scale \(\tau_l\)</label><output for="layer-scale" id="layer-scale-value"></output></div>
+<input type="range" id="layer-scale" min=".25" max="1.25" step=".05" value=".5">
+<div id="percentile-control"><div class="range-row"><label for="percentile">Unit-scale quantile \(u\)</label><output for="percentile" id="percentile-value"></output></div>
+<input type="range" id="percentile" min="10" max="80" step="1" value="60" aria-describedby="percentile-hint">
+<p class="tiny" id="percentile-hint">At quantile \(u\), the selected unit takes the value \(\lambda_{kl}=F_l^{-1}(u)\) of its conditional scale distribution.</p></div>
+<h3>Conditional standard deviations \(\sigma\lambda_{kl}\)</h3>
+<div class="scale-list" id="unit-bars" role="group" aria-label="Conditional standard deviations by hidden unit"></div>
+<p class="tiny" id="bars-caption"></p></section>
+@panel hierarchy@
+<span class="section-label">Prior representations · Figure 4</span><header class="inspector-head"><h2>Two hierarchies for the same weights</h2></header>
+@priors@
+<div class="choice-group hierarchy-choice" role="group" aria-label="Prior representation"><button type="button" class="choice" data-form="original" aria-pressed="true">Original</button><button type="button" class="choice" data-form="expanded" aria-pressed="false">Parameter expansion</button></div>
+<div class="hierarchy-box"><h3 id="hierarchy-title">Original hierarchy</h3><p class="tiny">Conditional on the observation variance \(\sigma^2\). The plate repeats over hidden units.</p><svg id="hierarchy-graph" aria-label="Selected prior hierarchy"></svg>@hierarchies@</div>
+<p class="tiny">A layer has one set of layer parameters and \(K_l\) incoming weight vectors. The unit-specific laws repeat for \(k=1,\ldots,K_l\). We use \(\operatorname{IG}(\alpha,\beta)\) with density proportional to \(t^{-\alpha-1}\exp(-\beta/t)\).</p></section>
+@panel tail@
+<span class="section-label">Prior on the unit scales · Equation (21)</span><header class="inspector-head"><h2>Tail probability at a fixed layer scale</h2></header>
+<p>Fix the layer parameters and take \(z\ge0\). The curves give the probability that the unit scale exceeds \(z\tau_l\).</p>
+\[S_l(z)=\Pr(\lambda_{kl}>z\tau_l\mid\tau_l,\xi_l).\]
+<p class="tiny">Condition on \(\tau_l\) alone for G and GL.</p>
+<div class="law"><div>G \(\quad S_l(z)=\mathbf 1\{z<1\}\)</div><div>GL \(\quad S_l(z)=1-(2/\pi)\arctan(z)\)</div><div>GLT \(\quad S_l(z)=(1+\xi_l z)^{-1/\xi_l}\)</div></div>
+<div class="range-row"><label for="tail-shape" id="tail-label">GLT tail shape \(\xi_l\)</label><output for="tail-shape" id="tail-value"></output></div>
+<input type="range" id="tail-shape" min=".55" max="3" step=".05" value="1">
+<svg id="tail-chart" class="chart" aria-label="Conditional tail probability by threshold"></svg>
+<h3>At \(z=10\)</h3><div class="metric-list"><div class="metric"><span>G</span><strong id="tail-g"></strong></div><div class="metric"><span>GL</span><strong id="tail-gl"></strong></div><div class="metric"><span>GLT</span><strong id="tail-glt"></strong></div></div>
+<p class="tiny">For G the probability drops to zero at \(z=1\), below the log axis. Under GLT, increasing \(\xi_l\) makes large unit scales more probable at fixed \(\tau_l\). In the joint prior, the distribution of \(\tau_l\) also depends on \(\xi_l\).</p></section>
+@panel prune@
+<span class="section-label">Fitted scales · Model comparison</span><header class="inspector-head"><h2>From shrinkage to pruning</h2></header>
+<p>Ghosh, Yao and Doshi-Velez group the same incoming coefficients as our GL-BNN. In their notation \(\tau_{kl}\) is local and \(\upsilon_l\) is global. Their post-fitting rule removes unit \(k\) if</p>
+<div class="law">\[\Pr_q(\tau_{kl}\upsilon_l<\delta)>p_0.\]</div>
+<p>Here \(q\) is their fitted variational distribution, \(\delta=10^{-3}\), and \(p_0=0.9\). In the grouped-horseshoe example, move the hypothetical fitted probability across the threshold.</p>
+<div class="choice-group" role="group" aria-label="Pruning comparison"><button type="button" class="choice" data-method="ghosh" aria-pressed="true">Ghosh et al.</button><button type="button" class="choice" data-method="ours" aria-pressed="false">Fixed architecture</button></div>
+<div class="range-row"><label for="prune-chance">Example fitted probability</label><output id="prune-value" for="prune-chance"></output></div><input type="range" id="prune-chance" min="0" max="100" step="1" value="95">
+<p class="status" id="prune-result" aria-live="polite"></p>
+<p>For our models, \(\Pr_q(\sigma\lambda_{kl}<\epsilon)\) summarizes mass near a small conditional weight SD. All \(K_l\) units remain in the fitted architecture. ReLU homogeneity allows an outgoing weight to compensate for a rescaling of the incoming weights and bias.</p></section>
+</aside></div><section class="sources" id="sources"><h2>Paper &amp; references</h2>
+<p>This illustration follows Figures 3–4 of <cite>Variational Learning of Bayesian Neural Networks with a family of global–local shrinkage priors</cite>. Its scale controls evaluate conditional prior laws. The <a href="../prediction/">fitted regression example</a> shows predictions from the R package.</p>
+<ul><li><a href="https://jmlr.org/papers/v20/19-236.html">Ghosh, Yao &amp; Doshi-Velez (2019), §4.3</a> · Grouped horseshoe networks and posterior pruning.</li><li><a href="https://doi.org/10.1214/24-EJS2317">Lee, Zhao, Pati &amp; Mallick (2024)</a> · Tail-adaptive shrinkage for regression coefficients.</li></ul></section></main></div></body></html>

@@ -1,0 +1,5 @@
+export(gltbnn_fit)
+export(gltbnn_shrinkage)
+S3method(print,gltbnn_fit)
+S3method(predict,gltbnn_fit)
+import(stats)

@@ -23,6 +23,16 @@ body {
   text-rendering: optimizeLegibility;
 }
 button, input, output { font: inherit; }
+.links { display:flex; gap:clamp(.6rem,2vw,1.3rem); flex-wrap:wrap; justify-content:flex-end; font-size:.86rem; }
+.law, .hierarchy-box { padding:12px 13px; border-left:3px solid var(--blue); background:#edf3ef; margin:.7rem 0 1rem; }
+.law > div + div { margin-top:.45em; }
+.equation { max-width:100%; overflow-x:auto; padding:.35em 0; }
+math { font-family:"Cambria Math","STIX Two Math",math; font-size:1.04em; }
+.equation math { margin:0; text-align:left; }
+.selected-math { font:italic 1.15rem/1.7 var(--serif); color:var(--ink); overflow-wrap:anywhere; }
+.selected-math sub { font-size:.7em; } .selected-math sup { font-size:.65em; }
+.hierarchy-box h3 { margin:0 0 .45rem; } #hierarchy-graph {display:block;width:100%;max-height:190px;margin-block:.6rem;}
+.law p:last-child, .hierarchy-box p:last-child {margin-bottom:0;}
 button { cursor: pointer; }
 a { color: var(--blue); text-underline-offset: .18em; }
 a:hover { text-decoration-thickness: 2px; }

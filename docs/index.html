@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Install gltbnn, an R package for Gaussian regression with Bayesian neural networks and grouped shrinkage priors. Fit a model and explore two interactive illustrations.">
+  <title>gltbnn · Bayesian neural networks in R</title>
+  <link rel="icon" href="assets/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="package.css">
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<header class="topbar">
+  <div class="wrap bar-inner">
+    <a class="wordmark" href="./" aria-label="gltbnn home">glt<span>bnn</span></a>
+    <nav aria-label="Main navigation">
+      <a href="#install">Install</a>
+      <a href="#example">Example</a>
+      <a href="#illustrations">Illustrations</a>
+      <a href="https://github.com/yain22/Bayesian_NN_GLT">GitHub <span aria-hidden="true">↗</span></a>
+    </nav>
+  </div>
+</header>
+
+<main id="content" class="wrap">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero-copy">
+      <p class="kicker">R package <span aria-hidden="true">/</span> gltbnn</p>
+      <h1 id="hero-title">Bayesian neural networks with grouped shrinkage</h1>
+      <p class="intro">Fit a Bayesian regression network with a common scale per hidden layer, a grouped horseshoe prior, or a learned tail shape. Inspect the fitted scales and compute variational intervals for a mean response or a new observation.</p>
+      <div class="actions">
+        <a class="button" href="#install">Install gltbnn <span aria-hidden="true">↓</span></a>
+        <a class="text-link" href="#example">Fit your first model <span aria-hidden="true">→</span></a>
+      </div>
+    </div>
+    <div class="hero-mark"><img src="assets/mark.svg" width="360" height="408" alt="BNN GLT hexagon showing three connections entering one hidden unit"></div>
+  </section>
+
+  <section id="install" class="section-grid" aria-labelledby="install-title">
+    <div><h2 id="install-title">Installation</h2>
+      <p>Install the package from GitHub in R&nbsp;4.1 or later. If you need the installer, run <code>install.packages("remotes")</code> once.</p>
+    </div>
+    <div class="codebox">
+      <div class="codebar"><span>R console</span><button class="copy" hidden type="button" data-code="install-code">Copy code</button></div>
+      <pre><code id="install-code">remotes::install_github(<span class="str">"yain22/Bayesian_NN_GLT"</span>)
+library(gltbnn)</code></pre>
+    </div>
+  </section>
+
+  <section id="example" class="section-grid" aria-labelledby="example-title">
+    <div><h2 id="example-title">Fit your first model</h2>
+      <p>Predict black cherry timber volume from trunk diameter (the <code>Girth</code> column) and height. Set aside three trees, then fit a GLT network with four neurons in one hidden layer.</p>
+      <p>This example gives the standardized observation variance a proper inverse-gamma prior. <code>predict()</code> estimates mean volume. A prediction interval also includes variation among individual trees with the same measurements.</p>
+      <p><code>gltbnn_shrinkage(fit)</code> reports the fitted scale summaries for each hidden unit. The <a href="reference.pdf">R reference manual</a> gives the equations, arguments, and return values.</p>
+    </div>
+    <div>
+      <div class="codebox">
+        <div class="codebar"><span>R console</span><button class="copy" hidden type="button" data-code="fit-code">Copy code</button></div>
+        <pre><code id="fit-code">x &lt;- trees[c(<span class="str">"Girth"</span>, <span class="str">"Height"</span>)]
+holdout &lt;- c(4, 14, 24)
+
+fit &lt;- gltbnn_fit(
+  x[-holdout, ], trees$Volume[-holdout],
+  hidden = 4L, prior = <span class="str">"GLT"</span>, seed = 7L,
+  noise_prior = c(shape = 2, scale = 1)
+)
+predict(fit, x[holdout, ])
+predict(fit, x[holdout, ], type = <span class="str">"prediction_interval"</span>)</code></pre>
+      </div>
+      <p class="result-note">For the first held-out tree, the estimated mean volume is <strong>14.6 cubic feet</strong> and the 95% variational prediction interval is <strong>4.6 to 25.2 cubic feet</strong>.</p>
+    </div>
+  </section>
+
+  <section id="illustrations" class="illustrations" aria-labelledby="illustrations-title">
+    <h2 id="illustrations-title">Interactive illustrations</h2>
+    <div class="illustration-grid">
+      <a href="illustration/" class="topic">
+        <h3>Inside a hidden unit <span aria-hidden="true">↗</span></h3>
+        <p>Select a hidden unit and follow its incoming weight vector through the original and parameter-expanded priors. Compare conditional weight densities and unit-scale tail probabilities.</p>
+      </a>
+      <a href="prediction/" class="topic">
+        <h3>Predictive uncertainty <span aria-hidden="true">↗</span></h3>
+        <p>Inspect the fitted shrinkage of eight hidden units under each prior. Compare uncertainty about the regression function with uncertainty about a future observation.</p>
+      </a>
+    </div>
+  </section>
+</main>
+
+<footer><div class="wrap footer-inner"><p>Software for <cite>Variational Learning of Bayesian Neural Networks with a family of global–local shrinkage priors</cite>.</p><a href="https://github.com/yain22/Bayesian_NN_GLT/blob/main/LICENSE.md">MIT license</a></div></footer>
+<div id="copy-status" class="sr-only" role="status"></div>
+<script>
+  if (navigator.clipboard) {
+    document.querySelectorAll("[data-code]").forEach((button) => {
+      button.hidden = false;
+      button.addEventListener("click", async () => {
+        const code = document.getElementById(button.dataset.code);
+        const status = document.getElementById("copy-status");
+        try {
+          await navigator.clipboard.writeText(code.textContent);
+          button.textContent = "Copied";
+          status.textContent = "Code copied to the clipboard.";
+        } catch {
+          const range = document.createRange();
+          range.selectNodeContents(code);
+          const selection = window.getSelection();
+          selection.removeAllRanges();
+          selection.addRange(range);
+          button.textContent = "Code selected";
+          status.textContent = "Code selected. Use your copy shortcut.";
+        }
+        window.setTimeout(() => { button.textContent = "Copy code"; }, 2000);
+      });
+    });
+  }
+</script>
+</body>
+</html>

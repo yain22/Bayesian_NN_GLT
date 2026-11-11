@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Compare fitted Bayesian neural networks and explore how observation noise affects predictions.">
+  <title>Fitted regression · gltbnn</title>
+  <link rel="icon" href="../assets/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../illustration/style.css">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="data.js"></script>
+  <script defer src="chart.js"></script>
+  <noscript><style>#fit, .unit-panel { display: none; }</style></noscript>
+</head>
+<body>
+<a class="skip-link" href="#fit">Skip to fitted regression</a>
+<div class="shell">
+  <header class="masthead">
+    <a class="brand" href="../"><img class="brandmark" src="../assets/mark.svg" width="52" height="59" alt="">gltbnn</a>
+    <a class="source-jump" href="../illustration/">Network illustration <span aria-hidden="true">↗</span></a>
+  </header>
+  <main>
+    <header class="hero">
+      <h1>From a fitted curve to a new observation</h1>
+      <p>Three networks learn from the same 36 observations. Choose a shrinkage prior, then explore what each network predicts at a particular input.</p>
+    </header>
+    <noscript>
+      <section class="network-panel">
+        <div class="panel-top"><h2>A prediction at input zero</h2></div>
+        <p>At <i>x</i><sub>∗</sub> = 0, the fitted GLT network estimates a mean response of 4.99. Its approximate pointwise 90% interval is 4.77 to 5.20 for the mean and 3.83 to 6.23 for a new observation, in the original response units. The second interval also includes observation noise.</p>
+        <p>The layer scale and tail shape have fitted geometric means of 0.153 and 1.331. Run the <a href="generate.R">R example</a> to reproduce these values and compare the three fits.</p>
+      </section>
+    </noscript>
+    <div class="lab-grid prediction-layout" id="fit">
+      <section class="network-panel" aria-labelledby="chart-heading">
+        <div class="panel-top"><h2 id="chart-heading">Fitted regression</h2></div>
+        <div class="legend" aria-label="Plot legend">
+          <span><i class="key key-point"></i>Training observation</span>
+          <span><i class="key key-line"></i>Mean curve</span>
+          <span><i class="key key-band"></i>90% interval</span>
+        </div>
+        <svg id="regression-chart" role="img" aria-labelledby="chart-heading chart-caption"></svg>
+        <p id="chart-caption" class="chart-caption">The band is an approximate pointwise 90% interval in the original response units. Move the input slider to read its endpoints.</p>
+      </section>
+      <aside class="inspector controls" aria-label="Prediction settings">
+        <fieldset><legend>Shrinkage prior</legend>
+          <div class="prior-options">
+            <label><input type="radio" name="prior" value="G">G</label>
+            <label><input type="radio" name="prior" value="GL">GL</label>
+            <label><input type="radio" name="prior" value="GLT" checked>GLT</label>
+          </div>
+          <p class="setting-hint" id="prior-explanation"></p>
+        </fieldset>
+        <fieldset><legend>What are you predicting?</legend>
+          <label class="target"><input type="radio" name="band" value="mean">Mean response <i>μ</i><sub>𝒲</sub>(<i>x</i><sub>∗</sub>)</label>
+          <label class="target"><input type="radio" name="band" value="response" checked>New observation <i>Y</i><sub>∗</sub></label>
+          <p id="band-explanation" class="setting-hint"></p>
+        </fieldset>
+        <div class="range-row"><label for="location">Original input <i>x</i><sub>∗</sub></label><output id="x-value" for="location">0.00</output></div>
+        <input id="location" type="range" min="0" max="80" value="40" step="1" aria-label="Input value">
+        <div id="readout" class="numbers" aria-live="polite" aria-atomic="true">
+          <div><span>Fitted mean</span><strong id="mean-value"></strong></div>
+          <div><span>90% interval</span><strong id="band-value"></strong></div>
+        </div>
+      </aside>
+    </div>
+    <section class="network-panel unit-panel" aria-labelledby="unit-heading">
+      <div class="panel-top"><h2 id="unit-heading">Shrinkage across the eight hidden units</h2></div>
+      <p>For hidden unit <i>k</i> in layer 1, its incoming weight and bias have conditional prior standard deviation σλ<sub><i>k</i>1</sub>. Each bar gives the geometric mean of this quantity under the fitted variational distribution, in standardized fitting units. A shorter bar means a tighter prior around zero.</p>
+      <ol id="unit-scales" aria-label="Geometric mean conditional prior standard deviation by hidden unit"></ol>
+      <p class="layer-summary">Fitted geometric means in layer 1 · Layer scale τ<sub>1</sub> = <strong id="layer-scale"></strong><span id="tail-summary"> · Tail shape ξ<sub>1</sub> = <strong id="tail-shape"></strong></span></p>
+    </section>
+    <details class="details-box reproduce">
+      <summary>How the fits were made in R</summary>
+      <p>At 36 equally spaced inputs from −2 to 2, we generated responses with mean 5 + 1.7 sin(1.5<i>x</i>) + 0.3<i>x</i> and independent Gaussian errors with standard deviation 0.45. Each model fits one hidden layer of eight ReLU units with the same initialization seed, 600 warm-start steps and a fixed budget of 60 variational iterations.</p>
+      <pre><code>fit &lt;- gltbnn_fit(training, y, hidden = 8L, prior = "GLT", seed = 17L)
+units &lt;- gltbnn_shrinkage(fit)
+units[, c("unit", "geometric_prior_sd")]
+unique(units[c("layer", "geometric_layer_scale", "geometric_tail_shape")])
+predict(fit, grid, type = "prediction_interval", level = 0.90,
+        draws = 2048L, seed = 23L)</code></pre>
+      <p>For original input <i>x</i><sub>∗</sub>, the network takes standardized input
+      <i>x</i><sub>∗,std</sub> = (<i>x</i><sub>∗</sub> − <span class="overline">x</span><sub>train</sub>)/<i>s</i><sub>x</sub>.
+      For a draw of the weights 𝒲, the mean in the original response units is
+      <i>μ</i><sub>𝒲</sub>(<i>x</i><sub>∗</sub>) = <span class="overline">y</span><sub>train</sub> + <i>s</i><sub>y</sub> <i>f</i><sub>𝒲</sub>(<i>x</i><sub>∗,std</sub>).
+      Both means and standard deviations come from the training data.</p>
+      <p>On the standardized fitting scale, σ² is the Gaussian noise variance and σ²(λ<sub><i>k</i>1</sub>)² is the conditional prior variance of a coefficient entering unit <i>k</i>. On the original response scale, a new observation <i>Y</i><sub>∗</sub> has conditional mean <i>μ</i><sub>𝒲</sub>(<i>x</i><sub>∗</sub>) and conditional variance <i>s</i><sub>y</sub>²σ² given the input, weights and noise variance.</p>
+      <p>These fits use the paper’s default Jeffreys prior with density proportional to 1/σ². For the supplement’s proper inverse-gamma option, supply positive shape and scale through <code>noise_prior</code>, for example <code>c(shape = 2, scale = 1)</code>, on the standardized variance scale.</p>
+      <p>At each of 81 inputs, the line averages 2,048 draws of the regression function. The selected band uses the 5th and 95th percentiles of its draws. All three fits use the same bar scale. The layer scale and the GLT tail shape each repeat for all units in their layer. The R example selects one copy of each layer’s summaries.</p>
+      <p>Inspect the fitted objective and its Monte Carlo standard error in <code>fit$engine$trace</code>. To check sensitivity to the iteration budget, refit with the same seed and <code>control = list(outer = 120L)</code>. For GLT at original input <i>x</i><sub>∗</sub> = 0, the approximate pointwise 90% interval for the mean response was [4.771, 5.197] after 60 iterations and [4.587, 5.342] after 120, with all other settings fixed.</p>
+      <p>Install <a href="../#install">the R package</a>, then download and run the <a href="generate.R" download>complete R script</a> to reproduce the data and all three fits.</p>
+    </details>
+  </main>
+</div>
+</body>
+</html>

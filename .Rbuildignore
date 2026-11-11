@@ -1,0 +1,6 @@
+^docs$
+^tools$
+^README\.md$
+^LICENSE\.md$
+^\.git$
+^\.gitignore$

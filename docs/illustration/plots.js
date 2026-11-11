@@ -64,20 +64,24 @@
     return Number(value.toFixed(3)).toString().replace("-", "−");
   }
 
-  function bell(svg, sd) {
+  function bell(svg, sd, lambda) {
     if (!Number.isFinite(sd) || sd <= 0) throw new RangeError("The prior spread must be positive.");
     const spread = decimal(sd);
     const clipId = begin(svg, "Bell curve for one incoming weight",
       "A zero-centered Gaussian prior with standard deviation " + spread +
       ". The shaded interval from minus " + spread + " to " + spread +
-      " contains about 68 percent of possible weight values. Both axes stay fixed as the spread changes.", 226) + "-clip";
+      " contains about 68 percent of conditional prior mass.", 226) + "-clip";
     const left = 42, right = 427, top = 25, bottom = 176;
-    const toX = value => left + (value + 5) * (right - left) / 10;
-    const toY = density => bottom - density * (bottom - top) / 1.65;
+    // Sigma varies from 0.25 to 2. Keep both axes fixed over that sweep.
+    const unit = lambda;
+    const limit = 6 * unit;
+    const peak = 1.65 / unit;
+    const toX = value => left + (value + limit) * (right - left) / (2 * limit);
+    const toY = density => bottom - density * (bottom - top) / peak;
     const density = w => Math.exp(-0.5 * (w / sd) ** 2) / (sd * Math.sqrt(2 * Math.PI));
     label(svg, left, 14, "Density", {fill: ink});
 
-    for (const tick of [0, 0.5, 1, 1.5]) {
+    for (const tick of [0, 0.5, 1, 1.5].map(v => v/unit)) {
       const y = toY(tick);
       line(svg, left, y, right, y);
       label(svg, left - 7, y + 4, decimal(tick), {"text-anchor": "end"});
@@ -97,15 +101,15 @@
       });
     }
     element(curves, "path", {
-      d: pathFor(-5, 5, 420, toX, w => toY(density(w))),
+      d: pathFor(-limit, limit, 420, toX, w => toY(density(w))),
       fill: "none", stroke: blue, "stroke-width": 2.7
     });
     line(svg, left, bottom, right, bottom, {stroke: axis});
-    for (const tick of [-4, -2, 0, 2, 4]) {
+    for (const tick of [-4, -2, 0, 2, 4].map(v => v*unit)) {
       line(svg, toX(tick), bottom, toX(tick), bottom + 4, {stroke: axis});
       label(svg, toX(tick), bottom + 18, decimal(tick), {"text-anchor": "middle"});
     }
-    label(svg, (left + right) / 2, 219, "Weight value", {"text-anchor": "middle", fill: ink});
+    label(svg, (left + right) / 2, 219, "One incoming coefficient", {"text-anchor": "middle", fill: ink});
   }
 
   function tailProbs(xi, threshold = 10) {
@@ -141,11 +145,15 @@
     label(svg, left + 28, 35, "GL", {fill: blue, "font-weight": "600"});
     line(svg, left + 79, 31, left + 101, 31, {stroke: rust, "stroke-width": 2.6, "stroke-dasharray": "6 4"});
     label(svg, left + 107, 35, "GLT", {fill: rust, "font-weight": "600"});
+    line(svg, left + 164, 31, left + 186, 31, {stroke: ink, "stroke-width": 2.4, "stroke-dasharray":"2 2"});
+    label(svg, left + 192, 35, "G", {fill:ink, "font-weight":"600"});
     line(svg, toX(10), top, toX(10), bottom, {stroke: axis, "stroke-dasharray": "2 4"});
 
     const clip = element(element(svg, "defs", {}), "clipPath", {id: clipId});
     element(clip, "rect", {x: left - 1.5, y: top - 2, width: right - left + 3, height: bottom - top + 3});
     const marks = element(svg, "g", {"clip-path": "url(#" + clipId + ")"});
+    line(marks,toX(0),toY(1),toX(1),toY(1),{stroke:ink,"stroke-width":2.4,"stroke-dasharray":"2 2"});
+    element(marks,"circle",{cx:toX(1),cy:toY(1),r:2.4,fill:"white",stroke:ink});
     for (const [model, color] of [["gl", blue], ["glt", rust]]) {
       const style = model === "glt" ? {"stroke-dasharray": "6 4"} : {};
       element(marks, "path", {
@@ -159,7 +167,7 @@
       line(svg, toX(tick), bottom, toX(tick), bottom + 4, {stroke: axis});
       label(svg, toX(tick), bottom + 18, String(tick), {"text-anchor": "middle"});
     }
-    label(svg, (left + right) / 2, 236, "Threshold in multiples of the layer scale", {"text-anchor": "middle", fill: ink});
+    label(svg, (left + right) / 2, 236, "Threshold multiple z", {"text-anchor": "middle", fill: ink});
   }
 
   window.PriorPlots = Object.freeze({bell, tail, tailProbs});
