@@ -10,6 +10,10 @@
     {tau: .5, xi: 1, u: [.35, .58, .24, .72, .60, .48, .31, .68]}
   ];
   const state = {layer:1, unit:2, sigma:1, prior:"GL", form:"original", method:"ghosh", chance:95, topic:"spread"};
+  const selectedNumbers = all("[data-selection]");
+  const selectedFormulas = all("math[data-selection-tex]");
+  const layerPassages = all("[data-in-layer]");
+  let displayedPair;
   const fmt = v => v >= .01 ? v.toFixed(2) : v.toPrecision(2);
   const sub = n => String(n).replace(/[0-9]/g, ch => "₀₁₂₃₄₅₆₇₈₉"[Number(ch)]);
   const indexed = (letter,k,l) => letter + sub(k) + sub(l);
@@ -26,9 +30,26 @@
     render();
   }
 
+  function bindSelection(layer) {
+    const l = state.layer, k = state.unit;
+    const inputs = l === 1 ? 3 : layers[l-1].u.length;
+    const indices = {l, k, kl:String(k)+l, prev:l-1, width:layer.u.length, inputs, d:inputs+1};
+    if (displayedPair !== indices.kl) {
+      for (const element of selectedNumbers) element.textContent = indices[element.dataset.selection];
+      for (const formula of selectedFormulas) {
+        const tex = formula.dataset.selectionTex.replace(/\[\[(\w+)\]\]/g, (_, key) => indices[key]);
+        formula.setAttribute("alttext",tex);
+      }
+      for (const passage of layerPassages) passage.hidden = Number(passage.dataset.inLayer) !== l;
+      displayedPair = indices.kl;
+    }
+    return indices;
+  }
+
   function network(layer, sd) {
-    const l = state.layer, k = state.unit, d = l === 1 ? 4 : 5;
+    const {l,k,d} = bindSelection(layer);
     const pruned = state.topic === "prune" && state.method === "ghosh" && state.chance > 90;
+    item("path-pruned").hidden = !pruned;
     const externalRule = state.topic === "prune" && state.method === "ghosh";
     window.drawNetwork(item("network"), {layer:l, unit:k, pruned, priorSd:externalRule ? undefined : sd},selectUnit);
     item("selection-name").textContent = "Layer l = " + l + " · Unit k = " + k;
@@ -56,7 +77,7 @@
   function spread(layer, lambda, sd) {
     item("spread").value = state.sigma;
     item("spread-value").value = fmt(state.sigma);
-    window.PriorPlots.bell(item("bell-chart"),sd,lambda);
+    window.PriorPlots.bell(item("bell-chart"),sd,lambda,state.unit,state.layer);
     item("spread-readout").textContent = "Conditional on " + indexed("λ",state.unit,state.layer) + " = " +
       fmt(lambda) + " and σ = " + fmt(state.sigma) + ", one coordinate has SD " + fmt(sd) +
       ". Its central 68.27% interval is [−" + fmt(sd) + ", " + fmt(sd) + "].";
@@ -69,12 +90,27 @@
   function scales(layer) {
     selectPriorButtons();
     all("[data-law]").forEach(b => b.hidden = b.dataset.law !== state.prior);
+    item("scale-equation-number").textContent = {G:17, GL:18, GLT:19}[state.prior];
     item("layer-scale").value = layer.tau;
     item("layer-scale-value").value = fmt(layer.tau);
     item("percentile-control").hidden = state.prior === "G";
-    const percent = Math.round(100 * layer.u[state.unit-1]);
+    const u = layer.u[state.unit-1];
+    const percent = Math.round(100 * u);
     item("percentile").value = percent;
     item("percentile-value").value = percent+"%";
+    const lambda = unitScale(layer,u);
+    const unitLabel = indexed("λ",state.unit,state.layer);
+    const layerLabel = "τ"+sub(state.layer)+" = "+fmt(layer.tau);
+    const substitution = item("scale-substitution");
+    if (state.prior === "G") {
+      substitution.textContent = unitLabel+" = "+layerLabel+".";
+    } else if (state.prior === "GL") {
+      substitution.textContent = "At u = "+fmt(u)+", "+indexed("r",state.unit,state.layer)+" ≈ "+
+        (lambda/layer.tau).toPrecision(3)+". With "+layerLabel+", "+unitLabel+" ≈ "+lambda.toPrecision(3)+".";
+    } else {
+      substitution.textContent = "At u = "+fmt(u)+", "+layerLabel+" and ξ"+sub(state.layer)+" = "+
+        fmt(layer.xi)+" give "+unitLabel+" ≈ "+lambda.toPrecision(3)+".";
+    }
     const sds = layer.u.map(u => state.sigma * unitScale(layer,u));
     const max = Math.max(1,Math.ceil(Math.max(...sds)));
     const bars = item("unit-bars"), focused = bars.contains(document.activeElement);
@@ -83,12 +119,12 @@
       const button = document.createElement("button");
       button.type = "button"; button.className = "scale-row";
       button.setAttribute("aria-pressed",state.unit === i+1);
-      button.setAttribute("aria-label","Unit "+(i+1)+", conditional prior standard deviation "+fmt(sd));
+      button.setAttribute("aria-label","Unit "+(i+1)+" in layer "+state.layer+", conditional prior standard deviation "+fmt(sd));
       const track=span("scale-track"), fill=span("scale-fill");
       fill.style.width = (100*sd/max)+"%";
       if (state.layer === 2) fill.style.backgroundColor = "var(--rust)";
       track.append(fill);
-      button.append(span("scale-name","k = "+(i+1)),track,span("scale-value",fmt(sd)));
+      button.append(span("scale-name","σ"+indexed("λ",i+1,state.layer)),track,span("scale-value",fmt(sd)));
       button.addEventListener("click",() => selectUnit(state.layer,i+1));
       return button;
     }));
@@ -103,13 +139,18 @@
     all("[data-form]").forEach(b => b.setAttribute("aria-pressed",b.dataset.form === state.form));
     all("[data-hierarchy]").forEach(b => b.hidden = b.dataset.hierarchy !== state.prior+":"+state.form);
     item("hierarchy-title").textContent = state.form === "expanded" ? "Equivalent hierarchy with parameter expansion" : "Original hierarchy";
-    window.drawHierarchy(item("hierarchy-graph"),state.prior,state.form);
+    let weightLaw = "local";
+    if (state.prior === "G") weightLaw = state.form === "original" ? "global" : "squared-layer";
+    if (state.prior === "GL" && state.form === "expanded") weightLaw = "squared-product";
+    all("[data-weight-law]").forEach(node => node.hidden = node.dataset.weightLaw !== weightLaw);
+    all("[data-source-layer]").forEach(node => node.hidden = Number(node.dataset.sourceLayer) !== state.layer);
+    window.drawHierarchy(item("hierarchy-graph"),state.prior,state.form,state.layer,state.unit,layers[state.layer].u.length);
   }
 
   function tail(layer) {
     item("tail-shape").value = layer.xi;
     item("tail-value").value = fmt(layer.xi);
-    window.PriorPlots.tail(item("tail-chart"),layer.xi);
+    window.PriorPlots.tail(item("tail-chart"),layer.xi,state.layer,state.unit);
     const probabilities = window.PriorPlots.tailProbs(layer.xi);
     for (const name of ["g","gl","glt"]) item("tail-"+name).textContent = (100*probabilities[name]).toFixed(name==="g"?0:1)+"%";
   }

@@ -2,8 +2,6 @@
 (() => {
   "use strict";
   const ns = "http://www.w3.org/2000/svg";
-  const labels = {a:["a","l"], tau:["τ","l"], w:["w","kl"], lambda:["λ","kl"], xi:["ξ","l"],
-    nu:["ν","kl"], t:["t","l"], at:["a","τ,l"], tr:["t","r,kl"], ar:["a","r,kl"], K:["K","l"], hyper:["μξ, ρ²ξ",""]};
   const graphs = {
     "G:original": {nodes:{a:[36,76],tau:[126,76],w:[289,76]},edges:[["a","tau"],["tau","w"]]},
     "G:expanded": {nodes:{a:[25,76],at:[90,76],t:[158,76],w:[289,76]},edges:[["a","at"],["at","t"],["t","w"]]},
@@ -18,19 +16,22 @@
     if(txt!==undefined) node.textContent=txt;
     return node;
   }
-  window.drawHierarchy = function(svg,prior,form) {
+  window.drawHierarchy = function(svg,prior,form,layer,unit,width) {
     const {nodes,edges}=graphs[prior+":"+form];
+    const l = String(layer), kl = String(unit) + l;
+    const labels = {a:["a",l], tau:["τ",l], w:["w",kl], lambda:["λ",kl], xi:["ξ",l],
+      nu:["ν",kl], t:["t",l], at:["a","τ,"+l], tr:["t","r,"+kl], ar:["a","r,"+kl],
+      K:["K",l], hyper:["μξ, ρ²ξ",""]};
     svg.setAttribute("viewBox","0 0 345 142");
     svg.setAttribute("role","img");
     svg.setAttribute("aria-labelledby","graph-title graph-description");
     const describe = name=>labels[name].join("_");
     const def=el("defs"),marker=el("marker",{id:"prior-arrow",viewBox:"0 0 8 8",refX:7,refY:4,markerWidth:6,markerHeight:6,orient:"auto-start-reverse"});
     marker.append(el("path",{d:"M0 0 L8 4 L0 8 Z",fill:"#667e83"}));def.append(marker);
-    svg.replaceChildren(el("title",{id:"graph-title"},prior+"-BNN "+form+" hierarchy"),el("desc",{id:"graph-description"},
-      "Conditional on the observation variance sigma squared. "+edges.map(([from,to])=>describe(from)+" determines the law of "+describe(to)).join(". ")+". Unit-specific nodes repeat in the plate."),def);
+    svg.replaceChildren(el("title",{id:"graph-title"},prior+"-BNN "+form+" hierarchy for unit "+unit+" in layer "+layer),el("desc",{id:"graph-description"},
+      "Conditional on the observation variance sigma squared. "+edges.map(([from,to])=>describe(from)+" determines the law of "+describe(to)).join(". ")+". The plate shows k = "+unit+" among "+width+" units in layer "+layer+"."),def);
     svg.append(el("rect",{x:185,y:12,width:153,height:121,rx:8,fill:"#f8faf8",stroke:"#a9bcb8","stroke-dasharray":"4 3"}));
-    const plate=el("text",{x:328,y:125,"text-anchor":"end","font-size":11,fill:"#506969"},"k = 1, …, K");
-    plate.append(el("tspan",{"baseline-shift":"sub","font-size":8},"l"));svg.append(plate);
+    svg.append(el("text",{x:328,y:125,"text-anchor":"end","font-size":11,fill:"#506969"},"j = 1, …, "+width+" · k = "+unit));
     for(const [from,to] of edges){
       const [x,y]=nodes[from],[u,v]=nodes[to],d=Math.hypot(u-x,v-y),dx=(u-x)/d,dy=(v-y)/d;
       svg.append(el("line",{x1:x+20*dx,y1:y+20*dy,x2:u-20*dx,y2:v-20*dy,stroke:"#667e83","stroke-width":1.45,"marker-end":"url(#prior-arrow)"}));

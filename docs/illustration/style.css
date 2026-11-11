@@ -32,6 +32,17 @@ math { font-family:"Cambria Math","STIX Two Math",math; font-size:1.04em; }
 .selected-math { font:italic 1.15rem/1.7 var(--serif); color:var(--ink); overflow-wrap:anywhere; }
 .selected-math sub { font-size:.7em; } .selected-math sup { font-size:.65em; }
 .hierarchy-box h3 { margin:0 0 .45rem; } #hierarchy-graph {display:block;width:100%;max-height:190px;margin-block:.6rem;}
+#vector-law { overflow-x:auto; margin:.5rem 0; text-align:center; }
+#coordinate-graph { padding:.8rem 0; margin:.7rem 0; border-block:1px solid #c8d7d4; }
+.coordinate-parent { display:inline-flex; flex-wrap:wrap; align-items:baseline; gap:.2rem .55rem; padding:.3rem .6rem; background:#fffefa; border:1px solid #809b9f; border-radius:.35rem; }
+.coordinate-parent strong { font-size:.79rem; }
+.coordinate-leaves { list-style:none; margin:0; padding:0 0 0 .9rem; }
+.coordinate-leaf { position:relative; display:flex; flex-wrap:wrap; align-items:baseline; gap:.1rem .65rem; padding:.4rem 0 .4rem 1.1rem; }
+.coordinate-leaf::before { content:""; position:absolute; top:0; bottom:0; left:0; border-left:1px solid #809b9f; }
+.coordinate-leaf:last-child::before { bottom:50%; }
+.coordinate-leaf::after { content:""; position:absolute; top:50%; left:0; width:.8rem; border-top:1px solid #809b9f; }
+.coordinate-source { color:var(--muted); font-size:.8rem; }
+.coordinate-law { max-width:100%; overflow-x:auto; }
 .law p:last-child, .hierarchy-box p:last-child {margin-bottom:0;}
 button { cursor: pointer; }
 a { color: var(--blue); text-underline-offset: .18em; }

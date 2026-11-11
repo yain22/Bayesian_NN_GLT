@@ -64,10 +64,10 @@
     return Number(value.toFixed(3)).toString().replace("-", "−");
   }
 
-  function bell(svg, sd, lambda) {
+  function bell(svg, sd, lambda, selectedUnit, layer) {
     if (!Number.isFinite(sd) || sd <= 0) throw new RangeError("The prior spread must be positive.");
     const spread = decimal(sd);
-    const clipId = begin(svg, "Bell curve for one incoming weight",
+    const clipId = begin(svg, "Conditional weight density for unit " + selectedUnit + " in layer " + layer,
       "A zero-centered Gaussian prior with standard deviation " + spread +
       ". The shaded interval from minus " + spread + " to " + spread +
       " contains about 68 percent of conditional prior mass.", 226) + "-clip";
@@ -109,7 +109,9 @@
       line(svg, toX(tick), bottom, toX(tick), bottom + 4, {stroke: axis});
       label(svg, toX(tick), bottom + 18, decimal(tick), {"text-anchor": "middle"});
     }
-    label(svg, (left + right) / 2, 219, "One incoming coefficient", {"text-anchor": "middle", fill: ink});
+    const axisTitle = label(svg, (left + right) / 2, 217, "Incoming coefficient ", {"text-anchor": "middle", fill: ink});
+    element(axisTitle, "tspan", {"font-family":"Georgia, serif", "font-style":"italic"}, "w");
+    element(axisTitle, "tspan", {"baseline-shift":"sub", "font-size":9}, String(selectedUnit) + layer + ",j");
   }
 
   function tailProbs(xi, threshold = 10) {
@@ -124,11 +126,11 @@
     };
   }
 
-  function tail(svg, xi) {
+  function tail(svg, xi, layer, unit) {
     const probability = tailProbs(xi);
     const percent = p => (100 * p).toFixed(1) + "%";
-    const clipId = begin(svg, "Tail probabilities for hidden-unit scales",
-      "Chance that a unit scale exceeds a multiple of the layer scale. The probability axis is logarithmic. " +
+    const clipId = begin(svg, "Tail probabilities for unit "+unit+" in layer "+layer,
+      "Chance that the selected unit scale exceeds a multiple of its layer's scale. The probability axis is logarithmic. " +
       "At ten times the layer scale, global shrinkage gives zero, the grouped horseshoe gives " +
       percent(probability.gl) + ", and GLT with tail shape " + decimal(xi) +
       " gives " + percent(probability.glt) + ".", 246) + "-clip";
