@@ -91,6 +91,8 @@ with independent Gaussian weight factors. The entries below are available in
   weight update (default 10).}
   \item{\code{logsd_bounds}}{Lower and upper bounds on the log standard
   deviations of the variational weight factors (default \code{c(-15, 3)}).
+  At both endpoints, \code{exp(2 * bound)} must give a positive finite variance
+  in double precision.
   Fitting starts at \code{log(0.01)} or at the nearest bound if that value
   falls outside the interval.}
   \item{\code{weight_draws}, \code{noise_draws}}{Monte Carlo draws per weight
@@ -103,7 +105,10 @@ With the Jeffreys prior, the objective uses the unnormalized joint density
 with the arbitrary additive constant of the log prior set to zero. Under this
 convention the endpoint value is a diagnostic for the variational fit.
 Normalized model evidence requires a proper prior. The inverse-gamma option
-includes the normalized log prior in the objective.
+includes the normalized log prior in the objective. Its component
+\code{noise_neg_kl} combines the expected log prior and factor entropy as
+minus the KL divergence from the fitted variance factor to its prior.
+The Jeffreys fit records \code{noise_prior} and \code{noise_entropy} separately.
 Each of the four training draw counts must be an even integer of at least two
 because the estimator pairs each draw with its negative. With just one pair,
 the Monte Carlo standard error is undefined. Training uses the requested

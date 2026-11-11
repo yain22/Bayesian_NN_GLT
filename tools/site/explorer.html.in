@@ -33,7 +33,7 @@
 <div class="range-row"><label for="spread">Observation-error SD \(\sigma\)</label><output for="spread" id="spread-value"></output></div>
 <input type="range" id="spread" min=".25" max="2" step=".05" value="1">
 <svg id="bell-chart" class="chart" aria-label="Conditional Gaussian density for one coordinate"></svg><p class="readout" id="spread-readout"></p>
-<p class="tiny">Both axes stay fixed as \(\sigma\) changes. Change \(\lambda_{kl}\) under Layer &amp; unit scales. Layer width \(K_l\) counts hidden units.</p></section>
+<p class="tiny">Both axes stay fixed as \(\sigma\) changes. Choosing a different \(\lambda_{kl}\) rescales the axes. The tick labels and interval report the resulting spread in weight units. Layer width \(K_l\) counts hidden units.</p></section>
 @panel scales@
 <span class="section-label">Conditional scales · Equations (17)–(19)</span><header class="inspector-head"><h2>Scale sharing across hidden units</h2></header>
 @priors@

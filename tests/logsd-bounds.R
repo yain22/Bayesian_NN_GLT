@@ -18,3 +18,15 @@ for (prior in c("G", "GL", "GLT")) {
               all(values >= bounds[1L] & values <= bounds[2L]), is.finite(fit$engine$endpoint$value))
   }
 }
+
+# Extreme bounds can map to zero or infinity in double precision, including
+# when the initializer itself would still lie inside the proposed interval.
+for (bounds in list(c(-1001, -1000), c(999, 1000), c(-500, 3), c(-15, 500))) {
+  control$logsd_bounds <- bounds
+  msg <- tryCatch(gltbnn_fit(x, y, hidden = 2L, control = control), error = conditionMessage)
+  stopifnot(is.character(msg), grepl("positive finite variances", msg, fixed = TRUE))
+}
+control$logsd_bounds <- c(-370, 350)
+fit <- gltbnn_fit(x, y, hidden = 2L, prior = "G", control = control, seed = 17L)
+stopifnot(all(is.finite(exp(2 * unlist(fit$engine$parameters$logsd)))),
+          all(exp(2 * unlist(fit$engine$parameters$logsd)) > 0))

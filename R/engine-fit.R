@@ -40,11 +40,14 @@
   output <- length(moments)
   gaussian_entropy <- function(ls) sum((1 + log(2 * pi)) / 2 + ls)
   output_dim <- length(parameters$mu[[output]])
+  noise_terms <- if (is.null(noise_prior)) {
+    c(noise_prior = -noise$zeta, noise_entropy = noise$entropy)
+  } else {
+    c(noise_neg_kl = -.bnn_ig_kl(noise, noise_prior[["shape"]], noise_prior[["scale"]]))
+  }
   terms <- c(
     observation = -length(y) * (log(2 * pi) + noise$zeta) / 2 - noise$phi * mean(sse) / 2,
-    noise_prior = if (is.null(noise_prior)) -noise$zeta else
-      .bnn_ig_log_prior(noise, noise_prior[["shape"]], noise_prior[["scale"]], log(noise_prior[["scale"]])),
-    noise_entropy = noise$entropy,
+    noise_terms,
     output_weight_prior = -output_dim * (log(2 * pi) + state$u$zeta) / 2 -
       state$u$phi * sum(moments[[output]]) / 2,
     output_weight_entropy = gaussian_entropy(parameters$logsd[[output]]),

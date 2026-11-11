@@ -117,6 +117,11 @@ print.gltbnn_fit <- function(x, ...) {
       any(!is.finite(b)) || b[1L] >= b[2L]) {
     stop("logsd_bounds must contain two increasing finite numbers.", call. = FALSE)
   }
+  variance_bounds <- exp(2 * b)
+  if (any(variance_bounds == 0) || any(!is.finite(variance_bounds))) {
+    stop("Both logsd_bounds must yield positive finite variances under exp(2 * bound).",
+         call. = FALSE)
+  }
   defaults
 }
 
