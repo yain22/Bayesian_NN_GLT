@@ -45,6 +45,25 @@ stopifnot(abs(-endpoint$components[["noise_neg_kl"]] / expected_kl - 1) < 1e-12,
           all(concentrated$engine$components$noise_neg_kl <= 0),
           isTRUE(all.equal(sum(endpoint$components), endpoint$value)))
 
+# Equal precision means leave only the shape contribution. Increasing the
+# fitted scale by one binary64 increment produces a small nonzero mean term.
+q <- list(a = 2^100, b = 2^103)
+kl <- getFromNamespace(".bnn_ig_kl", "gltbnn")
+stopifnot(abs(kl(q, 2^98, 2^101) - 0.31814718055994531) < 1e-14)
+q$b <- q$b * (1 + .Machine$double.eps)
+stopifnot(abs(kl(q, 2^98, 2^101) - 0.32595968055994531) < 1e-14)
+
+# These gradients have a representable norm even though some individual
+# squared entries exceed the double range. The clipped step completes.
+large_gradient <- gltbnn_fit(
+  matrix(c(-1, 0, 1, 2), ncol = 1L), c(2, -1, 1, 0), hidden = 1L, prior = "G",
+  seed = 1L, noise_prior = c(shape = 1e156, scale = 1),
+  control = list(init_steps = 1L, outer = 2L, weight_steps = 1L)
+)
+norm <- large_gradient$engine$weight_steps$gradient_norm[2L]
+stopifnot(is.finite(norm), norm > sqrt(.Machine$double.xmax),
+          is.finite(large_gradient$engine$endpoint$value))
+
 for (bad in list(c(3, 2), c(shape = 3, rate = 2), c(shape = 2, shape = 3),
                  c(shape = 0, scale = 1), c(shape = 1, scale = -1),
                  c(shape = NA, scale = 1), c(shape = 1, scale = Inf),

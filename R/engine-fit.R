@@ -77,8 +77,21 @@
   objective <- .bnn_weight_objective(parameters, x, y, noise_phi, rates, epsilon, TRUE)
   grad <- lapply(objective$gradient, function(g) g / nrow(x))
   norm <- sqrt(sum(vapply(grad, function(g) sum(g^2), numeric(1))))
-  if (!is.finite(norm) || !is.finite(objective$value)) stop("Nonfinite weight objective or gradient.")
-  if (norm > control$grad_clip) grad <- lapply(grad, function(g) g * control$grad_clip / norm)
+  if (!is.finite(objective$value)) stop("Nonfinite weight objective.")
+  if (!is.finite(norm)) {
+    # Finite gradient entries can overflow when squared. The unit direction
+    # and the clipping decision both remain available on a rescaled vector.
+    largest <- max(vapply(grad, function(g) max(abs(g)), numeric(1)))
+    if (!is.finite(largest)) stop("Nonfinite weight gradient.")
+    scaled <- lapply(grad, function(g) g / largest)
+    scaled_norm <- sqrt(sum(vapply(scaled, function(g) sum(g^2), numeric(1))))
+    norm <- largest * scaled_norm
+    if (norm > control$grad_clip) {
+      grad <- lapply(scaled, function(g) (g / scaled_norm) * control$grad_clip)
+    }
+  } else if (norm > control$grad_clip) {
+    grad <- lapply(grad, function(g) g * control$grad_clip / norm)
+  }
   adam$m <- Map(function(m, g) .9 * m + .1 * g, adam$m, grad)
   adam$v <- Map(function(v, g) .999 * v + .001 * g^2, adam$v, grad)
   denominator <- lapply(adam$v, function(v) sqrt(v / (1 - .999^iteration)) + 1e-8)

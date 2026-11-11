@@ -20,7 +20,39 @@
 }
 
 .bnn_log_ratio <- function(x, y) {
-  if (x >= y / 2 && x <= 2 * y) log1p((x - y) / y) else log(x) - log(y)
+  if (x >= y / 2 && x <= 2 * y) return(log1p((x - y) / y))
+  ratio <- x / y
+  if (ratio >= .Machine$double.xmin && is.finite(ratio)) log(ratio) else log(x) - log(y)
+}
+
+# Decompose a product of normalized binary64 mantissas into high and low
+# parts (Dekker's product). This preserves the residual when two nearly
+# equal products round to the same floating-point number.
+.bnn_product_parts <- function(x, y) {
+  splitter <- 2^27 + 1
+  cx <- splitter * x
+  cy <- splitter * y
+  x_high <- cx - (cx - x)
+  y_high <- cy - (cy - y)
+  x_low <- x - x_high
+  y_low <- y - y_high
+  product <- x * y
+  error <- (((x_high * y_high - product) + x_high * y_low) + x_low * y_high) + x_low * y_low
+  c(product, error)
+}
+
+.bnn_log_precision_ratio <- function(q, shape, scale) {
+  # log{(q$a / q$b) / (shape / scale)}. Scaling by powers of two keeps
+  # the products finite without rounding a division of the input parameters.
+  values <- c(q$a, scale, shape, q$b)
+  powers <- pmin(floor(log2(values)), .Machine$double.max.exp - 1L)
+  m <- values / 2^powers
+  shift <- (powers[1L] + powers[2L]) - (powers[3L] + powers[4L])
+  if (abs(shift) > 2) return(shift * log(2) + .bnn_log_ratio(m[1L] * m[2L], m[3L] * m[4L]))
+  numerator <- .bnn_product_parts(m[1L] * 2^shift, m[2L])
+  denominator <- .bnn_product_parts(m[3L], m[4L])
+  difference <- (numerator[1L] - denominator[1L]) + (numerator[2L] - denominator[2L])
+  log1p(difference / denominator[1L])
 }
 
 # t^2 * (trigamma(t) - 1/t) is positive. Recurrence near zero and the
@@ -52,16 +84,7 @@
     integral <- stats::integrate(integrand, 0, 1, rel.tol = 1e-10, abs.tol = 0)$value
     shape_loss <- if (s > 1) exp(s + log(s * integral)) else s^2 * integral
   }
-  # Log ratio of precision means a/b and shape/scale. Choose the pairing
-  # with smaller log ratios to avoid subtracting two large logarithms.
-  scale_ratio <- .bnn_log_ratio(scale, q$b)
-  log_q_mean <- .bnn_log_ratio(q$a, q$b)
-  log_p_mean <- .bnn_log_ratio(shape, scale)
-  z <- if (max(abs(s), abs(scale_ratio)) <= max(abs(log_q_mean), abs(log_p_mean))) {
-    scale_ratio - s
-  } else {
-    log_q_mean - log_p_mean
-  }
+  z <- .bnn_log_precision_ratio(q, shape, scale)
   # shape * (exp(z) - 1 - z). Squaring after rescaling preserves small
   # divergences; the factored positive-tail form avoids overflow in exp(z).
   if (abs(z) < 1e-3) {
