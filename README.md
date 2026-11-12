@@ -52,6 +52,7 @@ head(predict(fit, flowers[holdout, 1:4], type = "prob"))
 
 - Inspect predicted probabilities of a malignant diagnosis on held-out Wisconsin Diagnostic Breast Cancer observations and vary the classification threshold. [Binary application and R code](https://yain22.github.io/Bayesian_NN_GLT/classification/#binary)
 - Fit a categorical network to MNIST, select a held-out handwritten digit, and inspect its ten class probabilities. [MNIST application and R code](https://yain22.github.io/Bayesian_NN_GLT/classification/#mnist)
+- Compare T-shirt and pullover probabilities on ten held-out Fashion-MNIST images and inspect accuracy and log loss across all 36 fits. [Fashion-MNIST application and replication code](https://yain22.github.io/Bayesian_NN_GLT/classification/fashion/)
 - Trace a CIFAR-10 color pixel into a standardized network input, compare cat and dog probabilities, and inspect all 36 fits on the full cat/dog split. [CIFAR-10 application and replication code](https://yain22.github.io/Bayesian_NN_GLT/classification/cifar/)
 
 ## What each prior shrinks

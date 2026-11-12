@@ -1,12 +1,16 @@
 (() => {
   "use strict";
-  const data = window.CIFAR_STUDY;
+  const data = window.BINARY_IMAGE_STUDY || window.CIFAR_STUDY;
   if (!data) return;
   const element = id => document.getElementById(id);
   const methods = ["G", "GL", "GLT", "Unpenalized", "Dropout", "L1"];
   const architectures = ["2x10", "2x25", "5x10", "5x25", "10x10", "10x25"];
-  const channels = ["red", "green", "blue"];
-  const labels = ["Cat", "Dog"];
+  const gallery = element("main");
+  const side = Number(gallery.dataset.side);
+  const area = side * side;
+  const channels = element("channel") ? ["red", "green", "blue"] : ["grayscale"];
+  const labels = [gallery.dataset.negative, gallery.dataset.positive];
+  gallery.style.setProperty("--side", side);
   const fits = new Map(data.fits.map(fit => [fit.depth + "x" + fit.width + "/" + fit.method, fit]));
   const photos = data.images.map(photo => ({
     ...photo, raw: Uint8Array.from(atob(photo.pixels), ch => ch.charCodeAt(0))
@@ -21,9 +25,9 @@
 
   function paint(canvas, raw) {
     const ctx = canvas.getContext("2d");
-    const rgba = ctx.createImageData(32, 32);
-    for (let i = 0; i < 1024; i++) {
-      for (let q = 0; q < 3; q++) rgba.data[4 * i + q] = raw[q * 1024 + i];
+    const rgba = ctx.createImageData(side, side);
+    for (let i = 0; i < area; i++) {
+      for (let q = 0; q < 3; q++) rgba.data[4 * i + q] = raw[(channels.length === 1 ? 0 : q) * area + i];
       rgba.data[4 * i + 3] = 255;
     }
     ctx.putImageData(rgba, 0, 0);
@@ -31,22 +35,27 @@
   function renderPixel() {
     const row = Number(element("row").value);
     const col = Number(element("column").value);
-    if (![row, col].every(i => Number.isInteger(i) && i >= 1 && i <= 32)) return;
-    const q = Number(element("channel").value);
-    const start = 1024 * (q - 1) + 32 * (row - 1);
+    if (![row, col].every(i => Number.isInteger(i) && i >= 1 && i <= side)) return;
+    const q = element("channel") ? Number(element("channel").value) : 1;
+    const start = area * (q - 1) + side * (row - 1);
     const index = start + col - 1;
     const raw = photos[selected].raw;
     const standard = (raw[index] - data.trainingMean[index]) / data.trainingSD[index];
-    element("crosshair").style.left = (col - 1) * 3.125 + "%";
-    element("crosshair").style.top = (row - 1) * 3.125 + "%";
-    const spatialIndex = 32 * (row - 1) + col - 1;
-    element("channels").textContent = "RGB (" + [0, 1, 2].map(ch => raw[1024 * ch + spatialIndex]).join(", ") + ")";
-    element("coordinate").textContent = "j = 1,024 × " + (q - 1) + " + 32 × " + (row - 1) + " + " + col + " = " + (index + 1).toLocaleString("en-US");
+    element("crosshair").style.left = 100 * (col - 1) / side + "%";
+    element("crosshair").style.top = 100 * (row - 1) / side + "%";
+    let prefix = "";
+    if (channels.length === 3) {
+      const spatialIndex = side * (row - 1) + col - 1;
+      element("channels").textContent = "RGB (" + [0, 1, 2].map(ch => raw[area * ch + spatialIndex]).join(", ") + ")";
+      prefix = area.toLocaleString("en-US") + " × " + (q - 1) + " + ";
+    }
+    element("coordinate").textContent = "j = " + prefix + side + " × " + (row - 1) + " + " + col +
+      " = " + (index + 1).toLocaleString("en-US");
     element("intensity").textContent = "Raw " + channels[q - 1] + " intensity " + raw[index] +
       " of 255 · Standardized input " + standard.toFixed(3);
-    element("strip-label").textContent = "All 32 " + channels[q - 1] + " intensities in row " + row +
+    element("strip-label").textContent = "All " + side + " " + channels[q - 1] + " intensities in row " + row +
       ", from black (0) to white (255). The outline marks column " + col + ".";
-    element("strip").replaceChildren(...Array.from({length: 32}, (_, c) => {
+    element("strip").replaceChildren(...Array.from({length: side}, (_, c) => {
       const swatch = document.createElement("i");
       const v = raw[start + c];
       swatch.style.backgroundColor = "rgb(" + [v, v, v].join(",") + ")";
@@ -87,8 +96,8 @@
     selected = index;
     Array.from(element("photos").children).forEach((button, i) => button.setAttribute("aria-pressed", String(i === index)));
     paint(element("image"), photos[index].raw);
-    element("image").setAttribute("aria-label", "Enlarged photograph of a " + labels[photos[index].truth].toLowerCase() +
-      ", CIFAR-10 test image " + photos[index].id);
+    element("image").setAttribute("aria-label", "Enlarged " + labels[photos[index].truth] +
+      " image, " + gallery.dataset.study + " test image " + photos[index].id);
     renderPixel();
     renderPrediction();
   }
@@ -97,7 +106,7 @@
     button.className = "photo";
     button.type = "button";
     const canvas = document.createElement("canvas");
-    canvas.width = canvas.height = 32;
+    canvas.width = canvas.height = side;
     canvas.setAttribute("aria-hidden", "true");
     paint(canvas, photo.raw);
     const label = document.createElement("span");
@@ -137,7 +146,7 @@
   }
   element("enlargement").addEventListener("click", event => {
     const rect = element("image").getBoundingClientRect();
-    const coordinate = fraction => Math.max(1, Math.min(32, Math.floor(fraction * 32) + 1));
+    const coordinate = fraction => Math.max(1, Math.min(side, Math.floor(fraction * side) + 1));
     element("row").value = coordinate((event.clientY - rect.top) / rect.height);
     element("column").value = coordinate((event.clientX - rect.left) / rect.width);
     renderPixel();
@@ -146,11 +155,11 @@
     element(id).addEventListener("input", renderPixel);
     element(id).addEventListener("change", () => {
       const input = element(id);
-      input.value = Math.max(1, Math.min(32, Math.round(Number(input.value)) || 1));
+      input.value = Math.max(1, Math.min(side, Math.round(Number(input.value)) || 1));
       renderPixel();
     });
   }
-  element("channel").addEventListener("change", renderPixel);
+  element("channel")?.addEventListener("change", renderPixel);
   for (const id of ["model", "architecture"]) element(id).addEventListener("change", renderPrediction);
   element("metric").addEventListener("change", renderScores);
   choosePhoto(0);

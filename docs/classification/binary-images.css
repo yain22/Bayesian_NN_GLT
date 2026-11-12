@@ -1,4 +1,4 @@
-.photo-list { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: .55rem; margin: 1.3rem 0 1.5rem; }
+.photo-list { display: grid; grid-template-columns: repeat(var(--gallery-columns, 8), minmax(0, 1fr)); gap: .55rem; margin: 1.3rem 0 1.5rem; }
 .photo { display: grid; justify-items: center; padding: .45rem; border: 2px solid transparent; line-height: 1.4; }
 .photo:hover { background: #eef3f2; }
 .photo[aria-pressed=true] { border-color: var(--navy); background: #e3edf0; }
@@ -8,7 +8,7 @@ canvas { image-rendering: pixelated; display: block; }
 .pixel-tools { display: grid; grid-template-columns: minmax(0, 1fr) minmax(7rem, .72fr); align-items: center; gap: clamp(.7rem, 2vw, 1.3rem); }
 .enlargement { position: relative; overflow: hidden; }
 .enlargement canvas { width: 100%; height: auto; cursor: crosshair; }
-#crosshair { pointer-events: none; position: absolute; width: 3.125%; height: 3.125%; border: 1.5px solid white; outline: 1.5px solid black; }
+#crosshair { pointer-events: none; position: absolute; width: calc(100% / var(--side)); height: calc(100% / var(--side)); border: 1.5px solid white; outline: 1.5px solid black; }
 .pixel-controls, .model-controls { display: grid; gap: .65rem; }
 .model-controls { grid-template-columns: minmax(0, 1fr) minmax(0, .8fr); margin: 1rem 0; }
 .pixel-controls label, .model-controls label { display: grid; color: var(--muted); font-size: .87rem; }
@@ -18,10 +18,10 @@ canvas { image-rendering: pixelated; display: block; }
 .inspection { border-inline-start: 3px solid var(--navy); padding: .2rem .75rem; margin-top: 1rem; background: #f2f4ef; }
 .inspection p { margin: .25rem 0; }
 .equation { font: 1.1rem var(--serif); }
-.strip { display: grid; grid-template-columns: repeat(32, minmax(0, 1fr)); border: 1px solid #8a9394; }
+.strip { display: grid; grid-template-columns: repeat(var(--side), minmax(0, 1fr)); border: 1px solid #8a9394; }
 .strip i { height: 1.15rem; }
 .strip .selected { outline: 1px solid black; box-shadow: inset 0 0 0 2px white; z-index: 1; }
-.prob-row { grid-template-columns: 2.4rem minmax(0, 1fr) 4rem; }
+.prob-row { grid-template-columns: var(--label-width, 2.4rem) minmax(0, 1fr) 4rem; }
 .table-scroll { overflow-x: auto; }
 #scores { min-width: 545px; }
 #scores th[rowspan] { text-align: left; }

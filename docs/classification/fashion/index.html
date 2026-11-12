@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Compare T-shirt and pullover probabilities from six fully connected classifiers on held-out Fashion-MNIST images.">
+  <title>T-shirts and pullovers in Fashion-MNIST · gltbnn</title>
+  <link rel="icon" href="../../assets/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../../package.css">
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="../binary-images.css">
+  <script defer src="data.js"></script>
+  <script defer src="../binary-images.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to application</a>
+<header class="topbar"><div class="wrap bar-inner">
+  <a class="wordmark" href="../../" aria-label="gltbnn home">glt<span>bnn</span></a>
+  <nav aria-label="Page navigation"><a href="../">Classification applications</a><a href="#results">Test results</a><a href="#replication">Replication</a></nav>
+</div></header>
+<main id="main" class="wrap" data-study="Fashion-MNIST" data-side="28" data-negative="T-shirt/top" data-positive="Pullover" style="--label-width: 5.5rem; --gallery-columns: 5">
+  <header class="page-title">
+    <p class="kicker">Binary image classification</p>
+    <h1>T-shirts and pullovers in Fashion-MNIST</h1>
+    <p class="intro">Can a network distinguish a T-shirt or top from a pullover using the intensities in a 28 × 28 image? Select a held-out garment and compare its fitted probabilities across six classifiers.</p>
+  </header>
+  <section aria-labelledby="gallery-title" class="application">
+    <h2 id="gallery-title">Explore a test garment</h2>
+    <p class="lead">The gallery shows the first five test images of each class in file order, as in the paper’s garment figure. Each pixel has one grayscale intensity.</p>
+    <noscript><p>Enable JavaScript to explore pixels and predictions. The <a href="scores.csv">full test results</a> and <a href="replication.zip">R analysis</a> are available to download.</p></noscript>
+    <div id="controls" hidden>
+      <div id="photos" class="photo-list" role="group" aria-label="Choose a test garment"></div>
+      <div class="two-panels">
+        <section class="card" aria-labelledby="pixel-heading">
+          <h3 id="pixel-heading">From pixel to input vector</h3>
+          <p class="small">Select a pixel in the image, or change its row and column below.</p>
+          <div class="pixel-tools">
+            <div id="enlargement" class="enlargement">
+              <canvas id="image" width="28" height="28" aria-label="Enlarged test garment"></canvas>
+              <span id="crosshair" aria-hidden="true"></span>
+            </div>
+            <div class="pixel-controls">
+              <label>Row <i>r</i><input id="row" type="number" min="1" max="28" step="1" value="14"></label>
+              <label>Column <i>c</i><input id="column" type="number" min="1" max="28" step="1" value="14"></label>
+            </div>
+          </div>
+          <div class="inspection" aria-live="polite">
+            <p class="equation" id="coordinate"></p>
+            <p id="intensity"></p>
+          </div>
+          <p class="small" id="strip-label"></p>
+          <div class="strip" id="strip" aria-hidden="true"></div>
+          <details class="method"><summary>How an image enters the network</summary>
+            <p>Reading the rows from left to right maps pixel (<i>r</i>, <i>c</i>) to coordinate <i>j</i> = 28(<i>r</i> − 1) + <i>c</i> of the raw vector <b><i>x</i></b><sup>raw</sup><sub>i</sub>. Indices start at one. To obtain the fitted input <b><i>x</i></b><sub>i</sub>, we center and scale each coordinate using its training mean and standard deviation.</p>
+            <p>In first-layer unit <i>k</i>, input <i>x</i><sub>ij</sub> multiplies the scalar weight <i>w</i><sub>k1,j</sub>. Under GL and GLT, this connection has its own scale <i>λ</i><sub>k1,j</sub>. Under G, its scale is the shared layer scale <i>τ</i><sub>1</sub>. <a href="../../illustration/">Explore coefficient-specific shrinkage</a>.</p>
+          </details>
+        </section>
+        <section class="card" aria-labelledby="pred-heading">
+          <h3 id="pred-heading">What did the network predict?</h3>
+          <div class="model-controls">
+            <label>Hidden layers × units per layer<select id="architecture"></select></label>
+            <label>Method<select id="model"></select></label>
+          </div>
+          <div aria-live="polite">
+            <p id="record"></p>
+            <div id="probabilities" class="probabilities"></div>
+            <p id="model-score" class="small"></p>
+          </div>
+          <details class="method"><summary>From a network score to a class probability</summary>
+            <p>The network produces one logit, <i>f</i><sub>𝒲</sub>(<b><i>x</i></b><sub>i</sub>). Applying the inverse-logit gives the probability of pullover, coded 1 for this analysis. The remaining probability belongs to T-shirt/top, coded 0. We predict the more probable class and assign exact ties to T-shirt/top.</p>
+            <p>G, GL and GLT average the pullover probability over 256 draws from their fitted variational distributions. Each FNN uses its fitted weights. Dropout is disabled at prediction time.</p>
+          </details>
+        </section>
+      </div>
+    </div>
+  </section>
+  <section id="results" class="application" aria-labelledby="results-title">
+    <h2 id="results-title">Prediction on all 2,000 test images</h2>
+    <p class="lead">Table 8 in Section 8.4 of the main paper compares these fits. Each uses all 12,000 training images labeled T-shirt/top or pullover. The official test split contains 1,000 of each class.</p>
+    <div id="score-panel" hidden>
+      <label class="metric">Score <select id="metric"><option value="accuracy">Accuracy (%)</option><option value="log_loss">Mean log loss</option></select></label>
+      <div class="table-scroll"><table class="confusion" id="scores">
+        <caption id="table-caption"></caption>
+        <thead><tr><th rowspan="2" scope="col">Depth × width</th><th colspan="3" scope="colgroup">BNN</th><th colspan="3" scope="colgroup">FNN</th></tr>
+          <tr><th scope="col">G</th><th scope="col">GL</th><th scope="col">GLT</th><th scope="col">Unpenalized</th><th scope="col">Dropout</th><th scope="col">L<sub>1</sub></th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+    </div>
+    <p class="download"><a href="scores.csv" download>Download all 36 results (CSV)</a></p>
+  </section>
+  <section id="replication" class="sources" aria-labelledby="replication-title">
+    <h2 id="replication-title">Reproduce the comparison</h2>
+    <p>At each architecture the six methods start from the same 600-step initialization and use the same training minibatches for the next 600 updates. Each phase makes 50 passes through the training set. Architectures use fully connected ReLU layers and one Bernoulli logit. The test set is scored after fitting.</p>
+    <p>The replication archive includes the data preparation, frozen fitting code and independent scoring script. The preparation script verifies the original image and label files before selecting the two classes. Fashion-MNIST images are from Zalando Research. <a href="https://arxiv.org/abs/1708.07747">Xiao, Rasul and Vollgraf (2017)</a> · <a href="https://github.com/zalandoresearch/fashion-mnist">Data and class labels</a> · <a href="dataset-license.txt">Dataset license</a>.</p>
+    <p class="download"><a href="replication.zip" download>Download the R replication code (ZIP)</a></p>
+  </section>
+</main>
+</body>
+</html>
