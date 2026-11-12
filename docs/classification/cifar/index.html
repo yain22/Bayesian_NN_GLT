@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Trace a pixel into a network input and compare held-out cat and dog predictions from six classifiers on CIFAR-10.">
+  <title>Cats and dogs in CIFAR-10 · gltbnn</title>
+  <link rel="icon" href="../../assets/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../../package.css">
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="cifar.css">
+  <script defer src="data.js"></script>
+  <script defer src="cifar.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to application</a>
+<header class="topbar"><div class="wrap bar-inner">
+  <a class="wordmark" href="../../" aria-label="gltbnn home">glt<span>bnn</span></a>
+  <nav aria-label="Page navigation"><a href="../">Classification applications</a><a href="#results">Test results</a><a href="#replication">Replication</a></nav>
+</div></header>
+<main id="main" class="wrap">
+  <header class="page-title">
+    <p class="kicker">Binary image classification</p>
+    <h1>Cats and dogs in CIFAR-10</h1>
+    <p class="intro">How does a color photograph become a probability? Trace a pixel into the network’s input vector, then compare six classifiers on the same held-out photographs.</p>
+  </header>
+  <section aria-labelledby="gallery-title" class="application">
+    <h2 id="gallery-title">Explore a test photograph</h2>
+    <p class="lead">These are the first four cats and first four dogs in the official test file, in file order. Each image has 32 rows, 32 columns, and three color channels.</p>
+    <noscript><p>Enable JavaScript to explore pixels and predictions. The <a href="scores.csv">full test results</a> and <a href="replication.zip">R analysis</a> are available to download.</p></noscript>
+    <div id="controls" hidden>
+      <div id="photos" class="photo-list" role="group" aria-label="Choose a test photograph"></div>
+      <div class="two-panels">
+        <section class="card" aria-labelledby="pixel-heading">
+          <h3 id="pixel-heading">From pixel to input vector</h3>
+          <p class="small">Select a pixel in the image, or change its row and column below.</p>
+          <div class="pixel-tools">
+            <div id="enlargement" class="enlargement">
+              <canvas id="image" width="32" height="32" aria-label="Enlarged test photograph"></canvas>
+              <span id="crosshair" aria-hidden="true"></span>
+            </div>
+            <div class="pixel-controls">
+              <label>Row <i>r</i><input id="row" type="number" min="1" max="32" step="1" value="16"></label>
+              <label>Column <i>c</i><input id="column" type="number" min="1" max="32" step="1" value="16"></label>
+              <label>Channel <i>q</i><select id="channel"><option value="1">1 · Red</option><option value="2">2 · Green</option><option value="3">3 · Blue</option></select></label>
+            </div>
+          </div>
+          <div class="inspection" aria-live="polite">
+            <p id="channels"></p>
+            <p class="equation" id="coordinate"></p>
+            <p id="intensity"></p>
+          </div>
+          <p class="small" id="strip-label"></p>
+          <div class="strip" id="strip" aria-hidden="true"></div>
+          <details class="method"><summary>How the 3,072 coordinates are ordered</summary>
+            <p>In the raw vector <b><i>x</i></b><sup>raw</sup><sub>i</sub>, red occupies coordinates 1–1,024, green occupies 1,025–2,048, and blue occupies 2,049–3,072. Within each block, read across each row before moving down. With indices starting at one, the selected coordinate is <i>j</i> = 1,024(<i>q</i> − 1) + 32(<i>r</i> − 1) + <i>c</i>.</p>
+            <p>For photograph <i>i</i>, the input vector <b><i>x</i></b><sub>i</sub> contains the 3,072 standardized intensities. For coordinate <i>j</i> we subtract its training mean and divide by its training standard deviation. We apply the same transformation to each test image.</p>
+            <p>In first-layer unit <i>k</i>, input <i>x</i><sub>ij</sub> multiplies the scalar weight <i>w</i><sub>k1,j</sub>. Under GL and GLT, this connection has its own scale <i>λ</i><sub>k1,j</sub>. Under G, its scale is the shared layer scale <i>τ</i><sub>1</sub>. <a href="../../illustration/">Explore coefficient-specific shrinkage</a>.</p>
+          </details>
+        </section>
+        <section class="card" aria-labelledby="pred-heading">
+          <h3 id="pred-heading">What did the network predict?</h3>
+          <div class="model-controls">
+            <label>Hidden layers × units per layer<select id="architecture"></select></label>
+            <label>Method<select id="model"></select></label>
+          </div>
+          <div aria-live="polite">
+            <p id="record"></p>
+            <div id="probabilities" class="probabilities"></div>
+            <p id="model-score" class="small"></p>
+          </div>
+          <details class="method"><summary>From a network score to a class probability</summary>
+            <p>The network produces one logit, <i>f</i><sub>𝒲</sub>(<b><i>x</i></b><sub>i</sub>). Applying the inverse-logit gives the probability of dog, coded 1. The remaining probability belongs to cat, coded 0. The photograph is assigned the more probable class, with exact ties assigned to cat.</p>
+            <p>G, GL and GLT average the dog probability over 256 draws from their fitted variational distributions. Each FNN uses its fitted weights. Dropout is disabled at prediction time.</p>
+          </details>
+        </section>
+      </div>
+    </div>
+  </section>
+  <section id="results" class="application" aria-labelledby="results-title">
+    <h2 id="results-title">Prediction on all 2,000 test images</h2>
+    <p class="lead">Each fit uses all 10,000 cat and dog training images. Each split contains equal numbers of the two classes. Select a score to compare the same six methods at each architecture.</p>
+    <div id="score-panel" hidden>
+      <label class="metric">Score <select id="metric"><option value="accuracy">Accuracy (%)</option><option value="log_loss">Mean log loss</option></select></label>
+      <div class="table-scroll"><table class="confusion" id="scores">
+        <caption id="table-caption"></caption>
+        <thead><tr><th rowspan="2" scope="col">Depth × width</th><th colspan="3" scope="colgroup">BNN</th><th colspan="3" scope="colgroup">FNN</th></tr>
+          <tr><th scope="col">G</th><th scope="col">GL</th><th scope="col">GLT</th><th scope="col">Unpenalized</th><th scope="col">Dropout</th><th scope="col">L<sub>1</sub></th></tr></thead>
+        <tbody></tbody>
+      </table></div>
+    </div>
+    <p class="download"><a href="scores.csv" download>Download all 36 results (CSV)</a></p>
+  </section>
+  <section id="replication" class="sources" aria-labelledby="replication-title">
+    <h2 id="replication-title">Reproduce the comparison</h2>
+    <p>At each architecture the six methods start from the same 600-step initialization and use the same training minibatches for the next 600 updates. Each phase makes 60 passes through the training set. Architectures use fully connected ReLU layers and one Bernoulli logit. The test set is scored after fitting.</p>
+    <p>The replication archive includes the data preparation, frozen fitting code and independent scoring script. The preparation script downloads the CIFAR-10 binary release and verifies its checksum before selecting the two classes. Photographs are from CIFAR-10, compiled by Alex Krizhevsky, Vinod Nair and Geoffrey Hinton. <a href="https://www.cs.toronto.edu/~kriz/cifar.html">Original dataset and file format</a> · <a href="https://www.cs.toronto.edu/~kriz/learning-features-2009-TR.pdf">Krizhevsky (2009)</a>.</p>
+    <p class="download"><a href="replication.zip" download>Download the R replication code (ZIP)</a></p>
+  </section>
+</main>
+</body>
+</html>
