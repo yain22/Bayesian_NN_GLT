@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Explore held-out predictions from Bayesian neural networks fitted to Wisconsin diagnostic measurements and MNIST digits in R.">
+  <title>Classification applications · gltbnn</title>
+  <link rel="icon" href="../assets/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../package.css">
+  <link rel="stylesheet" href="style.css">
+  <script defer src="mnist.js"></script>
+  <script defer src="wisconsin.js"></script>
+  <script defer src="application.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to applications</a>
+<header class="topbar"><div class="wrap bar-inner">
+  <a class="wordmark" href="../" aria-label="gltbnn home">glt<span>bnn</span></a>
+  <nav aria-label="Applications"><a href="#mnist">MNIST digits</a><a href="#binary">Wisconsin diagnoses</a><a href="../reference.pdf">R reference</a></nav>
+</div></header>
+<main id="main" class="wrap">
+  <header class="page-title">
+    <p class="kicker">gltbnn applications</p>
+    <h1>Predicting a class</h1>
+    <p class="intro">The GLT prior assigns a scale to each hidden weight and bias. A logistic or softmax output turns the network scores into class probabilities. Both examples average these probabilities over draws from the fitted variational distribution.</p>
+  </header>
+  <section id="mnist" class="application" aria-labelledby="mnist-heading">
+    <p class="kicker">Categorical outcome</p>
+    <h2 id="mnist-heading">Reading handwritten digits</h2>
+    <p class="lead">Select a test image to see how the network divides its probability among the ten digits. The label above each image is the digit recorded in MNIST.</p>
+    <noscript><p>Enable JavaScript to inspect predictions, or run the <a href="mnist.R">MNIST example in R</a>.</p></noscript>
+    <div class="interactive" hidden id="digit-explorer">
+      <div class="numbers"><div><span>Training images</span><strong id="digit-training"></strong></div><div><span>Test images</span><strong id="digit-testing"></strong></div><div><span>Test accuracy</span><strong id="digit-accuracy"></strong></div><div><span>Test log loss</span><strong id="digit-loss"></strong></div></div>
+      <div class="two-panels digits-layout">
+        <section class="card" aria-labelledby="gallery-heading">
+          <div class="card-head"><h3 id="gallery-heading">Test images</h3><label class="filter">Show <select id="filter"><option value="all">All predictions</option><option value="wrong">Errors only</option><option value="correct">Correct only</option></select></label></div>
+          <div id="gallery" class="gallery" role="group" aria-label="Select a test image"></div>
+          <div class="pager"><button type="button" id="previous">Previous</button><span id="page-count" role="status"></span><button type="button" id="next">Next</button></div>
+        </section>
+        <section class="card" aria-labelledby="prob-heading">
+          <div class="card-head"><h3 id="prob-heading">Class probabilities</h3></div>
+          <p class="selection" id="selection" role="status"></p>
+          <div class="probabilities" id="probabilities"></div>
+          <p class="small">The predicted digit has the largest posterior predictive probability. Values are rounded for display.</p>
+        </section>
+      </div>
+    </div>
+    <details class="method"><summary>Model and sampling design</summary>
+      <p>We sampled 100 images per digit from the official training split and 30 per digit from the separate test split. The balanced test accuracy gives each digit equal weight. The gallery displays the original 28 × 28 pixels. For fitting, we average each 2 × 2 block to obtain 196 predictors and standardize using the training images.</p>
+      <p>A GLT network with one hidden layer of 20 units uses <code>outcome = "categorical"</code>. Its nine free scores are log odds relative to digit 9, whose score is zero. At each weight draw, the probability of digit <i>c</i> is exp(η<sub><i>c</i></sub>)/∑<sub><i>j</i></sub> exp(η<sub><i>j</i></sub>). We average 128 draws. Test log loss is the mean negative log probability assigned to the recorded digit.</p>
+    </details>
+    <p class="download"><a href="mnist.R" download>Download the MNIST R example</a></p>
+  </section>
+  <section id="binary" class="application" aria-labelledby="wdbc-heading">
+    <p class="kicker">Binary outcome</p>
+    <h2 id="wdbc-heading">Classifying Wisconsin diagnostic measurements</h2>
+    <p class="lead">The network uses thirty image-derived measurements of cell nuclei to predict whether a breast mass was labeled benign or malignant. Move the decision threshold to see which errors change on the held-out cases.</p>
+    <noscript><p>Enable JavaScript to adjust the threshold, or run the <a href="wisconsin.R">Wisconsin example in R</a>.</p></noscript>
+    <div class="interactive" hidden id="binary-explorer">
+      <div class="numbers"><div><span>Training cases</span><strong id="wdbc-training"></strong></div><div><span>Test cases</span><strong id="wdbc-testing"></strong></div><div><span>Test log loss</span><strong id="wdbc-loss"></strong></div><div><span>Test Brier score</span><strong id="wdbc-brier"></strong></div></div>
+      <div class="two-panels">
+        <section class="card" aria-labelledby="threshold-heading">
+          <h3 id="threshold-heading">Decision threshold</h3>
+          <div class="threshold"><label for="cutoff">Call malignant when its probability is at least</label><output id="cutoff-value" for="cutoff">0.50</output></div>
+          <input type="range" id="cutoff" min="0.05" max="0.95" step="0.05" value="0.50">
+          <div class="range-ends" aria-hidden="true"><span>0.05</span><span>0.95</span></div>
+          <p class="small">The fitted probabilities stay fixed as you change the decision rule. Log loss and the Brier score evaluate those probabilities directly.</p>
+        </section>
+        <section class="card" aria-labelledby="confusion-heading">
+          <h3 id="confusion-heading">Held-out classifications</h3>
+          <table class="confusion"><caption>Number of cases at the selected threshold</caption><thead><tr><td></td><th scope="col">Predicted benign</th><th scope="col">Predicted malignant</th></tr></thead>
+          <tbody><tr><th scope="row">Recorded benign</th><td id="tn"></td><td id="fp"></td></tr><tr><th scope="row">Recorded malignant</th><td id="fn"></td><td id="tp"></td></tr></tbody></table>
+          <p class="small" id="binary-metrics" role="status"></p>
+        </section>
+      </div>
+    </div>
+    <details class="method"><summary>Model and sampling design</summary>
+      <p>We reserved about one fifth of each diagnosis group for testing and excluded the record identifier from the predictors. A GLT network with eight units in one hidden layer uses <code>outcome = "binary"</code>. The second factor level is malignant. For a network score η, the probability of this class is 1/(1 + exp(−η)). We average 256 draws before applying the threshold.</p>
+      <p>Log loss is the mean negative log probability of the recorded diagnosis. The binary Brier score is the mean squared difference between the malignant probability and the indicator of malignancy. Lower values are better for both.</p>
+    </details>
+    <p class="download"><a href="wisconsin.R" download>Download the Wisconsin R example</a></p>
+  </section>
+  <section class="sources" aria-labelledby="sources-heading"><h2 id="sources-heading">Run the examples and find the data</h2>
+    <p>With <code>gltbnn</code> installed, run <code>Rscript mnist.R</code> or <code>Rscript wisconsin.R</code>. Each script retrieves and verifies its source files, fits the model, and prints the held-out results.</p>
+    <p>MNIST was compiled by Yann LeCun, Corinna Cortes and Christopher J. C. Burges. Digit pixels © Yann LeCun and Corinna Cortes, displayed here as a contact sheet under <a href="https://creativecommons.org/licenses/by-sa/3.0/">CC BY-SA 3.0</a>. <a href="https://github.com/cvdfoundation/mnist">MNIST files and checksums</a> · <a href="https://keras.io/2/api/datasets/mnist/">Dataset license information</a>.</p>
+    <p>Breast Cancer Wisconsin (Diagnostic) is distributed by the UCI Machine Learning Repository under <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. <a href="https://doi.org/10.24432/C5DW2B">Dataset and attribution</a>.</p>
+  </section>
+</main>
+</body>
+</html>

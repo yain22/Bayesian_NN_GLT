@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Coefficient shrinkage in the simulations · gltbnn</title>
+  <link rel="icon" href="../assets/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../package.css">
+  <link rel="stylesheet" href="study.css">
+  <script defer src="measurements.js"></script>
+  <script defer src="study.js"></script>
+  <script defer src="c2-scales.js"></script>
+  <script defer src="neuron.js"></script>
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="topbar"><div class="wrap bar-inner">
+    <a class="wordmark" href="../" aria-label="gltbnn home">glt<span>bnn</span></a>
+    <nav aria-label="Page navigation"><a href="../illustration/">Weight priors</a><a href="#fitted-neuron">Fitted neuron</a><a href="#downloads">Study data</a></nav>
+  </div></header>
+  <main class="wrap" id="content">
+    <header class="page-head"><h1>Coefficient shrinkage in the simulations</h1>
+      <p class="intro">What changes when two weights entering the same neuron can shrink by different amounts? Choose a simulation design and compare fitted scales with prediction error on independent test data.</p>
+    </header>
+    <div class="controls" aria-label="Simulation design">
+      <label>Signal design<select id="cell">
+        <option value="1">C1 · Linear</option><option selected value="2">C2 · Additive</option>
+        <option value="3">C3 · Interaction</option><option value="4">C4 · Smaller sample</option>
+        <option value="5">C5 · Larger sample</option><option value="6">C6 · More predictors</option>
+        <option value="7">C7 · More active predictors</option><option value="8">C8 · Higher correlation</option>
+      </select></label>
+      <label>Training SNR<select id="snr"><option>1</option><option>3</option></select></label>
+      <label>Hidden layers<select id="depth"><option>2</option><option>5</option><option>10</option></select></label>
+      <label>Units per layer<select id="width"><option>10</option><option>25</option></select></label>
+    </div>
+    <p id="design" class="design" role="status"></p>
+    <noscript><p>Enable JavaScript to change the design, or download the study tables below.</p></noscript>
+    <section class="panel" aria-labelledby="shrinkage">
+      <h2 id="shrinkage">Which connections receive larger scales?</h2>
+      <p>For each first-layer weight, we summarize its conditional prior standard deviation by the geometric mean
+        <math aria-label="delta sub k one comma j equals the exponential of the variational expectation of log sigma lambda sub k one comma j"><msub><mi>δ</mi><mrow><mi>k</mi><mn>1</mn><mo>,</mo><mi>j</mi></mrow></msub><mo>=</mo><mi>exp</mi><mo>{</mo><msub><mi mathvariant="double-struck">E</mi><mi>q</mi></msub><mo>[</mo><mi>log</mi><mo>(</mo><mi>σ</mi><msub><mi>λ</mi><mrow><mi>k</mi><mn>1</mn><mo>,</mo><mi>j</mi></mrow></msub><mo>)</mo><mo>]</mo><mo>}</mo></math>.
+        The simulation identifies which predictors enter the true regression function. Both summaries use predictor connections and exclude biases.</p>
+      <label class="toggle">Compare<select id="quantity">
+        <option value="active_minus_inactive">Active and inactive predictors</option>
+        <option value="within_unit_log_ratio">Connections within the same neuron</option>
+      </select></label>
+      <p id="interpret" class="definition"></p>
+      <div class="graph" id="plot" role="img" aria-labelledby="plot-title plot-description">
+        <strong id="plot-title"></strong><span id="plot-description" class="sr-only"></span>
+        <div id="series" aria-hidden="true"></div><div class="axis" aria-hidden="true"><span id="lo"></span><span id="hi"></span></div>
+      </div>
+      <p class="note">Points average 100 replicates. Lines extend two Monte Carlo standard errors on either side.</p>
+    </section>
+    <section class="panel" aria-labelledby="prediction">
+      <h2 id="prediction">How well does the fitted network predict?</h2>
+      <label class="toggle">Prediction target<select id="target">
+        <option value="rmse">Future response Y</option><option value="mean_rmse">True conditional mean</option>
+      </select></label>
+      <table>
+        <caption>Test RMSE over 2,000 observations per replicate. Lower values indicate smaller error.</caption>
+        <thead><tr><th scope="col">Method</th><th scope="col">Mean RMSE</th><th scope="col">Difference from GLT</th><th scope="col">Paired MCSE</th></tr></thead>
+        <tbody id="errors"></tbody>
+      </table>
+      <p class="note">Each difference compares methods fitted from the same starting weights to the same training data and evaluated on the same test data. MCSE measures variation in the mean paired difference across 100 simulated datasets.</p>
+    </section>
+    <section id="fitted-neuron" class="panel" aria-labelledby="neuron-title">
+      <h2 id="neuron-title">Incoming scales for one fitted neuron</h2>
+      <p>C2 replicate 1 has training SNR 3 and two hidden layers of 10 neurons. Choose a neuron to compare its incoming weights and bias across three fits to the same data.</p>
+      <p>The fitted scale
+        <math aria-label="delta sub k l comma j equals the exponential of the variational expectation of log sigma lambda sub k l comma j"><msub><mi>δ</mi><mrow><mi>k</mi><mi>l</mi><mo>,</mo><mi>j</mi></mrow></msub><mo>=</mo><mi>exp</mi><mo>{</mo><msub><mi mathvariant="double-struck">E</mi><mi>q</mi></msub><mo>[</mo><mi>log</mi><mo>(</mo><mi>σ</mi><msub><mi>λ</mi><mrow><mi>k</mi><mi>l</mi><mo>,</mo><mi>j</mi></mrow></msub><mo>)</mo><mo>]</mo><mo>}</mo></math>
+        is the geometric mean of the coefficient’s conditional <em>prior</em> standard deviation on the standardized training scale.</p>
+      <div class="neuron-controls" id="neuron-controls" hidden>
+        <label>Hidden layer <i>l</i><select id="neuron-layer"><option value="1">1</option><option value="2">2</option></select></label>
+        <label>Receiving neuron <i>k</i><select id="neuron-unit"></select></label>
+        <label>Incoming coordinates <i>j</i><select id="neuron-inputs"></select></label>
+      </div>
+      <p id="neuron-context" class="definition" role="status"></p>
+      <noscript><p>Enable JavaScript to select a neuron, or run <code>Rscript --vanilla tools/replication/c2-additive.R --write-neuron-scales</code> from the repository root to reproduce the fitted scales.</p></noscript>
+      <table id="neuron-table" hidden>
+        <caption id="neuron-caption"></caption>
+        <thead><tr><th scope="col">Incoming coefficient</th><th scope="col">G</th><th scope="col">GL</th><th scope="col">GLT</th></tr></thead>
+        <tbody id="neuron-coefficients"></tbody>
+      </table>
+      <p class="note">Given the scales, a Gaussian weight prior with a smaller standard deviation puts more mass in every interval centered at zero. Each bar summarizes that standard deviation across the fitted scale values. The Gaussian variational distribution for the weight has its own posterior standard deviation.</p>
+      <p class="note">The fits share their starting weights. Neurons with the same index can learn different features as fitting proceeds.</p>
+      <p class="note">C2 uses predictors 1–10 in its true regression function. Activity is a property of a predictor in that function. Different hidden weights can represent the same function.</p>
+    </section>
+    <section id="downloads" class="panel"><h2>Study data</h2>
+      <p>The C2 interval file reports coverage separately for the true mean and a future observation. At training SNR 3, the nominal 90% GLT intervals covered 45.8% of true means and 85.0% of future observations, averaged over the six architectures. In the real-data files, coverage refers to held-out responses. Housing errors and interval widths are in units of $100,000. Song-year errors and widths are in years.</p>
+      <ul id="download-tables"><li><a href="data/v3_design_rmse.csv">Mean test errors</a> · <a href="data/v3_paired_differences.csv">All paired comparisons</a></li>
+      <li><a href="data/v3_design_scales.csv">First-layer shrinkage summaries</a> · <a href="data/v3_interval_accuracy.csv">Interval coverage and widths</a></li>
+      <li><a href="data/housing.csv">California housing</a> · <a href="data/year.csv">Song release years</a> · <a href="data/engineering.csv">Engineering holdouts</a> · <a href="data/sensitivity.csv">Budget and tail sensitivity</a></li></ul>
+      <p>The <a href="https://github.com/yain22/Bayesian_NN_GLT/blob/main/tools/replication/c2-additive.R">C2 replication script</a> generates the data for one additive-signal replicate, fits the six methods from their common starting weights, and reproduces their test errors.</p>
+    </section>
+  </main>
+</body></html>

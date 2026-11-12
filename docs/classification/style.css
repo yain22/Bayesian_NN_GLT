@@ -1,0 +1,63 @@
+[hidden] { display: none !important; }
+.page-title { padding-block: clamp(2.4rem, 5vw, 4.25rem); }
+.intro { max-width: 73ch; }
+.application, .sources { border-top: 1px solid var(--rule); padding: clamp(2rem, 4.5vw, 3.6rem) 0; }
+.lead { max-width: 74ch; color: var(--muted); font-size: 1.05rem; }
+.numbers { display: grid; grid-template-columns: repeat(4, 1fr); margin: 1.5rem 0; padding: 1rem 0; border-block: 1px solid var(--rule); }
+.numbers div { padding: 0 1rem; border-left: 1px solid var(--rule); }
+.numbers div:first-child { padding-left: 0; border-left: 0; }
+.numbers span, .numbers strong { display: block; }
+.numbers span, .small, .pager span, .filter, .confusion caption { color: var(--muted); font-size: .91rem; }
+.numbers strong { font: 500 clamp(1.65rem, 2.4vw, 2.2rem)/1.35 var(--serif); font-variant-numeric: tabular-nums; }
+.two-panels { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+.digits-layout { grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); }
+.card { padding: clamp(.9rem, 2.2vw, 1.65rem); background: #fffefa; border: 1px solid var(--rule); border-radius: 8px; }
+.card-head, .pager, .range-ends, .threshold { display: flex; align-items: center; justify-content: space-between; gap: .65rem; }
+.card-head { flex-wrap: wrap; }
+.card h3 { display: block; }
+.filter { display: flex; align-items: center; gap: .4rem; }
+button, select, input { font: inherit; }
+button, select { color: var(--ink); background: #fffefa; border: 1px solid #a6b7bb; border-radius: 5px; cursor: pointer; }
+select:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid #d1884e; outline-offset: 3px; }
+button:disabled { opacity: .45; cursor: default; }
+select, .pager button { padding: .36rem .5rem; }
+.gallery { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .35rem; margin: .9rem 0; }
+.digit { padding: .28rem; border: 2px solid transparent; border-radius: 6px; line-height: 1.3; }
+.digit:hover { background: #eff3f1; }
+.digit[aria-pressed="true"] { border-color: var(--navy); background: #e3edf0; }
+.digit-label { display: block; margin-bottom: .25rem; font-size: .8rem; white-space: nowrap; }
+.glyph { display: block; inline-size: 100%; max-inline-size: 84px; margin: auto; aspect-ratio: 1; background-image: url(digits.png); image-rendering: pixelated; border-radius: 3px; }
+.pager { margin-top: 1rem; }
+.pager button { min-width: 4.7rem; font-size: .88rem; }
+.pager span { text-align: center; }
+.selection { margin: .75rem 0 .8rem; }
+.probabilities { display: grid; gap: .15rem; }
+.prob-row { display: grid; grid-template-columns: 1.3em minmax(0, 1fr) 4.2em; align-items: center; gap: .5rem; font-size: .9rem; font-variant-numeric: tabular-nums; }
+.prob-row .value { text-align: right; }
+.prob-track { height: .43rem; background: #e2e9e5; border-radius: 5px; overflow: hidden; }
+.prob-fill { display: block; height: 100%; background: #7899a5; }
+.winner { font-weight: 700; color: var(--navy); }
+.winner .prob-fill { background: var(--navy); }
+.threshold { margin: 1rem 0 .45rem; align-items: baseline; }
+.threshold output { font-weight: 700; color: var(--navy); font-variant-numeric: tabular-nums; }
+input[type=range] { accent-color: var(--navy); width: 100%; margin-inline: 0; }
+.range-ends { margin-top: -.25rem; font-size: .8rem; color: var(--muted); }
+.confusion { width: 100%; border-collapse: collapse; margin-top: 1rem; line-height: 1.35; font-size: .92rem; font-variant-numeric: tabular-nums; }
+.confusion caption { text-align: left; padding-bottom: .4rem; }
+.confusion th, .confusion td { border-bottom: 1px solid var(--rule); padding: .55rem .25rem; text-align: right; }
+.confusion th[scope=row] { text-align: left; }
+.small:last-child { margin-bottom: 0; }
+.method { border-block: 1px solid var(--rule); margin-top: 1.4rem; padding: .7rem 0; }
+.method summary { color: var(--navy); cursor: pointer; font-weight: 600; }
+.method p, .sources p { max-width: 80ch; color: var(--muted); }
+.download { margin-bottom: 0; font-weight: 600; }
+@media (max-width: 780px) {
+  .two-panels { grid-template-columns: 1fr; }
+}
+@media (max-width: 530px) {
+  .numbers { grid-template-columns: repeat(2, 1fr); gap: .55rem 0; }
+  .numbers div:nth-child(3) { padding-left: 0; border-left: 0; }
+  .gallery { gap: .05rem; }
+  .digit { padding: .15rem; }
+  .digit-label { font-size: .7rem; }
+}

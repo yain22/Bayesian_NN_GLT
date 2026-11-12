@@ -35,3 +35,12 @@
 .reproduce pre { max-width: 100%; padding: .8rem 1rem; background: var(--soft); overflow-x: auto; }
 @media (max-width: 760px) { .prediction-layout { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 560px) { #unit-scales { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+.bar-pair { display: flex; justify-content: center; gap: .25rem; width: 100%; }
+.paired-coefficient { width: 50%; text-align: center; }
+.paired-coefficient .unit-value { font-size: clamp(.7rem, 1vw, .9rem); }
+.bias-bar, .bias-key { background: var(--rust); }
+.coefficient-key { background: var(--blue); }
+.coefficient-key, .bias-key { width: 1em; height: .65em; }
+@media (max-width: 850px) { #unit-scales { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 470px) { #unit-scales { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

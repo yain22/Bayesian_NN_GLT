@@ -71,7 +71,7 @@
       fill:color.white,stroke,"stroke-width":1.5,"stroke-linejoin":"round"}));
   }
 
-  function drawEdge(parent, from, to, highlighted, layer, sd, sourceIndex) {
+  function drawEdge(parent, from, to, highlighted, layer, sd, sourceIndex, selectedCoordinate, onCoordinate) {
     const dx = to.x - from.x, dy = to.y - from.y;
     const length = Math.hypot(dx, dy);
     const ux = dx / length, uy = dy / length;
@@ -80,8 +80,8 @@
     const x2 = to.x - to.r * ux, y2 = to.y - to.r * uy;
     const stroke = highlighted ? (layer === 1 ? color.blue : color.rust) : color.line;
     const line = el("line", {x1, y1, x2, y2, stroke,
-      "stroke-width": highlighted ? 2.5 : 1.05,
-      "stroke-opacity": highlighted ? 1 : .75,
+      "stroke-width": highlighted ? (selectedCoordinate ? 4 : 1.8) : 1.05,
+      "stroke-opacity": highlighted ? (selectedCoordinate ? 1 : .68) : .75,
       "class": highlighted ? (layer === 1 ? "net-blue-arrow" : "net-orange-arrow") : "net-edge"});
     if (highlighted && layer === 2) line.setAttribute("stroke-dasharray", "5 3");
     parent.append(line);
@@ -95,6 +95,13 @@
     parent.append(el("polygon", {points:
       `${tipX},${tipY} ${backX - 3*uy},${backY + 3*ux} ${backX + 3*uy},${backY - 3*ux}`,
       fill:stroke}));
+    if (onCoordinate) {
+      const hit = el("line", {x1,y1,x2,y2,stroke:"transparent","stroke-width":12,
+        "pointer-events":"stroke",cursor:"pointer","data-coordinate-hit":sourceIndex+1});
+      hit.append(el("title", {}, "Select incoming coordinate " + (sourceIndex+1)));
+      hit.addEventListener("click", () => onCoordinate(sourceIndex+1));
+      parent.append(hit);
+    }
   }
 
   function unitButton(point, layer, index, selected, removed, onSelect) {
@@ -128,7 +135,7 @@
   }
 
   function render(svg, instance, actualWidth) {
-    const {state, onSelect} = instance;
+    const {state, onSelect, onCoordinate} = instance;
     const width = Math.round(Math.min(850, Math.max(300, actualWidth || 720)));
     const geom = axes(width);
     const {xs, ys, small} = geom;
@@ -170,7 +177,7 @@
         const highlight = target===state.layer && j+1===state.unit;
         sources.forEach((source,i) => {
           if (!source.removed) drawEdge(highlight ? active : inactive, source,p,
-            highlight,target,small ? undefined : state.priorSd,i);
+            highlight,target,small ? undefined : state.priorSds?.[i],i,state.coordinate === i+1,onCoordinate);
         });
       });
     }
@@ -205,7 +212,7 @@
     if (focusId) svg.querySelector(`[data-net-id="${focusId}"]`)?.focus({preventScroll:true});
   }
 
-  window.drawNetwork = function drawNetwork(svg, state, onSelect) {
+  window.drawNetwork = function drawNetwork(svg, state, onSelect, onCoordinate) {
     let instance = instances.get(svg);
     if (!instance) {
       instance = {id:++nextId};
@@ -220,6 +227,7 @@
     }
     instance.state = state;
     instance.onSelect = onSelect;
+    instance.onCoordinate = onCoordinate;
     render(svg,instance,Math.round(svg.getBoundingClientRect().width));
   };
 })();

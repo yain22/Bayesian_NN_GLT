@@ -11,14 +11,15 @@
 <header class="masthead"><a href="../" class="brand"><img class="brandmark" src="../assets/mark.svg" alt=""><span>gltbnn</span></a>
 <nav class="links"><a href="../">R package</a><a href="../prediction/">Fitted example</a><a href="#sources">References</a></nav></header>
 <main><header class="hero"><h1>Shrinkage in a Bayesian neural network</h1>
-<p>Select unit \(k\) in hidden layer \(l\). Its highlighted connections form one vector \(\mathbf w_{kl}\). The three priors differ in how they assign its scale \(\lambda_{kl}\).</p></header>
+<p>Select a hidden unit \(k\) in layer \(l\), then click an incoming edge or choose coordinate \(j\) of its vector \(\mathbf w_{kl}\). Under GL and GLT, each connection and bias has its own scalar scale \(\lambda_{kl,j}\). G shares one scale across the layer.</p></header>
 <nav class="tabbar" id="topics" aria-label="Mathematical explorer" role="tablist">
 @tabs@
-</nav><noscript><p>Each hidden unit shares one scale across its incoming weights and its bias. G uses \(\lambda_{kl}=\tau_l\), GL uses \(\lambda_{kl}=\tau_l r_{kl}\), and GLT uses \(\lambda_{kl}\mid\tau_l,\xi_l\sim\operatorname{GPD}(\tau_l,\xi_l)\). The <a href="../reference.pdf">R reference manual</a> gives the full hierarchies. Enable JavaScript to explore them interactively.</p></noscript>
+</nav><noscript><p>The conditional standard deviation of coordinate \(j\) is \(\sigma\lambda_{kl,j}\). G uses a shared layer scale. GL and GLT draw a separate scale for each coefficient, including the bias. Enable JavaScript to select an edge and explore the three priors.</p></noscript>
 <div class="lab-grid" id="explorer"><section class="network-panel" aria-labelledby="network-title">
-<span class="section-label">Network architecture · Figure 3</span><div class="panel-top"><h2 id="network-title">The incoming weight vector \(\mathbf w_{[[kl]]}\)</h2></div>
+<span class="section-label">Network architecture</span><div class="panel-top"><h2 id="network-title">The incoming weight vector \(\mathbf w_{[[kl]]}\)</h2></div>
 <div class="network-wrap"><svg id="network" aria-label="Selectable regression network with two hidden layers"></svg></div>
 <div class="network-summary" aria-live="polite"><strong id="selection-name"></strong><div id="selected-vector" class="selected-math"></div><span id="selection-detail"></span></div>
+<div class="coordinate-choice"><label for="coordinate">Incoming coefficient</label> <select id="coordinate"></select></div>
 <details class="details-box" id="unit-path"><summary>From unit [[k]] in layer [[l]] to the output</summary>
 <p id="path-pruned" hidden>The pruning example removes this unit. The equations below describe its connections before removal.</p>
 <div data-in-layer="1">
@@ -35,61 +36,67 @@
 <p>The output vector contains eight weights and its bias \(b_o\). They share a separate scale \(\kappa\), with \(\mathbf v\mid\kappa\sim\mathcal N(\mathbf0,\kappa^2\mathbf I_9)\) and \(\kappa\sim C^+(0,5)\).</p></details>
 </section><aside class="inspector" aria-label="Equations and controls">
 @panel spread@
-<span class="section-label">Gaussian regression · Equation (16)</span><header class="inspector-head"><h2>Conditional weight prior for \(\mathbf w_{[[kl]]}\)</h2></header>
-<div class="law">\[\mathbf w_{[[kl]]}\mid\lambda_{[[kl]]},\sigma^2\sim\mathcal N(\mathbf0,\sigma^2\lambda_{[[kl]]}^2\mathbf I_{[[d]]}).\]</div>
-<p>Unit [[k]] in layer [[l]] has \(d_{[[l]]}=K_{[[prev]]}+1=[[inputs]]+1=[[d]]\) incoming coefficients, including \(b_{[[kl]]}\). Each has conditional standard deviation \(\sigma\lambda_{[[kl]]}\), and they are independent given \(\lambda_{[[kl]]}\) and \(\sigma^2\). The same \(\sigma^2\) is the observation variance in the network likelihood</p>
+<span class="section-label">Gaussian regression</span><header class="inspector-head"><h2>Conditional weight prior for \(\mathbf w_{[[kl]]}\)</h2></header>
+@priors@
+<p>Given the scalar scales and the observation variance, the vector has a diagonal covariance.</p>
+<div class="law">\[\mathbf w_{[[kl]]}\mid\boldsymbol{\lambda}_{[[kl]]},\sigma^2\sim\mathcal N(\mathbf0,\sigma^2\mathbf D_{[[kl]]}),\]
+\[\mathbf D_{[[kl]]}=\operatorname{diag}(\lambda_{[[kl]],1}^2,\ldots,\lambda_{[[kl]],[[d]]}^2).\]</div>
+<p>Here \(\boldsymbol{\lambda}_{[[kl]]}\) collects the [[d]] scalar scales. Coordinate [[j]] has conditional standard deviation \(\sigma\lambda_{[[kl]],[[j]]}\). The last coordinate is the bias \(b_{[[kl]]}\). The same scalar \(\sigma^2\) is the observation variance in the regression likelihood.</p>
 \[Y_i\mid\mathbf x_i,\mathcal W,\sigma^2\sim\mathcal N(f_{\mathcal W}(\mathbf x_i),\sigma^2).\]
 <details class="details-box"><summary>Prior on the observation variance</summary><p>The study uses \(p(\sigma^2)\propto1/\sigma^2\) on the standardized response scale. Posterior propriety holds for almost every response direction under the paper’s conditions. For a given data set, a finite variational fit alone cannot establish propriety. To use the supplement’s proper inverse-gamma alternative in R, set <code>noise_prior = c(shape = 2, scale = 1)</code>, or supply other positive hyperparameters.</p></details>
 <div class="range-row"><label for="spread">Observation-error SD \(\sigma\)</label><output for="spread" id="spread-value"></output></div>
 <input type="range" id="spread" min=".25" max="2" step=".05" value="1">
 <svg id="bell-chart" class="chart" aria-label="Conditional Gaussian density for one coordinate"></svg><p class="readout" id="spread-readout"></p>
-<p class="tiny">Both axes stay fixed as \(\sigma\) changes. Changing \(\lambda_{[[kl]]}\) rescales the axes. The tick labels and interval report the spread of one of this unit’s [[d]] coefficients.</p></section>
+<p class="tiny">Both axes stay fixed as \(\sigma\) changes. Changing \(\lambda_{[[kl]],[[j]]}\) rescales the axes. The tick labels and interval report the spread of selected coordinate [[j]].</p></section>
 @panel scales@
-<span class="section-label">Conditional scales · Equation (<span id="scale-equation-number">18</span>)</span><header class="inspector-head"><h2>Scale sharing in layer [[l]]</h2></header>
+<span class="section-label">Conditional scales</span><header class="inspector-head"><h2>Scale sharing in layer [[l]]</h2></header>
 @priors@
 <div class="law" id="prior-explainer">@scalelaws@<p class="tiny" id="scale-substitution"></p></div>
+<p>The scalar \(\lambda_{[[kl]],[[j]]}\) sets the prior scale of coordinate [[j]] of \(\mathbf w_{[[kl]]}\). The layer contains \(M_{[[l]]}=K_{[[l]]}d_{[[l]]}=[[width]]\times[[d]]=[[m]]\) coefficients, including all its biases.</p>
+<details class="details-box"><summary>From regression coefficients to network weights</summary>
+<p>Like scalar regression coefficients \(\beta_j\), the entries of the hidden weight vector each receive a local scale under GL and GLT. For this unit their scales form the vector \(\boldsymbol{\lambda}_{[[kl]]}=(\lambda_{[[kl]],1},\ldots,\lambda_{[[kl]],[[d]]})^{\mathsf T}\). The layer scale \(\tau_{[[l]]}\) is shared by all [[m]] coefficients.</p></details>
 <div class="range-row"><label for="layer-scale">Layer scale \(\tau_{[[l]]}\)</label><output for="layer-scale" id="layer-scale-value"></output></div>
 <input type="range" id="layer-scale" min=".25" max="1.25" step=".05" value=".5">
-<div id="percentile-control"><div class="range-row"><label for="percentile">Quantile \(u\) for unit [[k]]</label><output for="percentile" id="percentile-value"></output></div>
+<div id="percentile-control"><div class="range-row"><label for="percentile">Quantile \(u\) for coordinate [[j]]</label><output for="percentile" id="percentile-value"></output></div>
 <input type="range" id="percentile" min="10" max="80" step="1" value="60" aria-describedby="percentile-hint">
-<p class="tiny" id="percentile-hint">The slider sets \(\lambda_{[[kl]]}=F_{[[l]]}^{-1}(u)\), where \(F_{[[l]]}\) is the conditional unit-scale distribution in layer [[l]].</p></div>
-<h3>Conditional weight SDs in layer [[l]]</h3>
-<div class="scale-list" id="unit-bars" role="group" aria-label="Conditional standard deviations by hidden unit"></div>
+<p class="tiny" id="percentile-hint">The slider sets \(\lambda_{[[kl]],[[j]]}=F_{[[l]]}^{-1}(u)\), where \(F_{[[l]]}\) is the conditional coefficient-scale distribution in layer [[l]].</p></div>
+<h3>Conditional SDs in unit [[k]]</h3>
+<div class="scale-list" id="unit-bars" role="group" aria-label="Conditional standard deviations by incoming coefficient"></div>
 <p class="tiny" id="bars-caption"></p></section>
 @panel hierarchy@
-<span class="section-label">Prior representations · Figure 4</span><header class="inspector-head"><h2>Two hierarchies for \(\mathbf w_{[[kl]]}\)</h2></header>
+<span class="section-label">Prior representations</span><header class="inspector-head"><h2>Two hierarchies for \(\mathbf w_{[[kl]]}\)</h2></header>
 @priors@
 <div class="choice-group hierarchy-choice" role="group" aria-label="Prior representation"><button type="button" class="choice" data-form="original" aria-pressed="true">Original</button><button type="button" class="choice" data-form="expanded" aria-pressed="false">Parameter expansion</button></div>
-<div class="hierarchy-box"><h3 id="hierarchy-title">Original hierarchy</h3><p class="tiny">Conditional on the observation variance \(\sigma^2\). The box shows unit [[k]] of the [[width]] units in layer [[l]].</p>
+<div class="hierarchy-box"><h3 id="hierarchy-title">Original hierarchy</h3><p class="tiny">Conditional on the observation variance \(\sigma^2\). The box shows coordinate [[j]] of unit [[k]]. Local terms repeat across all [[m]] coefficients in layer [[l]].</p>
 <svg id="hierarchy-graph" aria-label="Selected prior hierarchy"></svg>
 <div id="vector-law">@selected-vector-laws@</div>
 <section id="coordinate-graph" aria-labelledby="coordinate-title">
 <h3 id="coordinate-title">The [[d]] coordinates of \(\mathbf w_{[[kl]]}\)</h3>
-<p class="tiny">Given @selected-conditions@, the [[d]] coefficients below are independent. Each has the same conditional variance.</p>
-<div class="coordinate-parent"><strong>Shared conditional variance</strong> @selected-variances@</div>
+<p class="tiny">Given the layer and local scales and the observation variance, the [[d]] coefficients below are independent.</p>
+<div class="coordinate-parent"><strong>Variance of coordinate [[j]]</strong> @selected-variances@</div>
 <ol class="coordinate-leaves">@selected-leaves@</ol></section>
 @hierarchies@</div>
-<p class="tiny">The unit-specific laws repeat over \(j=1,\ldots,[[width]]\). We use \(\operatorname{IG}(\alpha,\beta)\) with density proportional to \(t^{-\alpha-1}\exp(-\beta/t)\).</p></section>
+<p class="tiny">The coefficient laws repeat over \(k=1,\ldots,[[width]]\) and \(j=1,\ldots,[[d]]\). We use \(\operatorname{IG}(\alpha,\beta)\) with density proportional to \(t^{-\alpha-1}\exp(-\beta/t)\).</p></section>
 @panel tail@
-<span class="section-label">Prior on the unit scales · Equation (21)</span><header class="inspector-head"><h2>Tail probability for unit [[k]] in layer [[l]]</h2></header>
-<p>Fix the layer parameters and take \(z\ge0\). The curves give the probability that \(\lambda_{[[kl]]}\) exceeds \(z\tau_{[[l]]}\). All [[width]] units in this layer have the same conditional tail probability under a given prior.</p>
-\[S_{[[l]]}(z)=\Pr(\lambda_{[[kl]]}>z\tau_{[[l]]}\mid\tau_{[[l]]},\xi_{[[l]]}).\]
+<span class="section-label">Conditional tails</span><header class="inspector-head"><h2>Tail probability for coordinate [[j]]</h2></header>
+<p>Fix the layer parameters and take \(z\ge0\). The curves give the probability that \(\lambda_{[[kl]],[[j]]}\) exceeds \(z\tau_{[[l]]}\). All [[m]] coefficients in this layer have the same conditional tail probability under a given prior.</p>
+\[S_{[[l]]}(z)=\Pr(\lambda_{[[kl]],[[j]]}>z\tau_{[[l]]}\mid\tau_{[[l]]},\xi_{[[l]]}).\]
 <p class="tiny">Condition on \(\tau_{[[l]]}\) alone for G and GL.</p>
 <div class="law"><div>G \(\quad S_{[[l]]}(z)=\mathbf 1\{z<1\}\)</div><div>GL \(\quad S_{[[l]]}(z)=1-(2/\pi)\arctan(z)\)</div><div>GLT \(\quad S_{[[l]]}(z)=(1+\xi_{[[l]]}z)^{-1/\xi_{[[l]]}}\)</div></div>
 <div class="range-row"><label for="tail-shape" id="tail-label">GLT tail shape \(\xi_{[[l]]}\)</label><output for="tail-shape" id="tail-value"></output></div>
 <input type="range" id="tail-shape" min=".55" max="3" step=".05" value="1">
 <svg id="tail-chart" class="chart" aria-label="Conditional tail probability by threshold"></svg>
 <h3>At \(z=10\)</h3><div class="metric-list"><div class="metric"><span>G</span><strong id="tail-g"></strong></div><div class="metric"><span>GL</span><strong id="tail-gl"></strong></div><div class="metric"><span>GLT</span><strong id="tail-glt"></strong></div></div>
-<p class="tiny">For G the probability drops to zero at \(z=1\), below the log axis. Under GLT, increasing \(\xi_{[[l]]}\) makes large unit scales more probable at fixed \(\tau_{[[l]]}\). In the joint prior, the distribution of \(\tau_{[[l]]}\) also depends on \(\xi_{[[l]]}\).</p></section>
+<p class="tiny">For G the probability drops to zero at \(z=1\), below the log axis. Under GLT, increasing \(\xi_{[[l]]}\) makes large coefficient scales more probable at fixed \(\tau_{[[l]]}\). In the joint prior, the distribution of \(\tau_{[[l]]}\) also depends on \(\xi_{[[l]]}\).</p></section>
 @panel prune@
 <span class="section-label">Fitted scales · Model comparison</span><header class="inspector-head"><h2>Pruning unit [[k]] in layer [[l]]</h2></header>
-<p>Ghosh, Yao and Doshi-Velez group the same [[d]] incoming coefficients as our GL-BNN. In their notation \(\tau_{[[kl]]}\) is the unit’s local scale and \(\upsilon_{[[l]]}\) is the shared layer scale. Their post-fitting rule removes unit [[k]] if</p>
+<p>Ghosh, Yao and Doshi-Velez give the [[d]] coefficients entering one hidden unit a common local scale. Our GL-BNN assigns each of those coefficients its own local scale. In their notation \(\tau_{[[kl]]}\) is the unit’s local scale and \(\upsilon_{[[l]]}\) is the shared layer scale. Their post-fitting rule removes unit [[k]] if</p>
 <div class="law">\[\Pr_q(\tau_{[[kl]]}\upsilon_{[[l]]}<\delta)>p_0.\]</div>
 <p>Here \(q\) is their fitted variational distribution, \(\delta=10^{-3}\), and \(p_0=0.9\). In the grouped-horseshoe example, move the hypothetical fitted probability across the threshold.</p>
 <div class="choice-group" role="group" aria-label="Pruning comparison"><button type="button" class="choice" data-method="ghosh" aria-pressed="true">Ghosh et al.</button><button type="button" class="choice" data-method="ours" aria-pressed="false">Fixed architecture</button></div>
 <div class="range-row"><label for="prune-chance">Example fitted probability</label><output id="prune-value" for="prune-chance"></output></div><input type="range" id="prune-chance" min="0" max="100" step="1" value="95">
 <p class="status" id="prune-result" aria-live="polite"></p>
-<p>For our models, \(\Pr_q(\sigma\lambda_{[[kl]]}<\epsilon)\) summarizes mass near a small conditional weight SD. All [[width]] units remain in layer [[l]] of the fitted architecture. ReLU homogeneity allows an outgoing weight to compensate for a rescaling of the incoming weights and bias.</p></section>
+<p>For our models, \(\Pr_q(\sigma\lambda_{[[kl]],[[j]]}<\epsilon)\) summarizes mass near a small conditional weight SD. All [[width]] units remain in layer [[l]] of the fitted architecture. ReLU homogeneity allows an outgoing weight to compensate for a rescaling of the incoming weights and bias.</p></section>
 </aside></div><section class="sources" id="sources"><h2>Paper &amp; references</h2>
-<p>This illustration follows Figures 3–4 of <cite>Variational Learning of Bayesian Neural Networks with a family of global–local shrinkage priors</cite>. Its scale controls evaluate conditional prior laws. The <a href="../prediction/">fitted regression example</a> shows predictions from the R package.</p>
+<p>This illustration accompanies <cite>Variational Learning of Bayesian Neural Networks with a family of global–local shrinkage priors</cite>. Its scale controls evaluate conditional prior laws. The <a href="../prediction/">fitted regression example</a> shows predictions from the R package.</p>
 <ul><li><a href="https://jmlr.org/papers/v20/19-236.html">Ghosh, Yao &amp; Doshi-Velez (2019), §4.3</a> · Grouped horseshoe networks and posterior pruning.</li><li><a href="https://doi.org/10.1214/24-EJS2317">Lee, Zhao, Pati &amp; Mallick (2024)</a> · Tail-adaptive shrinkage for regression coefficients.</li></ul></section></main></div></body></html>

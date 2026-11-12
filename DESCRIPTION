@@ -1,15 +1,16 @@
 Package: gltbnn
 Type: Package
-Title: Variational Bayesian Neural Networks with Grouped Shrinkage Priors
-Version: 0.1.0
+Title: Variational Bayesian Neural Networks with Global-Local Shrinkage Priors
+Version: 0.2.0
 Authors@R: person("Se Yoon", "Lee", email = "seyoonlee.stat.math@gmail.com",
     role = c("aut", "cre", "cph"))
-Description: Fit Bayesian neural networks for Gaussian regression with
-    global, grouped horseshoe, or global-local-tail shrinkage on the incoming
-    weights and bias of each hidden unit. The global-local-tail model learns
+Description: Fit Bayesian neural networks for Gaussian regression, binary
+    logistic regression, and multinomial classification with global, horseshoe,
+    or global-local-tail shrinkage on individual hidden weights and biases.
+    The global-local-tail model learns
     a separate tail shape for each hidden layer. Variational inference yields
-    draws of the regression function and posterior predictive draws for new
-    observations. The tail-adaptive prior builds on Lee et al. (2024)
+    draws of the regression function, predictive draws for continuous outcomes,
+    and predictive class probabilities. The tail-adaptive prior builds on Lee et al. (2024)
     <doi:10.1214/24-EJS2317>.
 License: MIT + file LICENSE
 Encoding: UTF-8

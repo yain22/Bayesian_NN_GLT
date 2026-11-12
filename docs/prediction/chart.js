@@ -4,9 +4,9 @@
   const svg = document.querySelector("#regression-chart");
   const slider = document.querySelector("#location");
   const priorNotes = {
-    G: "All eight hidden units share a single shrinkage scale.",
-    GL: "Each hidden unit has its own half-Cauchy scale, multiplied by the shared layer scale.",
-    GLT: "Each hidden unit has a local scale. The layer learns a tail shape that controls how easily a unit can have a large scale."
+    G: "All 16 hidden weights and biases share one layer scale.",
+    GL: "Each weight and bias has its own half-Cauchy multiplier. The layer scale multiplies them all.",
+    GLT: "Each weight and bias has a local scale. The fitted layer tail shape describes how frequently large coefficient scales occur."
   };
   const bandNotes = {
     mean: "Each draw gives the mean at this input under one draw of the weights, converted back to the original response units.",
@@ -31,24 +31,36 @@
     document.querySelector("#layer-scale").textContent = fit.geometric_layer_scale.toFixed(3);
     document.querySelector("#tail-summary").hidden = fit.geometric_tail_shape === null;
     document.querySelector("#tail-shape").textContent = fit.geometric_tail_shape?.toFixed(3) ?? "";
-    fit.geometric_prior_sd.forEach((sd, k) => {
+    for (let k = 0; k < fit.geometric_prior_sd.length / 2; k++) {
       const item = document.createElement("li");
       const name = document.createElement("span");
       name.className = "unit-name";
       name.textContent = "Unit " + (k + 1);
-      const track = document.createElement("span");
-      track.className = "unit-track";
-      track.setAttribute("aria-hidden", "true");
-      const bar = document.createElement("span");
-      bar.className = "unit-fill";
-      bar.style.height = (100 * sd / maxUnitSpread) + "%";
-      track.append(bar);
-      const value = document.createElement("span");
-      value.className = "unit-value";
-      value.textContent = sd.toFixed(3);
-      item.append(name, track, value);
+      item.append(name);
+      const pair = document.createElement("div");
+      pair.className = "bar-pair";
+      ["Weight", "Bias"].forEach((label,j) => {
+        const sd = fit.geometric_prior_sd[2*k+j];
+        const group = document.createElement("div");
+        group.className = "paired-coefficient";
+        group.setAttribute("role", "img");
+        group.setAttribute("aria-label", label + " " + sd.toFixed(3));
+        const track = document.createElement("span");
+        track.className = "unit-track";
+        track.setAttribute("aria-hidden","true");
+        const bar = document.createElement("span");
+        bar.className = j === 1 ? "unit-fill bias-bar" : "unit-fill";
+        bar.style.height = (100 * sd / maxUnitSpread) + "%";
+        track.append(bar);
+        const value = document.createElement("span");
+        value.className = "unit-value";
+        value.textContent = sd.toFixed(3);
+        group.append(track,value);
+        pair.append(group);
+      });
+      item.append(pair);
       chart.append(item);
-    });
+    }
   }
 
   function element(tag, attributes, text) {

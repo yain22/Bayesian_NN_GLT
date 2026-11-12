@@ -1,0 +1,46 @@
+.page-head {padding:clamp(2.5rem,6vw,5rem) 0 2rem}
+.page-head .intro {max-width:72ch}
+.controls {display:flex;flex-wrap:wrap;gap:1rem 1.5rem;padding:1.2rem 1.4rem;background:#edf2ef;border:1px solid var(--rule);border-radius:.55rem}
+.controls label,.toggle {display:grid;gap:.35rem;font-weight:650}
+select {max-width:100%;padding:.45rem .65rem;border:1px solid #99a9a7;border-radius:.3rem;background:#fffefa;color:var(--ink);font:inherit}
+select:focus-visible {outline:3px solid #af5a32;outline-offset:2px}
+.design,.note,caption {color:var(--muted)}
+.design {margin:.8rem 0 2rem}
+.panel {padding:2rem 0;border-top:1px solid var(--rule)}
+.panel p {max-width:78ch}
+.toggle {width:fit-content;margin:1.2rem 0 .8rem}
+.definition {margin:.8rem 0 1rem}
+.graph {max-width:52rem;padding:1.1rem clamp(.8rem,3vw,1.8rem);border:1px solid var(--rule);border-radius:.45rem;background:#fffefa}
+.graph strong {display:block;margin-bottom:1rem}
+.row {display:grid;grid-template-columns:3.1rem minmax(0,1fr) 5.5rem;gap:.6rem;align-items:center;margin:.75rem 0}
+.row span:last-child {text-align:right;font-variant-numeric:tabular-nums}
+.track {height:1.45rem;position:relative;display:block;background:linear-gradient(0deg,transparent 47%,#d8dfda 47%,#d8dfda 53%,transparent 53%)}
+.zero,.point,.whisker {position:absolute;display:block}
+.zero {height:100%;width:1px;background:#a8b7af}
+.point {width:.8rem;height:.8rem;border-radius:50%;background:#18617b;top:50%;transform:translate(-50%,-50%)}
+.whisker {height:3px;background:#26748a;top:calc(50% - 1.5px)}
+.axis {display:flex;justify-content:space-between;margin:0 6.1rem 0 3.7rem;color:var(--muted);font-size:.87rem}
+.note {font-size:.95rem}
+table {border-collapse:collapse;width:min(49rem,100%);margin:1.2rem 0}
+caption {text-align:left;padding-bottom:.7rem}
+td,th {border-bottom:1px solid var(--rule);padding:.45rem .6rem;text-align:right;font-variant-numeric:tabular-nums}
+td:first-child,th:first-child {text-align:left}
+th[scope=col] {vertical-align:bottom}
+@media(max-width:520px){.controls {gap:.7rem;padding:.8rem}.controls label {font-size:.9rem}.row {grid-template-columns:2.1rem minmax(0,1fr) 3.2rem}.axis {margin:0 3.8rem 0 2.7rem}td,th{padding:.35rem .18rem;font-size:.88rem}}
+.controls[hidden], .panel[hidden], #download-tables[hidden] {display:none}
+.neuron-controls {display:flex; flex-wrap:wrap; gap:.8rem 1.5rem; margin:1.3rem 0}
+.neuron-controls[hidden], #neuron-table[hidden] {display:none}
+.neuron-controls label {font-weight:650}
+.neuron-controls select {display:block; width:100%; margin-top:.3rem}
+#neuron-context {margin:.8rem 0}
+#fitted-neuron noscript code {overflow-wrap:anywhere}
+#neuron-table {table-layout:fixed}
+#neuron-table th:first-child {width:35%}
+#neuron-table td {text-align:left}
+#neuron-table thead th {text-align:left}
+.coef-symbol {font-family:Georgia,serif; font-style:italic; font-weight:400}
+.coef-source {display:block; color:var(--muted); font-size:.82rem; font-weight:400}
+.coef-track {display:block; height:.26rem; margin-top:.24rem; background:#e1e8e4; border-radius:.2rem}
+.coef-track span {display:block; height:100%; border-radius:.2rem; background:#216b80}
+.neuron-bias {background:#edf2ef}
+@media(max-width:520px){.neuron-controls {gap:.65rem 1rem}.neuron-controls label {font-size:.9rem}.coef-source {font-size:.78rem}}

@@ -1,4 +1,4 @@
-/* Nodes outside the plate are shared by the layer; nodes inside repeat over units. */
+/* Nodes outside the plate are shared by the layer; nodes inside repeat over individual coefficients. */
 (() => {
   "use strict";
   const ns = "http://www.w3.org/2000/svg";
@@ -16,22 +16,22 @@
     if(txt!==undefined) node.textContent=txt;
     return node;
   }
-  window.drawHierarchy = function(svg,prior,form,layer,unit,width) {
+  window.drawHierarchy = function(svg,prior,form,layer,unit,coordinate,dimension,width) {
     const {nodes,edges}=graphs[prior+":"+form];
-    const l = String(layer), kl = String(unit) + l;
-    const labels = {a:["a",l], tau:["τ",l], w:["w",kl], lambda:["λ",kl], xi:["ξ",l],
-      nu:["ν",kl], t:["t",l], at:["a","τ,"+l], tr:["t","r,"+kl], ar:["a","r,"+kl],
-      K:["K",l], hyper:["μξ, ρ²ξ",""]};
+    const l = String(layer), kl = String(unit) + l, klj = kl + "," + coordinate;
+    const labels = {a:["a",l], tau:["τ",l], w:coordinate === dimension ? ["b",kl] : ["w",klj], lambda:["λ",klj], xi:["ξ",l],
+      nu:["ν",klj], t:["t",l], at:["a","τ,"+l], tr:["t","r,"+klj], ar:["a","r,"+klj],
+      K:["M",l], hyper:["μξ, ρ²ξ",""]};
     svg.setAttribute("viewBox","0 0 345 142");
     svg.setAttribute("role","img");
     svg.setAttribute("aria-labelledby","graph-title graph-description");
     const describe = name=>labels[name].join("_");
     const def=el("defs"),marker=el("marker",{id:"prior-arrow",viewBox:"0 0 8 8",refX:7,refY:4,markerWidth:6,markerHeight:6,orient:"auto-start-reverse"});
     marker.append(el("path",{d:"M0 0 L8 4 L0 8 Z",fill:"#667e83"}));def.append(marker);
-    svg.replaceChildren(el("title",{id:"graph-title"},prior+"-BNN "+form+" hierarchy for unit "+unit+" in layer "+layer),el("desc",{id:"graph-description"},
-      "Conditional on the observation variance sigma squared. "+edges.map(([from,to])=>describe(from)+" determines the law of "+describe(to)).join(". ")+". The plate shows k = "+unit+" among "+width+" units in layer "+layer+"."),def);
+    svg.replaceChildren(el("title",{id:"graph-title"},prior+"-BNN "+form+" hierarchy for coefficient "+coordinate+" of unit "+unit+" in layer "+layer),el("desc",{id:"graph-description"},
+      "Conditional on the observation variance sigma squared. "+edges.map(([from,to])=>describe(from)+" determines the law of "+describe(to)).join(". ")+". The plate repeats over "+width+" units and "+dimension+" coordinates per unit."),def);
     svg.append(el("rect",{x:185,y:12,width:153,height:121,rx:8,fill:"#f8faf8",stroke:"#a9bcb8","stroke-dasharray":"4 3"}));
-    svg.append(el("text",{x:328,y:125,"text-anchor":"end","font-size":11,fill:"#506969"},"j = 1, …, "+width+" · k = "+unit));
+    svg.append(el("text",{x:328,y:125,"text-anchor":"end","font-size":11,fill:"#506969"},"k = 1, …, "+width+" · j = 1, …, "+dimension));
     for(const [from,to] of edges){
       const [x,y]=nodes[from],[u,v]=nodes[to],d=Math.hypot(u-x,v-y),dx=(u-x)/d,dy=(v-y)/d;
       svg.append(el("line",{x1:x+20*dx,y1:y+20*dy,x2:u-20*dx,y2:v-20*dy,stroke:"#667e83","stroke-width":1.45,"marker-end":"url(#prior-arrow)"}));
@@ -39,12 +39,12 @@
     for(const [key,[x,y]] of Object.entries(nodes)){
       const weight=key==="w",fixed=key==="a"||key==="K"||key==="hyper";
       if(!fixed)svg.append(el("circle",{cx:x,cy:y,r:18,fill:weight?"#e4f0ee":"#fffefa",stroke:weight?"#135d7a":"#708387","stroke-width":weight?2.8:1.25}));
-      const text=el("text",{x,y:y+4,"text-anchor":"middle",fill:"#213b43","font-family":"Cambria Math, Georgia, serif","font-size":17,"font-style":"italic","font-weight":weight?700:400},labels[key][0]);
+      const text=el("text",{x,y:y+4,"text-anchor":"middle",fill:"#213b43","font-family":"Cambria Math, Georgia, serif","font-size":17,"font-style":"italic","font-weight":400},labels[key][0]);
       if(key==="hyper") {
         text.textContent="μ"; text.append(el("tspan",{"baseline-shift":"sub","font-size":10},"ξ"),
           el("tspan",{},", ρ"), el("tspan",{"baseline-shift":"super","font-size":10},"2"),
           el("tspan",{"baseline-shift":"sub","font-size":10},"ξ"));
-      } else text.append(el("tspan",{"baseline-shift":"sub","font-size":10},labels[key][1]));
+      } else text.append(el("tspan",{"baseline-shift":"sub","font-size":10,"font-weight":400},labels[key][1]));
       svg.append(text);
     }
   };

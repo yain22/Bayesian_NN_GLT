@@ -8,7 +8,7 @@
     pre[[layer]] <- features[[layer]] %*% t(weights[[layer]])
     h <- if (layer < length(weights)) pmax(pre[[layer]], 0) else pre[[layer]]
   }
-  list(y = as.vector(h), features = features, pre = pre)
+  list(y = if (ncol(h) == 1L) as.vector(h) else h, logits = h, features = features, pre = pre)
 }
 
 .bnn_backprop <- function(back, forward, weights) {
@@ -23,18 +23,24 @@
   gradient
 }
 
-# Full-batch squared-error warm start shared by all three priors.
-.bnn_initialize <- function(x, y, hidden, seed, steps) {
+# Full-batch likelihood warm start shared by all three shrinkage priors.
+.bnn_initialize <- function(x, y, hidden, seed, steps, outcome = "continuous", n_classes = NULL) {
   set.seed(seed)
   inputs <- c(ncol(x), hidden) + 1L
-  units <- c(hidden, 1L)
+  output_units <- if (outcome == "categorical") n_classes - 1L else 1L
+  units <- c(hidden, output_units)
   weights <- lapply(seq_along(units), function(l) {
     matrix(stats::rnorm(units[l] * inputs[l], sd = sqrt(2 / inputs[l])), nrow = units[l])
   })
   first <- second <- lapply(weights, function(w) w * 0)
   for (iteration in seq_len(steps)) {
     forward <- .bnn_forward(x, weights)
-    back <- matrix((forward$y - y) / length(y), ncol = 1L)
+    if (outcome == "continuous") {
+      back <- matrix((forward$y - y) / length(y), ncol = 1L)
+    } else {
+      log_probs <- .bnn_class_log_probs(forward$logits, outcome)
+      back <- -.bnn_class_score(log_probs, y, outcome) / length(y)
+    }
     gradient <- .bnn_backprop(back, forward, weights)
     for (l in seq_along(weights)) {
       first[[l]] <- .9 * first[[l]] + .1 * gradient[[l]]
@@ -60,8 +66,11 @@
 }
 
 # Row sums give E[||w_kl||^2] from the diagonal variational covariance.
-.bnn_weight_moments <- function(parameters) {
-  Map(function(m, s) rowSums(m^2 + exp(2 * s)), parameters$mu, parameters$logsd)
+.bnn_weight_moments <- function(parameters, coefficient = FALSE) {
+  Map(function(m, s) {
+    moments <- m^2 + exp(2 * s)
+    if (coefficient) moments else rowSums(moments)
+  }, parameters$mu, parameters$logsd)
 }
 
 .bnn_sse <- function(parameters, x, y, epsilon) {

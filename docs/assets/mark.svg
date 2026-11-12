@@ -1,11 +1,11 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 408" width="360" height="408" role="img" aria-labelledby="title desc">
   <title id="title">BNN GLT</title>
-  <desc id="desc">A feedforward network inside a white hexagon with a navy outline. Three rust connections enter one neuron marked with a bell curve.</desc>
+  <desc id="desc">A neural network inside a white hexagon. Three connections entering the highlighted neuron each carry a bell curve of a different width.</desc>
 
   <path d="M180 15 343.7 109.5v189L180 393 16.3 298.5v-189Z"
         fill="#fff" stroke="#244f70" stroke-width="10" stroke-linejoin="round"/>
 
-  <!-- The selected neuron shares one scale across its two weights and its bias. -->
+  <!-- Each incoming coefficient, including the bias, has its own local scale. -->
   <g fill="none" stroke="#244f70" stroke-width="3.7" stroke-linecap="round">
     <path d="m79 120 99 95M79 172l99 43m-99 9 99-9"/>
     <path d="m178 128 102 44-102 43"/>
@@ -22,9 +22,12 @@
   </g>
   <path d="m75.4 222.4 4.3-3.1v9.6" fill="none" stroke="#244f70"
         stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <circle cx="178" cy="128" r="21" fill="#fff8f3" stroke="#b35446" stroke-width="5"/>
-  <path d="M164.7 134c3.4 0 5.8-.3 7.7-6.1 1.6-4.8 2.9-9.1 5.6-9.1s4 4.3 5.6 9.1c1.9 5.8 4.3 6.1 7.7 6.1"
-        fill="none" stroke="#b35446" stroke-width="3.3" stroke-linecap="round"/>
+  <g fill="#fff8f3" stroke="#b35446" stroke-width="2.6" stroke-linejoin="round">
+    <path transform="translate(118 123.2) rotate(4.6)" d="M-14 0 C-5 0 -5 -12 0 -12 S5 0 14 0 Z"/>
+    <path transform="translate(123 152.4) rotate(-24)" d="M-10 0 C-3 0 -4 -14 0 -14 S3 0 10 0 Z"/>
+    <path transform="translate(122 182.3) rotate(-44)" d="M-17 0 C-6 0 -5 -8 0 -8 S6 0 17 0 Z"/>
+  </g>
+  <circle cx="178" cy="128" r="16" fill="#fff8f3" stroke="#b35446" stroke-width="5"/>
 
   <!-- Geometric outlined lettering keeps the wordmark independent of local fonts. -->
   <g transform="translate(75 270)" fill="none" stroke-width="6.9"

@@ -27,8 +27,7 @@
     <noscript>
       <section class="network-panel">
         <div class="panel-top"><h2>A prediction at input zero</h2></div>
-        <p>At <i>x</i><sub>∗</sub> = 0, the fitted GLT network estimates a mean response of 4.99. Its approximate pointwise 90% interval is 4.77 to 5.20 for the mean and 3.83 to 6.23 for a new observation, in the original response units. The second interval also includes observation noise.</p>
-        <p>The layer scale and tail shape have fitted geometric means of 0.153 and 1.331. Run the <a href="generate.R">R example</a> to reproduce these values and compare the three fits.</p>
+        <p>At input zero, the central 90% interval for a new observation includes both uncertainty in the regression function and Gaussian observation noise. Run the <a href="generate.R">R example</a> to calculate the two intervals and the fitted weight and bias scales under all three priors.</p>
       </section>
     </noscript>
     <div class="lab-grid prediction-layout" id="fit">
@@ -66,8 +65,9 @@
     </div>
     <section class="network-panel unit-panel" aria-labelledby="unit-heading">
       <div class="panel-top"><h2 id="unit-heading">Shrinkage across the eight hidden units</h2></div>
-      <p>For hidden unit <i>k</i> in layer 1, its incoming weight and bias have conditional prior standard deviation σλ<sub><i>k</i>1</sub>. Each bar gives the geometric mean of this quantity under the fitted variational distribution, in standardized fitting units. A shorter bar means a smaller typical conditional prior standard deviation for that unit in this fit.</p>
-      <ol id="unit-scales" aria-label="Geometric mean conditional prior standard deviation by hidden unit"></ol>
+      <p>Unit <i>k</i> receives one input weight and a bias. Their conditional prior standard deviations are σλ<sub><i>k</i>1,1</sub> and σλ<sub><i>k</i>1,2</sub>. The paired bars show the geometric means of these quantities under the fitted variational distribution, in standardized fitting units.</p>
+      <div class="legend"><span><i class="key coefficient-key" aria-hidden="true"></i>Input weight</span><span><i class="key bias-key" aria-hidden="true"></i>Bias</span></div>
+      <ol id="unit-scales" aria-label="Conditional prior standard deviations of the input weight and bias for each hidden unit"></ol>
       <p class="layer-summary">Fitted geometric means in layer 1 · Layer scale τ<sub>1</sub> = <strong id="layer-scale"></strong><span id="tail-summary"> · Tail shape ξ<sub>1</sub> = <strong id="tail-shape"></strong></span></p>
       <p class="setting-hint">Unit numbers label neurons within each fit. The same number can correspond to different learned features when you switch priors.</p>
     </section>
@@ -76,7 +76,7 @@
       <p>At 36 equally spaced inputs from −2 to 2, we generated responses with mean 5 + 1.7 sin(1.5<i>x</i>) + 0.3<i>x</i> and independent Gaussian errors with standard deviation 0.45. Each model fits one hidden layer of eight ReLU units with the same initialization seed, 600 warm-start steps and a fixed budget of 60 variational iterations.</p>
       <pre><code>fit &lt;- gltbnn_fit(training, y, hidden = 8L, prior = "GLT", seed = 17L)
 units &lt;- gltbnn_shrinkage(fit)
-units[, c("unit", "geometric_prior_sd")]
+units[, c("unit", "coordinate", "is_bias", "geometric_prior_sd")]
 unique(units[c("layer", "geometric_layer_scale", "geometric_tail_shape")])
 predict(fit, grid, type = "prediction_interval", level = 0.90,
         draws = 2048L, seed = 23L)</code></pre>
@@ -85,10 +85,10 @@ predict(fit, grid, type = "prediction_interval", level = 0.90,
       For a draw of the weights 𝒲, the mean in the original response units is
       <i>μ</i><sub>𝒲</sub>(<i>x</i><sub>∗</sub>) = <span class="overline">y</span><sub>train</sub> + <i>s</i><sub>y</sub> <i>f</i><sub>𝒲</sub>(<i>x</i><sub>∗,std</sub>).
       Both means and standard deviations come from the training data.</p>
-      <p>On the standardized fitting scale, σ² is the Gaussian noise variance and σ²(λ<sub><i>k</i>1</sub>)² is the conditional prior variance of a coefficient entering unit <i>k</i>. On the original response scale, a new observation <i>Y</i><sub>∗</sub> has conditional mean <i>μ</i><sub>𝒲</sub>(<i>x</i><sub>∗</sub>) and conditional variance <i>s</i><sub>y</sub>²σ² given the input, weights and noise variance.</p>
+      <p>On the standardized fitting scale, σ² is the Gaussian noise variance and σ²(λ<sub><i>k</i>1,<i>j</i></sub>)² is the conditional prior variance of a coefficient entering unit <i>k</i>. On the original response scale, a new observation <i>Y</i><sub>∗</sub> has conditional mean <i>μ</i><sub>𝒲</sub>(<i>x</i><sub>∗</sub>) and conditional variance <i>s</i><sub>y</sub>²σ² given the input, weights and noise variance.</p>
       <p>These fits use the paper’s default Jeffreys prior with density proportional to 1/σ². For the supplement’s proper inverse-gamma option, supply positive shape and scale through <code>noise_prior</code>, for example <code>c(shape = 2, scale = 1)</code>, on the standardized variance scale.</p>
-      <p>At each of 81 inputs, the line averages 2,048 draws of the regression function. The selected band uses the 5th and 95th percentiles of its draws. All three fits use the same bar scale. The layer scale and the GLT tail shape each repeat for all units in their layer. The R example selects one copy of each layer’s summaries.</p>
-      <p>Inspect the fitted objective and its Monte Carlo standard error in <code>fit$engine$trace</code>. To check sensitivity to the iteration budget, refit with the same seed and <code>control = list(outer = 120L)</code>. For GLT at original input <i>x</i><sub>∗</sub> = 0, the approximate pointwise 90% interval for the mean response was [4.771, 5.197] after 60 iterations and [4.587, 5.342] after 120, with all other settings fixed.</p>
+      <p>At each of 81 inputs, the line averages 2,048 draws of the regression function. The selected band uses the 5th and 95th percentiles of its draws. All three fits use the same bar scale. The layer scale and the GLT tail shape each repeat for all coefficients in their layer. The R example selects one copy of each layer’s summaries.</p>
+      <p>Inspect the fitted objective and its Monte Carlo standard error in <code>fit$engine$trace</code>. To check sensitivity to the iteration budget, refit with the same seed and <code>control = list(outer = 120L)</code>.</p>
       <p>Install <a href="../#install">the R package</a>, then download and run the <a href="generate.R" download>complete R script</a> to reproduce the data and all three fits.</p>
     </details>
   </main>

@@ -1,11 +1,14 @@
-# Fit a Gaussian-response neural network with grouped shrinkage priors.
+# Fit a neural network with shrinkage on hidden coefficients.
 gltbnn_fit <- function(x, y, hidden = c(10L, 10L), prior = c("GLT", "GL", "G"),
-                       control = list(), seed = 1L, noise_prior = NULL) {
+                       control = list(), seed = 1L, noise_prior = NULL,
+                       outcome = c("continuous", "binary", "categorical"),
+                       geometry = c("coefficient", "unit")) {
   prior <- match.arg(prior)
+  outcome <- match.arg(outcome)
+  geometry <- match.arg(geometry)
   x <- .gltbnn_matrix(x, "x")
-  if (nrow(x) < 2L || !is.numeric(y) || !is.null(dim(y)) ||
-      length(y) != nrow(x) || any(!is.finite(y))) {
-    stop("Supply at least two observations and one finite numeric response per row of x.",
+  if (nrow(x) < 2L || !is.null(dim(y)) || length(y) != nrow(x)) {
+    stop("Supply at least two observations and one response per row of x.",
          call. = FALSE)
   }
   if (!is.numeric(hidden) || !is.null(dim(hidden)) || !length(hidden) ||
@@ -18,6 +21,9 @@ gltbnn_fit <- function(x, y, hidden = c(10L, 10L), prior = c("GLT", "GL", "G"),
   control <- .gltbnn_control(control)
   seed <- .gltbnn_integer(seed, "seed", minimum = 0L)
   if (!is.null(noise_prior)) {
+    if (outcome != "continuous") {
+      stop("noise_prior applies only to continuous outcomes.", call. = FALSE)
+    }
     if (!is.numeric(noise_prior) || !is.null(dim(noise_prior)) ||
         length(noise_prior) != 2L || !setequal(names(noise_prior), c("shape", "scale")) ||
         any(!is.finite(noise_prior)) || any(noise_prior <= 0)) {
@@ -26,31 +32,80 @@ gltbnn_fit <- function(x, y, hidden = c(10L, 10L), prior = c("GLT", "GL", "G"),
     }
     noise_prior <- noise_prior[c("shape", "scale")]
   }
-  prep <- list(x_center = colMeans(x), x_scale = apply(x, 2L, stats::sd),
-               y_center = mean(y), y_scale = stats::sd(y))
-  if (any(!is.finite(prep$x_scale) | prep$x_scale <= 0) ||
-      !is.finite(prep$y_scale) || prep$y_scale <= 0) {
-    stop("Each training predictor and the response must have a positive finite sample standard deviation.",
-         call. = FALSE)
+  prep <- list(x_center = colMeans(x), x_scale = apply(x, 2L, stats::sd))
+  class_levels <- NULL
+  if (outcome == "continuous") {
+    if (!is.numeric(y) || any(!is.finite(y))) {
+      stop("Continuous outcomes require finite numeric responses.", call. = FALSE)
+    }
+    prep$y_center <- mean(y)
+    prep$y_scale <- stats::sd(y)
+    if (any(!is.finite(prep$x_scale) | prep$x_scale <= 0) ||
+        !is.finite(prep$y_scale) || prep$y_scale <= 0) {
+      stop("Each training predictor and the response must have a positive finite sample standard deviation.",
+           call. = FALSE)
+    }
+    response <- (as.numeric(y) - prep$y_center) / prep$y_scale
+  } else {
+    labels <- .gltbnn_labels(y, outcome)
+    class_levels <- levels(labels)
+    response <- as.integer(labels)
+    if (any(!is.finite(prep$x_scale))) {
+      stop("Training predictor standard deviations must be finite.", call. = FALSE)
+    }
+    prep$x_keep <- which(prep$x_scale > 0)
+    if (!length(prep$x_keep)) {
+      stop("Classification requires at least one varying training predictor.", call. = FALSE)
+    }
   }
 
   standardized_x <- .gltbnn_scale_x(x, prep)
-  standardized_y <- (as.numeric(y) - prep$y_center) / prep$y_scale
   engine <- .gltbnn_with_seed(seed, .gltbnn_engine_fit(
-    standardized_x, standardized_y, hidden, prior, control, seed, noise_prior
+    standardized_x, response, hidden, prior, control, seed, noise_prior,
+    outcome = outcome, n_classes = length(class_levels), geometry = geometry
   ))
   structure(list(prior = prior, hidden = hidden, n = nrow(x), p = ncol(x),
                  predictor_names = colnames(x), preprocess = prep, seed = seed,
-                 control = control, noise_prior = noise_prior, engine = engine), class = "gltbnn_fit")
+                 control = control, noise_prior = noise_prior, engine = engine,
+                 outcome = outcome, levels = class_levels, geometry = geometry),
+            class = "gltbnn_fit")
 }
 
 print.gltbnn_fit <- function(x, ...) {
   widths <- paste(x$hidden, collapse = ", ")
-  cat(sprintf("Bayesian neural network for Gaussian regression (%s prior)\n", x$prior),
+  family <- if (is.null(x$outcome)) "continuous" else x$outcome
+  description <- switch(family, continuous = "Gaussian regression",
+                        binary = "binary classification", categorical = "categorical classification")
+  cat(sprintf("Bayesian neural network for %s (%s prior)\n", description, x$prior),
       sprintf("Training dimensions (observations x predictors): %d x %d\n", x$n, x$p),
       sprintf("Hidden layer widths: %s\n", widths),
       sprintf("Outer iterations: %d\n", x$control$outer), sep = "")
+  cat("Shrinkage geometry:", if (is.null(x$geometry)) "unit" else x$geometry, "\n")
+  if (family != "continuous") cat("Class levels:", paste(x$levels, collapse = ", "), "\n")
   invisible(x)
+}
+
+.gltbnn_labels <- function(y, outcome) {
+  if (!(is.factor(y) || is.character(y) || is.numeric(y) || is.logical(y)) ||
+      anyNA(y) || (is.numeric(y) && any(!is.finite(y)))) {
+    stop("Classification requires a factor or a vector of nonmissing class labels.",
+         call. = FALSE)
+  }
+  labels <- if (is.factor(y)) y else factor(y)
+  if (anyNA(levels(labels)) || any(!nzchar(levels(labels)))) {
+    stop("Class labels must be nonmissing and nonempty.", call. = FALSE)
+  }
+  if (any(tabulate(as.integer(labels), nbins = nlevels(labels)) == 0L)) {
+    stop("Each declared class must be observed in training; remove unused factor levels.",
+         call. = FALSE)
+  }
+  if (outcome == "binary" && nlevels(labels) != 2L) {
+    stop("Binary outcomes require exactly two observed classes.", call. = FALSE)
+  }
+  if (nlevels(labels) < 2L) {
+    stop("Categorical outcomes require at least two observed classes.", call. = FALSE)
+  }
+  labels
 }
 
 .gltbnn_matrix <- function(x, label) {
@@ -74,7 +129,10 @@ print.gltbnn_fit <- function(x, ...) {
 }
 
 .gltbnn_scale_x <- function(x, prep) {
-  sweep(sweep(x, 2L, prep$x_center, "-"), 2L, prep$x_scale, "/")
+  keep <- prep$x_keep
+  if (is.null(keep)) keep <- seq_len(ncol(x))
+  x <- x[, keep, drop = FALSE]
+  sweep(sweep(x, 2L, prep$x_center[keep], "-"), 2L, prep$x_scale[keep], "/")
 }
 
 .gltbnn_integer <- function(value, name, minimum = 1L) {

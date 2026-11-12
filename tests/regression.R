@@ -38,7 +38,7 @@ set.seed(19)
 before <- .Random.seed
 for (prior in rownames(reference)) {
   fit <- gltbnn_fit(x, y, hidden = c(3L, 2L), prior = prior, control = control,
-                    seed = 23L)
+                    seed = 23L, geometry = "unit")
   means <- predict(fit, newx, draws = 32L, seed = 31L)
   estimates <- c(fit$engine$endpoint$value, fit$engine$state$noise$phi, means)
   stopifnot(length(estimates) == ncol(reference),

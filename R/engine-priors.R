@@ -107,7 +107,8 @@
   length(g$local) * g$tau$zeta + sum(vapply(g$nu, function(x) x$zeta + x$phi, numeric(1)))
 }
 
-.bnn_init_groups <- function(K, d, prior) {
+.bnn_init_groups <- function(K, d, prior, geometry = "unit", fixed_shape = NULL) {
+  if (geometry == "coefficient") return(.bnn_coefficient_init(K, prior, fixed_shape))
   g <- list(tau = .bnn_ig(2, 2))
   if (prior == "GLT") {
     g$nu <- rep(list(.bnn_ig(2, 2)), K)
@@ -126,6 +127,7 @@
 # Per-unit E[lambda^-2], E[log(lambda^2)], and the layer's contribution
 # from scale priors plus scale-factor entropies to the augmented-bound ELBO.
 .bnn_prior_terms <- function(g, K, prior) {
+  if (identical(g$geometry, "coefficient")) return(.bnn_coefficient_terms(g, prior))
   if (prior == "GLT") {
     nu_precision <- vapply(g$nu, `[[`, numeric(1), "phi")
     nu_log <- vapply(g$nu, `[[`, numeric(1), "zeta")
@@ -157,6 +159,9 @@
 }
 
 .bnn_update_groups <- function(g, K, d, prior, moments, phi) {
+  if (identical(g$geometry, "coefficient")) {
+    return(.bnn_coefficient_update(g, prior, as.numeric(moments), phi))
+  }
   if (prior == "GLT") {
     for (k in seq_len(K)) {
       g$local[[k]] <- .bnn_local_factor(g$tau$phi * g$nu[[k]]$phi, phi * moments[k], d)
