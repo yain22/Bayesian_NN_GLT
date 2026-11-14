@@ -57,6 +57,8 @@ head(predict(fit, flowers[holdout, 1:4], type = "prob"))
 
 ## What each prior shrinks
 
+The package website’s computation guide explains the updates for G, GL and GLT. Its [R scripts](docs/computation/) fit all three priors to the same training trees, predict volume for six held-out trees and reproduce the GLT quadrature check in Supplement Section S5.1.
+
 For Gaussian regression, the package standardizes the training response and uses the Jeffreys prior $p(\sigma^2)\propto1/\sigma^2$ by default. Posterior propriety with this prior depends on the data. To use the supplement's proper inverse-gamma alternative, pass positive hyperparameters, for example `noise_prior = c(shape = 2, scale = 1)`.
 
 For neuron $k$ in layer $l$, the vector $\mathbf{w}_{kl}$ contains its $d_l=K_{l-1}+1$ incoming weights, including its bias at $j=d_l$. Its scalar coefficient $w_{kl,j}$ has a zero-centered Gaussian prior with conditional standard deviation $\sigma\lambda_{kl,j}$ in regression and $\lambda_{kl,j}$ in classification. A small local scale concentrates the prior for that individual coefficient near zero. There are $M_l=K_l d_l$ such coefficients in layer $l$.

@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Variational fitting and runnable R examples for global, global–local and global–local–tail Bayesian neural networks.">
+  <title>Fitting G, GL and GLT networks · gltbnn</title>
+  <link rel="icon" href="../assets/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../package.css">
+  <style>
+    .guide-intro { padding-block:clamp(2rem,5vw,4rem); max-width:56rem; }
+    .guide-intro p { max-width:72ch; color:var(--muted); }
+    .section-grid { grid-template-columns:minmax(0,.95fr) minmax(0,1.3fr); gap:clamp(1.25rem,4vw,3.5rem); }
+    .section-grid h3 { font:600 1.07rem/1.5 var(--sans); letter-spacing:0; }
+    math[display=block] { margin:1rem 0; font-size:1.05rem; }
+    .codebar a { color:#fff; }
+    @media (max-width:860px) { .section-grid { grid-template-columns:minmax(0,1fr); } }
+  </style>
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<header class="topbar"><div class="wrap bar-inner">
+  <a class="wordmark" href="../" aria-label="gltbnn home">glt<span>bnn</span></a>
+  <nav aria-label="Computational methods"><a href="#g">G-BNN</a><a href="#gl">GL-BNN</a><a href="#glt">GLT-BNN</a><a href="#checks">Numerical checks</a><a href="../reference.pdf">R reference</a></nav>
+</div></header>
+<main id="content" class="wrap">
+<header class="guide-intro">
+  <h1>Fitting G, GL and GLT networks in R</h1>
+  <p>Each example predicts timber volume from trunk girth and height in the R <code>trees</code> dataset. Every fifth tree is held out. All three fits use the same two hidden layers, starting weights and training split, so you can inspect how changing the prior affects shrinkage.</p>
+  <p>With Gaussian outcomes, each hidden weight or bias has conditional variance σ²λ². In a fitting cycle, the Gaussian weight factors supply an expected square for each coefficient. After updating the observation variance and output scale, the algorithm updates the hidden scales. Their expected inverse squares, denoted by <i>P</i> below, multiply the fitted noise precision in the next weight update.</p>
+  <p>These examples use the package defaults of 600 initialization steps, 60 fitting cycles and the Jeffreys prior on the standardized observation variance. Each fits the model on the training trees and predicts mean volume in cubic feet for the held-out trees. <a href="../#install">Install gltbnn</a> to run the scripts.</p>
+  <p>In the supplement, Section S1 derives the shared variational updates. Section S2 gives the G-BNN algorithm, S3 the GL-BNN algorithm and S4 the GLT-BNN algorithm.</p>
+</header>
+<section id="g" class="section-grid" aria-labelledby="g-title">
+  <div>
+    <h2 id="g-title">G-BNN</h2>
+    <h3>One scale per hidden layer</h3>
+    <p>The layer scale has a half-Cauchy prior with scale parameter 1/<i>M</i>, where <i>M</i> counts the weights and biases in that layer. The update for the squared layer scale combines the expected squares of all <i>M</i> coefficients. Their next weight updates use the same scale precision.</p>
+    <math alttext="\lambda_{kl,j}=\tau_l,\qquad P_{kl,j}=\mathbb{E}_q(\tau_l^{-2})." xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>&#x003BB;</mi><mrow><mi>k</mi><mi>l</mi><mo>&#x0002C;</mo><mi>j</mi></mrow></msub><mo>&#x0003D;</mo><msub><mi>&#x003C4;</mi><mi>l</mi></msub><mo>&#x0002C;</mo><mspace width="2em" /><msub><mi>P</mi><mrow><mi>k</mi><mi>l</mi><mo>&#x0002C;</mo><mi>j</mi></mrow></msub><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mi>q</mi></msub><mo stretchy="false">&#x00028;</mo><msubsup><mi>&#x003C4;</mi><mi>l</mi><mrow><mo>&#x02212;</mo><mn>2</mn></mrow></msubsup><mo stretchy="false">&#x00029;</mo><mo>&#x0002E;</mo></mrow></math>
+    <p>The example returns one row per layer. <code>geometric_layer_scale</code> is the geometric mean of the fitted layer scale, and <code>scale_precision</code> is its expected inverse square.</p>
+  </div>
+  <div class="codebox">
+    <div class="codebar"><span>G.R</span><a href="G.R" download>Download R script</a></div>
+    <pre tabindex="0" aria-label="G-BNN example"><code id="g-code">library(gltbnn)
+x &lt;- datasets::trees[c("Girth", "Height")]
+y &lt;- datasets::trees$Volume
+test &lt;- seq(5L, nrow(x), by = 5L)
+fit &lt;- gltbnn_fit(x[-test, ], y[-test], hidden = c(3L, 2L),
+                  prior = "G", seed = 31L)
+scales &lt;- gltbnn_shrinkage(fit)
+unique(scales[c("layer", "geometric_layer_scale", "scale_precision")])
+predict(fit, x[test, ], type = "mean", draws = 256L, seed = 32L)
+</code></pre>
+  </div>
+</section>
+<section id="gl" class="section-grid" aria-labelledby="gl-title">
+  <div>
+    <h2 id="gl-title">GL-BNN</h2>
+    <h3>One local multiplier per coefficient</h3>
+    <p>Each hidden weight and bias has its own half-Cauchy multiplier. A fitting cycle updates each squared multiplier and its auxiliary from that coefficient’s expected square, then updates the shared layer scale and its auxiliary. The variational factors for the layer scale and each multiplier are independent.</p>
+    <math alttext="\lambda_{kl,j}=\tau_l r_{kl,j},\qquad r_{kl,j}\sim C^+(0,1)." xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>&#x003BB;</mi><mrow><mi>k</mi><mi>l</mi><mo>&#x0002C;</mo><mi>j</mi></mrow></msub><mo>&#x0003D;</mo><msub><mi>&#x003C4;</mi><mi>l</mi></msub><msub><mi>r</mi><mrow><mi>k</mi><mi>l</mi><mo>&#x0002C;</mo><mi>j</mi></mrow></msub><mo>&#x0002C;</mo><mspace width="2em" /><msub><mi>r</mi><mrow><mi>k</mi><mi>l</mi><mo>&#x0002C;</mo><mi>j</mi></mrow></msub><mi>&#x0007E;</mi><msup><mi>C</mi><mo>&#x0002B;</mo></msup><mo stretchy="false">&#x00028;</mo><mn>0</mn><mo>&#x0002C;</mo><mn>1</mn><mo stretchy="false">&#x00029;</mo><mo>&#x0002E;</mo></mrow></math><math alttext="P_{kl,j}=\mathbb{E}_q(\tau_l^{-2})\,\mathbb{E}_q(r_{kl,j}^{-2})." xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>P</mi><mrow><mi>k</mi><mi>l</mi><mo>&#x0002C;</mo><mi>j</mi></mrow></msub><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mi>q</mi></msub><mo stretchy="false">&#x00028;</mo><msubsup><mi>&#x003C4;</mi><mi>l</mi><mrow><mo>&#x02212;</mo><mn>2</mn></mrow></msubsup><mo stretchy="false">&#x00029;</mo><mspace width="0.167em" /><msub><mi>&#x1D53C;</mi><mi>q</mi></msub><mo stretchy="false">&#x00028;</mo><msubsup><mi>r</mi><mrow><mi>k</mi><mi>l</mi><mo>&#x0002C;</mo><mi>j</mi></mrow><mrow><mo>&#x02212;</mo><mn>2</mn></mrow></msubsup><mo stretchy="false">&#x00029;</mo><mo>&#x0002E;</mo></mrow></math>
+    <p>For the first hidden unit the example displays the girth weight, height weight and bias in that order. Each has its own scale precision. <code>geometric_prior_sd</code> is the geometric mean of its conditional prior standard deviation on the standardized scale.</p>
+  </div>
+  <div class="codebox">
+    <div class="codebar"><span>GL.R</span><a href="GL.R" download>Download R script</a></div>
+    <pre tabindex="0" aria-label="GL-BNN example"><code id="gl-code">library(gltbnn)
+x &lt;- datasets::trees[c("Girth", "Height")]
+y &lt;- datasets::trees$Volume
+test &lt;- seq(5L, nrow(x), by = 5L)
+fit &lt;- gltbnn_fit(x[-test, ], y[-test], hidden = c(3L, 2L),
+                  prior = "GL", seed = 31L)
+scales &lt;- gltbnn_shrinkage(fit)
+subset(scales, layer == 1 &amp; unit == 1,
+       select = c(coordinate, is_bias, scale_precision, geometric_prior_sd))
+predict(fit, x[test, ], type = "mean", draws = 256L, seed = 32L)
+</code></pre>
+  </div>
+</section>
+<section id="glt" class="section-grid" aria-labelledby="glt-title">
+  <div>
+    <h2 id="glt-title">GLT-BNN</h2>
+    <h3>A learned tail shape in each layer</h3>
+    <p>Each scalar coefficient scale follows a generalized Pareto law given the layer scale and tail shape. A fitting cycle updates the individual scales, the layer scale, the coefficient auxiliaries and finally the tail shape. One-dimensional quadrature supplies the local-scale and tail-shape moments.</p>
+    <math alttext="\lambda_{kl,j}\mid\tau_l,\xi_l\sim\operatorname{GPD}(\tau_l,\xi_l)," xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>&#x003BB;</mi><mrow><mi>k</mi><mi>l</mi><mo>&#x0002C;</mo><mi>j</mi></mrow></msub><mo>&#x02223;</mo><msub><mi>&#x003C4;</mi><mi>l</mi></msub><mo>&#x0002C;</mo><msub><mi>&#x003BE;</mi><mi>l</mi></msub><mi>&#x0007E;</mi><mo>GPD</mo><mo stretchy="false">&#x00028;</mo><msub><mi>&#x003C4;</mi><mi>l</mi></msub><mo>&#x0002C;</mo><msub><mi>&#x003BE;</mi><mi>l</mi></msub><mo stretchy="false">&#x00029;</mo><mo>&#x0002C;</mo></mrow></math><math alttext="P_{kl,j}=\mathbb{E}_q(\lambda_{kl,j}^{-2})." xmlns="http://www.w3.org/1998/Math/MathML" display="block"><mrow><msub><mi>P</mi><mrow><mi>k</mi><mi>l</mi><mo>&#x0002C;</mo><mi>j</mi></mrow></msub><mo>&#x0003D;</mo><msub><mi>&#x1D53C;</mi><mi>q</mi></msub><mo stretchy="false">&#x00028;</mo><msubsup><mi>&#x003BB;</mi><mrow><mi>k</mi><mi>l</mi><mo>&#x0002C;</mo><mi>j</mi></mrow><mrow><mo>&#x02212;</mo><mn>2</mn></mrow></msubsup><mo stretchy="false">&#x00029;</mo><mo>&#x0002E;</mo></mrow></math>
+    <p>The first summary gives the geometric means of the layer scale and tail shape. The second shows the precision of each incoming weight and bias of the first hidden unit.</p>
+  </div>
+  <div class="codebox">
+    <div class="codebar"><span>GLT.R</span><a href="GLT.R" download>Download R script</a></div>
+    <pre tabindex="0" aria-label="GLT-BNN example"><code id="glt-code">library(gltbnn)
+x &lt;- datasets::trees[c("Girth", "Height")]
+y &lt;- datasets::trees$Volume
+test &lt;- seq(5L, nrow(x), by = 5L)
+fit &lt;- gltbnn_fit(x[-test, ], y[-test], hidden = c(3L, 2L),
+                  prior = "GLT", seed = 31L)
+scales &lt;- gltbnn_shrinkage(fit)
+unique(scales[c("layer", "geometric_layer_scale", "geometric_tail_shape")])
+subset(scales, layer == 1 &amp; unit == 1,
+       select = c(coordinate, is_bias, scale_precision))
+predict(fit, x[test, ], type = "mean", draws = 256L, seed = 32L)
+</code></pre>
+  </div>
+</section>
+<section id="checks" class="section-grid" aria-labelledby="checks-title">
+  <div><h2 id="checks-title">Numerical checks</h2></div>
+  <div>
+    <p>Supplement Section S5.1 compares the GLT coefficient-scale quadrature with independent adaptive integration for nine pairs of local-factor parameters. <a href="check-quadrature.R" download>Download the R quadrature check</a>.</p>
+    <p>The same section plots the variational objective through 60 fitting cycles for all three priors in the first matched replication of each of nine simulation settings, with two hidden layers of 25 units. The 27 traces increased in that replication.</p>
+  </div>
+</section>
+</main>
+</body>
+</html>

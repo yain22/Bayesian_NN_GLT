@@ -125,7 +125,7 @@
 <input type="range" id="output-scale" min=".25" max="5" step=".05" value="1">
 <p class="readout" id="output-spread"></p></section>
 @panel extensions@
-<span class="section-label">Outcome extensions · Section 6</span>
+<span class="section-label">Outcome extensions</span>
 <header class="inspector-head"><h2 data-family="binary">Binary outcomes</h2><h2 data-family="categorical" hidden>Unordered categorical outcomes</h2></header>
 <div data-family="binary">
 <p>The second response level is the event \(Y_i=1\). One affine output gives its log odds. The logistic function converts this value into the Bernoulli event probability.</p>
