@@ -2,3 +2,8 @@
 docs/study/data/401k_analysis.csv -text whitespace=trailing-space,cr-at-eol
 tools/replication/401k/data/analysis.csv -text whitespace=trailing-space,cr-at-eol
 tools/replication/401k/data/sipp1991.dta binary
+
+# The historical MNIST scorer authenticates these original source bytes.
+tools/replication/mnist/compute/*.R -text whitespace=blank-at-eol,space-before-tab,cr-at-eol
+tools/replication/mnist/compute/dropout.R -text whitespace=-blank-at-eof,cr-at-eol
+tools/replication/mnist/package/R/*.R -text whitespace=trailing-space,cr-at-eol

@@ -94,10 +94,12 @@
     </section>
     <section id="causal-inference" class="panel">
       <h2>401(k) eligibility and household assets</h2>
-      <p>How much does eligibility for an employer-sponsored 401(k) plan change household net financial assets? The example uses 9,915 households from the 1991 Survey of Income and Program Participation.</p>
+      <p>How do net financial assets differ between households with and without access to an employer-sponsored 401(k) plan? The example uses 9,915 households from the 1991 Survey of Income and Program Participation.</p>
       <p>With gltbnn 0.2.1 installed, run the example directly in R. The package includes the survey data.</p>
       <pre><code>demo("aipw401k", package = "gltbnn", ask = FALSE)</code></pre>
-      <p>The ten-layer, 25-unit GLT-BNN gives an estimated average effect of $8,080 (standard error $1,135, 95% confidence interval $5,855 to $10,305) in 1991 dollars.</p>
+      <p>The ten-layer, 25-unit GLT-BNN gives a cross-fitted, adjusted difference of $8,080 between eligible and ineligible households (standard error $1,135, 95% confidence interval $5,855 to $10,305) in 1991 dollars.</p>
+      <figure><img src="data/eligibility-401k.png" alt="Six adjusted differences in net financial assets, with 95% confidence intervals. The highlighted GLT-BNN estimate is $8,080 ($5,855 to $10,305)." style="display:block;max-width:100%;height:auto"><figcaption>Eligible minus ineligible households, in 1991 dollars. All six methods use the same five folds and ten hidden layers of 25 units (Supplement Table S6, last row). Lines are pointwise 95% confidence intervals.</figcaption></figure>
+      <p>A total-effect interpretation requires the adjustment assumptions in Supplement S7.1. In particular, the analysis uses current individual retirement account (IRA) participation as a covariate. If eligibility changed whether a household held IRA assets, adjusting for IRA participation could remove part of the effect.</p>
       <ul>
         <li><a href="data/example_401k.R" download>Standalone R example from Section S7.4</a></li>
         <li><a href="data/401k_analysis.csv" download>Public analysis data and fold assignments (CSV)</a></li>

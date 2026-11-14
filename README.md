@@ -79,17 +79,45 @@ Select the signal design, training signal-to-noise ratio, depth and width to com
 
 To reproduce one comparison, run the [C2 replication script](tools/replication/c2-additive.R) with the package installed. It generates the data, fits all six methods from a common initialization, and reports held-out errors and 90% interval coverage. With `jsonlite` installed, pass `--write-neuron-scales` from the repository root to regenerate the fitted-neuron panel’s individual weight and bias scales.
 
+## Image classification applications
+
+### MNIST handwritten digits
+
+![Two rows of handwritten MNIST digits. Each row shows digits zero through nine in order.](docs/classification/mnist-full/test-digits.png)
+
+*The first and second test images for each digit in official file order. [MNIST image credits and license](tools/replication/mnist/data/README.md).*
+
+**Can a network recognize all ten digits?** Section 6.3 trains six methods on **60,000 images** and evaluates them on **10,000 test images**. Across the 36 fits, GLT with two hidden layers of 25 units correctly classified **9,628 digits (96.28%)**. GL with five 25-unit layers gave the lowest mean log loss (0.125).
+
+[Table 9 scores](tools/replication/mnist/summary/scores.csv) · [Full replication in R and saved fits](tools/replication/mnist/) · [Try the small R demo (1,000 training and 300 test images)](docs/classification/mnist.R)
+
+### Fashion-MNIST T-shirts and pullovers
+
+![Two rows of grayscale garments, with five T-shirts or tops above five pullovers.](docs/classification/fashion/test-garments.png)
+
+*The first five T-shirt/top and pullover images in official test-file order. Images from Zalando’s [Fashion-MNIST dataset](https://github.com/zalandoresearch/fashion-mnist), used under its [MIT license](tools/replication/fashion/data/LICENSE).*
+
+**Can a network distinguish a pullover from a T-shirt or top?** Section 6.4 uses **12,000 training images** and **2,000 test images**, evenly split between the two classes. Dropout with ten 10-unit layers correctly classified **1,941 garments (97.05%)**. The most accurate Bayesian fit was GLT with five 25-unit layers (**96.75%**). GL with five 10-unit layers gave the lowest mean log loss (0.092).
+
+[Table 10 scores](docs/classification/fashion/scores.csv) · [Full replication in R](tools/replication/fashion/)
+
 ## Double Machine Learning Applications
 
-How much does eligibility for an employer-sponsored 401(k) plan change household net financial assets? This example uses 9,915 households from the 1991 Survey of Income and Program Participation.
+How do net financial assets differ between households with and without access to an employer-sponsored 401(k) plan? This example uses 9,915 households from the 1991 Survey of Income and Program Participation.
 
-**Run the example in R.** Install gltbnn 0.2.1 using the [installation instructions](#installation), then run the command below. The package includes the data. The demo prints the R code as it fits two asset regressions and an eligibility model in each of five folds, then combines the predictions to estimate the average effect.
+**Run the example in R.** Install gltbnn 0.2.1 using the [installation instructions](#installation), then run the command below. The package includes the data. The demo prints the R code as it fits two asset regressions and an eligibility model in each of five folds, then combines the predictions to estimate the adjusted difference.
 
 ~~~r
 demo("aipw401k", package = "gltbnn", ask = FALSE)
 ~~~
 
-**Expected result.** With ten hidden layers of 25 units, the estimated average effect of eligibility on net financial assets is **$8,080** (standard error **$1,135**, 95% confidence interval **$5,855 to $10,305**), in 1991 dollars.
+**Expected result.** With ten hidden layers of 25 units, the cross-fitted, adjusted difference in net financial assets between eligible and ineligible households is **$8,080** (standard error **$1,135**, 95% confidence interval **$5,855 to $10,305**), in 1991 dollars.
+
+![Six adjusted differences in net financial assets, with 95% confidence intervals. The highlighted GLT-BNN estimate is $8,080 ($5,855 to $10,305).](docs/study/data/eligibility-401k.png)
+
+*Eligible minus ineligible households, in 1991 dollars. All six methods use the same five folds and ten hidden layers of 25 units (Supplement Table S6, last row). Lines are pointwise 95% confidence intervals.* [Estimates (CSV)](tools/replication/401k/reference/aipw_estimates.csv) · [Plotting script](tools/replication/401k/plot_401k.py)
+
+A total-effect interpretation requires the adjustment assumptions in Supplement S7.1. In particular, the analysis uses current individual retirement account (IRA) participation as a covariate. If eligibility changed whether a household held IRA assets, adjusting for IRA participation could remove part of the effect.
 
 - [Read the standalone R example from S7.4](demo/aipw401k.R) to see the `gltbnn_fit()`, `predict()` and AIPW calculations.
 - [Download the analysis CSV](tools/replication/401k/data/analysis.csv) for the nine adjustment variables and fold assignments, or get the [original Stata file](tools/replication/401k/data/sipp1991.dta) and [data source notes](tools/replication/401k/data/source_notes.txt).
