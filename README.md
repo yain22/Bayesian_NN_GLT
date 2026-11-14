@@ -79,7 +79,7 @@ Select the signal design, training signal-to-noise ratio, depth and width to com
 
 To reproduce one comparison, run the [C2 replication script](tools/replication/c2-additive.R) with the package installed. It generates the data, fits all six methods from a common initialization, and reports held-out errors and 90% interval coverage. With `jsonlite` installed, pass `--write-neuron-scales` from the repository root to regenerate the fitted-neuron panel’s individual weight and bias scales.
 
-## Causal inference
+## Double Machine Learning Applications
 
 How much does eligibility for an employer-sponsored 401(k) plan change household net financial assets? This example uses 9,915 households from the 1991 Survey of Income and Program Participation.
 
