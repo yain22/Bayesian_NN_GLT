@@ -1,0 +1,84 @@
+Benchmark source
+
+The analysis uses all 9,915 complete households in the public sipp1991.dta
+file from the authors' double machine learning replication repository. This is
+also the source used by the DoubleML R package's fetch_401k(). The preparation
+archive includes the original data file and the analysis CSV with the five
+fold assignments. The preparation script rebuilds the CSV from the bundled
+Stata file and can retrieve that file from the fixed revision if needed.
+
+Source revision   a8ef8ef6e48d7d7056669e08f0b812bdb6528106
+Source SHA-256    1123d5f0abf6adae1d8e200f756d2a22b0ce0ce30cb228e69342a0098e57b4b2
+Analysis SHA-256  209af6267c5954789d96da227f44e2fa335dea447e12c5de4e738f2fc41abf7c
+
+Chernozhukov and Hansen (2004) describe this sample as the fourth wave of
+the 1990 Survey of Income and Program Participation panel, collected in 1991.
+Reference persons were aged 25 to 64, with at least one employed person and
+no self-employed person in the household. Net total financial assets are
+measured in 1991 US dollars. Eligibility is an offer of an employer-sponsored
+401(k) plan. The treatment is household eligibility, not actual enrollment.
+The nine adjustment variables follow the original benchmark. They are the
+household head's age and education, income, household size, married status,
+two-earner status, defined-benefit pension status, IRA participation and
+home ownership. No covariate is derived from the response or 401(k)
+participation variable. Whether the covariates suffice for exchangeability
+is an identification assumption, not a consequence of the data.
+
+There are 3,682 eligible and 6,233 ineligible households. Unadjusted group
+means are 30,347.39 and 10,788.04 dollars, giving a difference of 19,559.34
+dollars computed before rounding. The preparation script creates one
+treatment-stratified random partition with 1,983 observations per fold.
+Folds 1 through 5 contain 736, 736, 736, 737 and 737 eligible households.
+Within treatment group, indices in original source order are shuffled with
+R's Mersenne-Twister (Rejection sampler, seed 401015), then allocated in
+round-robin order, starting the second stratum where the first leaves off.
+
+The published DML analysis in Chernozhukov et al. (2018, Section 6.2,
+Table 2, Panel A) gives five-fold interactive-model ATE estimates ranging
+from 7,170 to 8,105 dollars across seven learners or combinations. For their
+neural network, the estimate is 7,788 dollars, with median within-split SE
+1,238 and split-adjusted SE 1,293. Their point estimate is the median across
+100 random partitions. Their implementation excludes observations whose
+propensity scores fall outside the open interval (0.01, 0.99). A full-sample
+analysis which instead bounds the fitted probabilities uses different
+regularization.
+
+The U.S. Census Bureau lists the 1990 panel, wave 4, as public-use microdata.
+Chapter 5 of the SIPP Users' Guide permits copying and distribution of
+released SIPP data. The Stata file is the research sample distributed by
+the original double machine learning authors. The CSV contains its analysis
+variables, a sequential row number and the study's fold assignments.
+The permission for the Census data is separate from the software license.
+https://www.census.gov/programs-surveys/sipp/data/datasets.1990.html
+https://www2.census.gov/programs-surveys/sipp/guidance/SIPP_2008_USERS_Guide_Chapter5.pdf
+https://raw.githubusercontent.com/VC2015/DMLonGitHub/a8ef8ef6e48d7d7056669e08f0b812bdb6528106/sipp1991.dta
+
+Data attribution and license: Ahrens, Chernozhukov, Hansen, Kozbur,
+Schaffer and Wiemann (2026), Repository for "An Introduction to
+Double/Debiased Machine Learning", Harvard Dataverse, version 5.0.
+The original Stata file in that deposit is byte-identical to the
+included file. These data are redistributed under the deposit's
+Creative Commons Attribution 4.0 International license. For the
+analysis CSV we selected the study variables and added row numbers
+and cross-fitting folds.
+https://doi.org/10.7910/DVN/T81OHQ
+https://dataverse.harvard.edu/api/access/datafile/14075920?format=original
+https://creativecommons.org/licenses/by/4.0/
+
+Primary references
+
+Chernozhukov, V., Chetverikov, D., Demirer, M., Duflo, E., Hansen, C.,
+Newey, W. and Robins, J. (2018). Double/debiased machine learning for
+treatment and structural parameters. The Econometrics Journal 21(1),
+C1-C68. https://doi.org/10.1111/ectj.12097
+
+Chernozhukov, V. and Hansen, C. (2004). The Effects of 401(k)
+Participation on the Wealth Distribution: An Instrumental Quantile
+Regression Analysis. The Review of Economics and Statistics 86(3),
+735-751. https://doi.org/10.1162/0034653041811734
+
+Authors' IRM implementation:
+https://github.com/VC2015/DMLonGitHub/blob/ff35d21e19eedf78197243064e39616ef12705a0/Moment_Functions.R#L144-L157
+
+DoubleML example:
+https://docs.doubleml.org/stable/examples/R_double_ml_pension.html

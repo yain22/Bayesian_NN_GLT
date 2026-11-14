@@ -81,7 +81,13 @@ To reproduce one comparison, run the [C2 replication script](tools/replication/c
 
 ## Causal inference
 
-Supplement Section S7 estimates the effect of 401(k) eligibility on net financial assets for 9,915 households. The six network methods fit the two outcome regressions and the eligibility propensity score on five shared folds. The replication archive includes the data preparation, fitting and scoring code, effect estimates with confidence intervals, and held-out nuisance diagnostics. [Download the 401(k) replication archive](docs/study/data/causal_401k_replication.zip)
+Supplement Section S7 estimates the average effect of 401(k) eligibility on net financial assets using 9,915 households from the 1991 Survey of Income and Program Participation. The public analysis file includes the nine adjustment variables and the five fold assignments used for every fit. [Analysis data (CSV)](tools/replication/401k/data/analysis.csv) · [Original data (Stata)](tools/replication/401k/data/sipp1991.dta) · [Data provenance](tools/replication/401k/data/source_notes.txt)
+
+To reproduce the ten-layer, 25-unit GLT-BNN example in S7.4, extract the archive and run the following command from the extracted directory. It fits both outcome regressions and the eligibility model across five folds, then prints the AIPW effect, standard error and confidence limits in 1991 dollars. [Download the data and R code](docs/study/data/causal_401k_replication.zip) · [Browse the replication, including the full Table S6 analysis](tools/replication/401k/)
+
+~~~sh
+Rscript --vanilla example_401k.R
+~~~
 
 ## License
 

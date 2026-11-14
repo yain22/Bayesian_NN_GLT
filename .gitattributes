@@ -1,0 +1,4 @@
+# Preserve the published checksums of the public 401(k) data on every platform.
+docs/study/data/401k_analysis.csv -text whitespace=trailing-space,cr-at-eol
+tools/replication/401k/data/analysis.csv -text whitespace=trailing-space,cr-at-eol
+tools/replication/401k/data/sipp1991.dta binary
