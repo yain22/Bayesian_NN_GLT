@@ -26,7 +26,7 @@ The example builds five eligibility-stratified folds and calls `gltbnn_fit()` fo
 
 ## Reproduce the full comparison
 
-Use R with its recommended package **foreign**. The reported results were computed with R 4.5.1. Python 3 with NumPy is used for independent verification. From the extracted archive directory, run these commands in order.
+Use R with its recommended package **foreign**. The reported results were computed with R 4.5.1. The independent verifier requires Python 3 with NumPy. The last command assumes `python` starts that interpreter. If your installation uses `python3` or `py -3`, substitute that launcher for `python`. From the extracted archive directory, run these commands in order.
 
 ~~~sh
 Rscript --vanilla data/prepare_401k.R data

@@ -14,7 +14,7 @@ Rscript --vanilla report/score.R data/data.rds results summary
 Rscript --vanilla report/export_explorer.R data/data.rds results summary/scores.csv explorer
 ```
 
-The integer following `run_full.R` sets the maximum number of parallel workers. Each worker has its own in-memory data. The same command resumes completed fits. The runner records source hashes and the R version.
+The integer following `run_full.R` sets the maximum number of parallel workers. Each worker has its own in-memory data. On restart, the runner checks the saved protocol and the run ID in each existing initializer and fit file. It stops on a mismatch; otherwise it skips those files and runs the missing jobs.
 
 We fit each method once at each architecture. Depth is two, five or ten hidden layers and width is ten or 25 units per layer. The six methods at a given architecture use the same weights after 600 unpenalized initialization updates and the same 600 subsequent minibatches, covering all 12,000 observations 50 times per phase. All networks have ReLU hidden units and one logit for the probability of pullover. The Bayesian networks average probabilities over 256 variational draws. The unpenalized and penalized networks predict with the final fitted weights, with dropout turned off.
 
