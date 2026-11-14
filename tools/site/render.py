@@ -10,7 +10,7 @@ from latex2mathml.converter import convert
 
 source = Path(__file__).resolve().parent
 src = (source / 'explorer.html.in').read_text(encoding='utf8')
-topics = {'spread':'Weight prior','scales':'Layer &amp; coefficient scales','hierarchy':'Prior hierarchies','tail':'Tail probability','prune':'Pruning'}
+topics = {'spread':'Weight prior','scales':'Layer &amp; coefficient scales','hierarchy':'Prior hierarchies','tail':'Tail probability','prune':'Pruning','output':'Output layer'}
 tabs = []
 for i,(key,title) in enumerate(topics.items()):
     active = 'true' if i == 0 else 'false'
@@ -19,6 +19,20 @@ for i,(key,title) in enumerate(topics.items()):
     tabs.append(f'<button class="tab" type="button" id="tab-{key}" role="tab" aria-selected="{active}" aria-controls="panel-{key}" tabindex="{focus}">{title}</button>')
     src = src.replace(f'@panel {key}@', f'<section class="pane" id="panel-{key}" role="tabpanel" aria-labelledby="tab-{key}" tabindex="0"{hidden}>')
 src = src.replace('@tabs@','\n'.join(tabs))
+readout_laws = []
+for j in range(1, 10):
+    if j == 9:
+        coefficient = 'b_o'
+        explanation = r'The square supplies the constant \(1\). Its coefficient adds \(b_o\) to the predicted mean.'
+    else:
+        coefficient = rf'v_{{{j}}}'
+        activation = rf'h_{{{j}2}}(\mathbf x)'
+        explanation = rf'Unit {j} in layer 2 contributes \({coefficient}\,{activation}\) to the predicted mean.'
+    readout_laws.append(
+        rf'<div data-readout-coordinate="{j}" hidden><p>{explanation}</p>'
+        rf'\[{coefficient}\mid\kappa\sim\mathcal N(0,\kappa^2).\]</div>'
+    )
+src = src.replace('@readout-laws@', '\n'.join(readout_laws))
 buttons = [f'<button class="choice" type="button" data-prior="{p}" aria-pressed="{str(p=="GL").lower()}">{p}-BNN</button>' for p in ('G','GL','GLT')]
 src = src.replace('@priors@','<div class="choice-group" role="group" aria-label="Prior family">'+''.join(buttons)+'</div>')
 scales = {

@@ -10,11 +10,12 @@
     return {tau:.5, xi:1, width, dimension, quantiles};
   }
   const layers = [null, makeLayer(4,4), makeLayer(8,5)];
-  const state = {layer:1, unit:2, j:1, sigma:1, prior:"GL", form:"original", method:"ghosh", chance:95, topic:"spread"};
+  const state = {layer:1, unit:2, j:1, sigma:1, prior:"GL", form:"original", method:"ghosh", chance:95, topic:"spread", outputJ:1, kappa:1};
   const selectedNumbers = all("[data-selection]");
   const selectedFormulas = all("math[data-selection-tex]");
   const layerPassages = all("[data-in-layer]");
   let displayedPair;
+  let lastHiddenTopic = "spread";
   const fmt = v => v >= .01 ? v.toFixed(2) : v.toPrecision(2);
   const sub = n => String(n).replace(/[0-9]/g, ch => "₀₁₂₃₄₅₆₇₈₉"[Number(ch)]);
   const indexed = (letter,k,l,j) => letter + sub(k) + sub(l) + (j === undefined ? "" : "," + sub(j));
@@ -32,6 +33,10 @@
     state.j = state.j === previous.dimension ? layers[l].dimension : Math.min(state.j, layers[l].dimension - 1);
     state.layer = l;
     state.unit = k;
+    if (state.topic === "output") {
+      showTopic(lastHiddenTopic);
+      return;
+    }
     render();
   }
 
@@ -74,7 +79,7 @@
       layer:l, unit:k, pruned, coordinate:externalRule ? undefined : state.j,
       priorSds:externalRule ? [] : layer.quantiles[k-1].map(u => state.sigma * coefficientScale(layer,u))
     };
-    window.drawNetwork(item("network"), active, selectUnit, externalRule ? null : selectCoordinate);
+    window.drawNetwork(item("network"), active, selectUnit, externalRule ? null : selectCoordinate, selectOutput);
     item("selection-name").textContent = "Layer l = " + l + " · Unit k = " + k;
     const vector = item("selected-vector");
     const term = (letter,index,bold=false) => {
@@ -96,6 +101,41 @@
       ? "Grouped-horseshoe pruning example. " + (pruned ? "The dashed node marks the removed unit." : "The selected unit remains connected.")
       : "Layer width K" + sub(l) + " = " + layer.width + ". Incoming dimension d" + sub(l) + " = " + d +
         ", including the bias. Under " + state.prior + ", σ" + indexed("λ",k,l,state.j) + " = " + fmt(sd) + ".";
+  }
+
+  function selectOutput() {
+    if (state.topic !== "output" && state.layer === 2) state.outputJ = state.unit;
+    showTopic("output");
+  }
+
+  function selectOutputCoordinate(j) {
+    state.outputJ = j;
+    render();
+  }
+
+  function outputLayer() {
+    const {outputJ, kappa} = state;
+    const select = item("coordinate");
+    if (displayedPair !== "output") {
+      select.replaceChildren(...Array.from({length:9}, (_,index) => {
+        const j = index + 1;
+        const label = j === 9 ? "Output bias" : "Layer 2 unit " + j;
+        return new Option("j = " + j + " · " + label, String(j));
+      }));
+      displayedPair = "output";
+    }
+    select.value = outputJ;
+    select.disabled = false;
+    window.drawNetwork(item("network"), {output:true, outputJ, kappa}, selectUnit, null, selectOutput, selectOutputCoordinate);
+    item("selection-name").textContent = "Output layer · Affine readout";
+    item("selection-detail").textContent = "Eight weights connect layer 2 to the predicted mean. The ninth coordinate is the output bias.";
+    for (const law of item("output-contribution").children) {
+      law.hidden = Number(law.dataset.readoutCoordinate) !== outputJ;
+    }
+    item("output-scale").value = kappa;
+    item("output-scale-value").value = fmt(kappa);
+    item("output-spread").textContent = "At κ = " + fmt(kappa) + ", each output coefficient has conditional variance " +
+      Number((kappa * kappa).toFixed(4)) + ". Its central 95% prior interval is [−" + fmt(1.96*kappa) + ", " + fmt(1.96*kappa) + "].";
   }
 
   function spread(layer, lambda, sd) {
@@ -192,6 +232,16 @@
   }
 
   function render() {
+    const output = state.topic === "output";
+    item("hidden-weight-title").hidden = output;
+    item("output-weight-title").hidden = !output;
+    item("selected-vector").hidden = output;
+    item("output-vector").hidden = !output;
+    item("unit-path").hidden = output;
+    if (output) {
+      outputLayer();
+      return;
+    }
     selectPriorButtons();
     const layer = layers[state.layer], lambda = coefficientScale(layer,layer.quantiles[state.unit-1][state.j-1]), sd=state.sigma*lambda;
     network(layer,sd);
@@ -204,6 +254,7 @@
 
   function showTopic(topic) {
     state.topic = topic;
+    if (topic !== "output") lastHiddenTopic = topic;
     for (const tab of tabs) {
       const active = tab.id === "tab-"+topic;
       tab.setAttribute("aria-selected",active); tab.tabIndex = active ? 0 : -1;
@@ -223,7 +274,12 @@
     state[attr]=b.dataset[attr]; render();
   }));
   const bind = (id,handler) => item(id).addEventListener("input",e=>{handler(e.target.valueAsNumber);render();});
-  item("coordinate").addEventListener("change", e=>selectCoordinate(Number(e.target.value)));
+  item("coordinate").addEventListener("change", e => {
+    const j = Number(e.target.value);
+    if (state.topic === "output") selectOutputCoordinate(j);
+    else selectCoordinate(j);
+  });
+  bind("output-scale",v=>state.kappa=v);
   bind("spread",v=>state.sigma=v);
   bind("layer-scale",v=>layers[state.layer].tau=v);
   bind("percentile",v=>layers[state.layer].quantiles[state.unit-1][state.j-1]=v/100);

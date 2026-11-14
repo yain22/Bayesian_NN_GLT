@@ -9,7 +9,7 @@
   const color = {
     ink: "#253a40", muted: "#5c6f73", line: "#b8c8c9", outline: "#6d8184",
     blue: "#146b8c", blueFill: "#dff1f6", rust: "#a44822", rustFill: "#f8e9df",
-    white: "#ffffff", ghost: "#81908f"
+    output: "#6e467d", outputFill: "#f0e9f3", white: "#ffffff", ghost: "#81908f"
   };
 
   function el(tag, attrs = {}, text) {
@@ -31,7 +31,10 @@
     .net-unit:hover .net-ring{stroke:${color.outline};stroke-opacity:.55}
     .net-unit:focus-visible .net-ring{stroke:${color.ink};stroke-opacity:1;stroke-width:2.5}
     .net-hit{fill:transparent;stroke:none}
-    .net-blue-arrow,.net-orange-arrow{pointer-events:none}
+    .net-blue-arrow,.net-orange-arrow,.net-output-arrow{pointer-events:none}
+    .net-output-hit{outline:none}
+    .net-output-hit:hover,.net-output-hit:focus-visible{stroke:${color.output};stroke-opacity:.23}
+    .net-legend{font-family:Inter,"Segoe UI",Arial,sans-serif;fill:${color.ink}}
   `;
 
   function axes(width) {
@@ -71,23 +74,25 @@
       fill:color.white,stroke,"stroke-width":1.5,"stroke-linejoin":"round"}));
   }
 
-  function drawEdge(parent, from, to, highlighted, layer, sd, sourceIndex, selectedCoordinate, onCoordinate) {
+  function drawEdge(parent, from, to, highlighted, layer, sd, sourceIndex, selectedCoordinate, onCoordinate, hitGroup) {
     const dx = to.x - from.x, dy = to.y - from.y;
     const length = Math.hypot(dx, dy);
     const ux = dx / length, uy = dy / length;
     const startRadius = from.square ? from.r / Math.max(Math.abs(ux), Math.abs(uy)) : from.r;
     const x1 = from.x + startRadius * ux, y1 = from.y + startRadius * uy;
     const x2 = to.x - to.r * ux, y2 = to.y - to.r * uy;
-    const stroke = highlighted ? (layer === 1 ? color.blue : color.rust) : color.line;
+    const accent = [null,color.blue,color.rust,color.output][layer];
+    const stroke = highlighted ? accent : color.line;
     const line = el("line", {x1, y1, x2, y2, stroke,
       "stroke-width": highlighted ? (selectedCoordinate ? 4 : 1.8) : 1.05,
       "stroke-opacity": highlighted ? (selectedCoordinate ? 1 : .68) : .75,
-      "class": highlighted ? (layer === 1 ? "net-blue-arrow" : "net-orange-arrow") : "net-edge"});
+      "class": highlighted ? [null,"net-blue-arrow","net-orange-arrow","net-output-arrow"][layer] : "net-edge"});
     if (highlighted && layer === 2) line.setAttribute("stroke-dasharray", "5 3");
     parent.append(line);
     if (!highlighted) return;
     if (Number.isFinite(sd) && sd > 0) {
-      const fraction = [0.33,0.41,0.35,0.43,0.36][sourceIndex];
+      const fractions = [0.33,0.41,0.35,0.43,0.36];
+      const fraction = fractions[sourceIndex % fractions.length];
       drawBell(parent,{x:x1,y:y1},{x:x2,y:y2},fraction,sd,stroke);
     }
     const tipX = x1 + (x2 - x1) * .62, tipY = y1 + (y2 - y1) * .62;
@@ -98,10 +103,38 @@
     if (onCoordinate) {
       const hit = el("line", {x1,y1,x2,y2,stroke:"transparent","stroke-width":12,
         "pointer-events":"stroke",cursor:"pointer","data-coordinate-hit":sourceIndex+1});
-      hit.append(el("title", {}, "Select incoming coordinate " + (sourceIndex+1)));
-      hit.addEventListener("click", () => onCoordinate(sourceIndex+1));
-      parent.append(hit);
+      const j = sourceIndex+1;
+      if (layer === 3) {
+        const name = from.square ? `Output bias bₒ = v${subscript(j)}, constant input 1` :
+          `Output weight v${subscript(j)} from hidden unit ${j} in layer 2`;
+        hit.setAttribute("class","net-output-hit");
+        hit.setAttribute("data-net-id",`output-edge-${j}`);
+        hit.setAttribute("data-output-coordinate",j);
+        activate(hit,name,selectedCoordinate,() => onCoordinate(j));
+      } else {
+        hit.append(el("title", {}, "Select incoming coordinate " + j));
+        hit.addEventListener("click", () => onCoordinate(j));
+      }
+      (hitGroup || parent).append(hit);
     }
+  }
+
+  function subscript(n) {
+    return String(n).replace(/\d/g, digit => "₀₁₂₃₄₅₆₇₈₉"[Number(digit)]);
+  }
+
+  function activate(node,name,selected,onSelect) {
+    node.setAttribute("tabindex",0);
+    node.setAttribute("role","button");
+    node.setAttribute("aria-label",name);
+    node.setAttribute("aria-pressed",selected);
+    node.append(el("title",{},name));
+    node.addEventListener("click",onSelect);
+    node.addEventListener("keydown", event => {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      if (!event.repeat) onSelect();
+    });
   }
 
   function unitButton(point, layer, index, selected, removed, onSelect) {
@@ -110,11 +143,11 @@
     const fill = layer === 1 ? color.blueFill : color.rustFill;
     const name = `Layer ${layer}, neuron ${index}${removed ? ", pruned in this example" : ""}`;
     const g = el("g", {
-      class:"net-unit", tabindex:0, role:"button", "aria-label":name,
-      "aria-pressed":selected, "data-net-id":`${layer}-${index}`,
+      class:"net-unit", "data-net-id":`${layer}-${index}`,
       transform:`translate(${x} ${y})`
     });
-    g.append(el("title", {}, name), el("rect", {
+    activate(g,name,selected,() => onSelect(layer,index));
+    g.append(el("rect", {
       x:-22, y:-21, width:44, height:42, rx:8, class:"net-hit"
     }), el("circle", {r:r+4, class:"net-ring"}));
     const shape = el("circle", {r, fill:removed ? color.white : selected ? fill : color.white,
@@ -125,35 +158,61 @@
     g.append(el("text", {x:0, y:0, class:"net-unit-label",
       "font-size":selected ? 13 : 11.5, "font-weight":selected ? 700 : 500,
       fill:removed ? color.muted : selected ? accent : color.ink}, removed ? "×" : index));
-    g.addEventListener("click", () => onSelect(layer,index));
-    g.addEventListener("keydown", event => {
-      if (event.key !== "Enter" && event.key !== " ") return;
-      event.preventDefault();
-      if (!event.repeat) onSelect(layer,index);
-    });
     return g;
   }
 
+  function outputButton(point, selected, onSelect) {
+    const {x,y,r} = point;
+    const node = el("g",{transform:`translate(${x} ${y})`, "data-net-id":"output"});
+    if (onSelect) {
+      node.setAttribute("class","net-unit");
+      activate(node,"Affine output, eight hidden-unit weights and a bias",selected,onSelect);
+      node.append(el("rect",{x:-22,y:-22,width:44,height:44,rx:8,class:"net-hit"}),
+        el("circle",{r:r+4,class:"net-ring"}));
+    }
+    const text = el("text",{x:0,y:0,class:"net-output-label",fill:selected ? color.output : color.ink,
+      "font-size":17,"font-style":"italic"},"f");
+    text.append(el("tspan",{"baseline-shift":"sub","font-size":10},"𝒲"));
+    node.append(el("circle",{r,fill:selected ? color.outputFill : color.white,
+      stroke:selected ? color.output : color.ink,"stroke-width":selected ? 2.4 : 1.4}),text);
+    return node;
+  }
+
+  function outputLegend(guide,width,y,j) {
+    const small = width < 505, font = small ? 10.5 : 12;
+    const start = small ? 7 : width*.12;
+    const second = width*.56;
+    [[start,"Output weights and bias",1.8],[second,j===9 ? "Selected bₒ = v₉" : `Selected v${subscript(j)}`,4]]
+      .forEach(([x,label,strokeWidth]) => {
+        guide.append(el("line",{x1:x,x2:x+16,y1:y-4,y2:y-4,stroke:color.output,
+          "stroke-width":strokeWidth,"stroke-opacity":strokeWidth===4 ? 1 : .68}),
+          el("text",{x:x+21,y,class:"net-legend","font-size":font},label));
+      });
+  }
+
   function render(svg, instance, actualWidth) {
-    const {state, onSelect, onCoordinate} = instance;
+    const {state, onSelect, onCoordinate, onOutput, onOutputCoordinate} = instance;
+    const output = Boolean(state.output);
+    const outputJ = state.outputJ ?? 1;
     const width = Math.round(Math.min(850, Math.max(300, actualWidth || 720)));
     const geom = axes(width);
     const {xs, ys, small} = geom;
     instance.lastWidth = Math.round(actualWidth);
     const focusId = svg.contains(document.activeElement)
       ? document.activeElement.getAttribute("data-net-id") : null;
-    svg.setAttribute("viewBox", `0 0 ${width} ${geom.height}`);
+    svg.setAttribute("viewBox", `0 0 ${width} ${geom.height + (output ? 22 : 0)}`);
     svg.setAttribute("role", "group");
     svg.setAttribute("aria-labelledby", `net-title-${instance.id}`);
     svg.setAttribute("aria-describedby", `net-desc-${instance.id}`);
     svg.style.display = "block";
     svg.style.width = "100%";
     svg.style.height = "auto";
-    const pruned = Boolean(state.pruned);
+    const pruned = !output && Boolean(state.pruned);
     const root = el("g");
     const guide = el("g", {"aria-hidden":"true"});
     const inactive = el("g", {"aria-hidden":"true"});
     const active = el("g", {"aria-hidden":"true"});
+    const outputHits = el("g",{role:"group","aria-label":"Output coefficients"});
     const nodes = el("g");
     const headers = ["Inputs", "ReLU layer 1", "ReLU layer 2", "Output"];
     const countLabel = layer => {
@@ -174,10 +233,12 @@
       const sources = [...points[target-1], biases[target-1]];
       points[target].forEach((p,j) => {
         if (p.removed) return;
-        const highlight = target===state.layer && j+1===state.unit;
+        const highlight = output ? target===3 : target===state.layer && j+1===state.unit;
         sources.forEach((source,i) => {
           if (!source.removed) drawEdge(highlight ? active : inactive, source,p,
-            highlight,target,small ? undefined : state.priorSds?.[i],i,state.coordinate === i+1,onCoordinate);
+            highlight,target,small ? undefined : output ? state.kappa : state.priorSds?.[i],
+            i,(output ? outputJ : state.coordinate) === i+1,output ? onOutputCoordinate : onCoordinate,
+            output ? outputHits : undefined);
         });
       });
     }
@@ -188,12 +249,9 @@
     });
     for (let layer = 1; layer <= 2; layer++) {
       points[layer].forEach((p,j) => nodes.append(unitButton(p,layer,j+1,
-        state.layer===layer && state.unit===j+1, p.removed,onSelect)));
+        !output && state.layer===layer && state.unit===j+1, p.removed,onSelect)));
     }
-    const out = points[3][0];
-    const readout = el("text",{x:out.x,y:out.y,class:"net-output-label",fill:color.ink,"font-size":17,"font-style":"italic"},"f");
-    readout.append(el("tspan",{"baseline-shift":"sub","font-size":10},"𝒲"));
-    nodes.append(el("circle",{cx:out.x,cy:out.y,r:out.r,fill:color.white,stroke:color.ink,"stroke-width":1.4}),readout);
+    nodes.append(outputButton(points[3][0],output,onOutput));
     biases.forEach(({x,y,r}) => {
       const bias = el("g");
       bias.append(el("title",{},"Constant input 1; its arrow carries a bias coefficient."),
@@ -201,18 +259,24 @@
         el("text",{x,y,class:"net-bias-label",fill:color.ink,"font-size":12},"1"));
       nodes.append(bias);
     });
+    if (output) outputLegend(guide,width,geom.height+12,outputJ);
     root.append(guide,inactive,active,nodes);
-    const description = pruned
+    if (output) root.append(outputHits);
+    const description = output
+      ? `All eight weights from layer 2 and the bias enter the affine output. Selected coordinate v${subscript(outputJ)}.`
+      : pruned
       ? `Layer ${state.layer}, neuron ${state.unit} is pruned. Its dashed position has no connections.`
       : `Incoming weights and bias are highlighted for layer ${state.layer}, neuron ${state.unit}.`;
     svg.replaceChildren(el("style",{},styles),
       el("title",{id:`net-title-${instance.id}`},"Interactive two-layer regression network"),
-      el("desc",{id:`net-desc-${instance.id}`}, description+" Choose a hidden neuron using a pointer or Tab and Enter."),
+      el("desc",{id:`net-desc-${instance.id}`}, description+
+        (onOutput ? " Choose a hidden neuron or the output using a pointer or Tab and Enter." :
+          " Choose a hidden neuron using a pointer or Tab and Enter.")),
       root);
     if (focusId) svg.querySelector(`[data-net-id="${focusId}"]`)?.focus({preventScroll:true});
   }
 
-  window.drawNetwork = function drawNetwork(svg, state, onSelect, onCoordinate) {
+  window.drawNetwork = function drawNetwork(svg, state, onSelect, onCoordinate, onOutput, onOutputCoordinate) {
     let instance = instances.get(svg);
     if (!instance) {
       instance = {id:++nextId};
@@ -228,6 +292,8 @@
     instance.state = state;
     instance.onSelect = onSelect;
     instance.onCoordinate = onCoordinate;
+    instance.onOutput = onOutput;
+    instance.onOutputCoordinate = onOutputCoordinate;
     render(svg,instance,Math.round(svg.getBoundingClientRect().width));
   };
 })();
