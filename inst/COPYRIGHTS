@@ -1,0 +1,17 @@
+401(k) survey data
+
+The sipp401k dataset is distributed under the Creative Commons Attribution
+4.0 International license (CC BY 4.0).
+https://creativecommons.org/licenses/by/4.0/
+
+Original survey: U.S. Census Bureau, Survey of Income and Program
+Participation, 1990 panel, wave 4 (1991).
+https://www.census.gov/programs-surveys/sipp/data/datasets/1990-panel/wave-4.html
+
+Source: Achim Ahrens, Victor Chernozhukov, Christian Hansen, Damian Kozbur,
+Mark Schaffer and Thomas Wiemann (2026). Repository for "An Introduction to
+Double/Debiased Machine Learning", version 5. Harvard Dataverse.
+https://doi.org/10.7910/DVN/T81OHQ
+
+The R data frame retains 11 of the 14 variables in the archived Stata file,
+in their original units and household order. The columns have been reordered.

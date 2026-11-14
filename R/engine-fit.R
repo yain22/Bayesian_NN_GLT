@@ -15,8 +15,8 @@
       if (gradient) score <- matrix(phi * residual, ncol = 1L)
     } else {
       log_probs <- .bnn_class_log_probs(forward$logits, outcome)
-      value <- value + .bnn_class_loglik(log_probs, y) / draws
-      if (gradient) score <- .bnn_class_score(log_probs, y, outcome)
+      value <- value + phi * .bnn_class_loglik(log_probs, y) / draws
+      if (gradient) score <- phi * .bnn_class_score(log_probs, y, outcome)
     }
     if (gradient) {
       back <- .bnn_backprop(score, forward, weights)
@@ -160,15 +160,27 @@
                                batches = NULL, milestones = integer(), on_milestone = NULL) {
   started <- proc.time()[["elapsed"]]
   continuous <- outcome == "continuous"
+  if (!is.null(control$batch_size) && is.null(batches)) {
+    # Independent random streams for initialization, the two schedules, and VI.
+    stream <- function(offset) as.integer((as.double(seed) + offset) %% 2147483648)
+    if (is.null(initial_weights)) {
+      warm_batches <- .bnn_batch_schedule(nrow(x), control$batch_size, control$init_steps, stream(1000))
+      initial_weights <- .bnn_initialize(x, y, hidden, seed, control$init_steps, outcome,
+                                         n_classes, batches = warm_batches)
+    }
+    batches <- .bnn_batch_schedule(nrow(x), control$batch_size,
+                                   as.double(control$outer) * control$weight_steps, stream(3000))
+    seed <- stream(4000)
+  }
   batch_fit <- !is.null(batches)
   if (length(milestones) && (!is.function(on_milestone) || !is.numeric(milestones) ||
       any(!is.finite(milestones) | milestones != floor(milestones) |
           milestones < 1L | milestones > control$outer))) stop("Invalid milestone cycles or callback.")
   if (batch_fit) {
-    if (!continuous || !is.list(batches) || length(batches) != control$outer * control$weight_steps ||
+    if (!is.list(batches) || length(batches) != as.double(control$outer) * control$weight_steps ||
         any(!vapply(batches, function(ids) is.numeric(ids) && length(ids) > 0L &&
           all(is.finite(ids) & ids == floor(ids) & ids >= 1L & ids <= nrow(x)), logical(1)))) {
-      stop("A Gaussian minibatch fit requires one nonempty vector of training indices per weight step.")
+      stop("A minibatch fit requires one nonempty vector of training indices per weight step.")
     }
   }
   shape0 <- if (is.null(noise_prior)) 0 else noise_prior[["shape"]]
@@ -207,7 +219,7 @@
                            accepted = 0L, rejected = 0L, backtracks = 0L, direction_fallbacks = 0L,
                            seconds = proc.time()[["elapsed"]] - started))
   components <- if (batch_fit) list() else list(data.frame(outer = 0L, as.list(monitor$components), check.names = FALSE))
-  if (batch_fit) trace[[1L]]$pooled_batch_rmse <- NA_real_
+  if (batch_fit && continuous) trace[[1L]]$pooled_batch_rmse <- NA_real_
   steps <- vector("list", control$outer)
   finish <- function(done) {
     set.seed(as.integer((as.double(seed) + 100000) %% 2147483646 + 1))
@@ -287,7 +299,7 @@
       noise_precision = hidden_precision, accepted = sum(records$accepted), rejected = sum(!records$accepted),
       backtracks = sum(records$backtracks), direction_fallbacks = sum(records$direction_fallback),
       seconds = proc.time()[["elapsed"]] - started)
-    if (batch_fit) trace[[outer + 1L]]$pooled_batch_rmse <- sqrt(sse / nrow(x))
+    if (batch_fit && continuous) trace[[outer + 1L]]$pooled_batch_rmse <- sqrt(sse / nrow(x))
     if (!batch_fit) {
       components[[outer + 1L]] <- data.frame(outer = outer, as.list(next_monitor$components), check.names = FALSE)
     }

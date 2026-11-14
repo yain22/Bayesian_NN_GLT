@@ -152,11 +152,16 @@ print.gltbnn_fit <- function(x, ...) {
                    logsd_bounds = c(-15, 3), max_backtracks = 10L)
   if (!is.list(control) || is.data.frame(control) ||
       (length(control) && (is.null(names(control)) || anyDuplicated(names(control)) ||
-                            !all(names(control) %in% names(defaults))))) {
+                            !all(names(control) %in% c(names(defaults), "batch_size"))))) {
     stop("control must be a list with unique names selected from the fitting controls.",
          call. = FALSE)
   }
   defaults[names(control)] <- control
+  if (is.null(defaults$batch_size)) {
+    defaults$batch_size <- NULL
+  } else {
+    defaults$batch_size <- .gltbnn_integer(defaults$batch_size, "batch_size")
+  }
   for (nm in c("outer", "weight_steps", "init_steps", "max_backtracks")) {
     defaults[[nm]] <- .gltbnn_integer(defaults[[nm]], nm)
   }

@@ -119,6 +119,9 @@ with independent Gaussian weight factors. The entries below are available in
 \describe{
   \item{\code{init_steps}}{Number of deterministic-network optimizer steps
   used to initialize the weight means (default 600).}
+  \item{\code{batch_size}}{Optional positive integer giving the maximum
+  number of training observations in each optimizer step. The default
+  \code{NULL} uses all observations at every step.}
   \item{\code{outer}, \code{weight_steps}}{Number of outer iterations
   (default 60) and weight updates per iteration (default 10).}
   \item{\code{lr}, \code{grad_clip}}{Initial learning rate for each
@@ -138,6 +141,20 @@ with independent Gaussian weight factors. The entries below are available in
   the evidence lower bound (ELBO) recorded during training (default 64) and at
   the independently sampled endpoint (default 256).}
 }
+With \code{batch_size} set, the warm start and variational weight updates
+each use a separate sequence of randomly permuted passes through the training
+rows. Each pass retains its short final batch. For a batch of size \eqn{b}
+from \eqn{n} training observations, the variational update multiplies the
+batch log likelihood and its gradient by \eqn{n/b}. The Gaussian noise update
+estimates the residual sum of squares from all batch rows used in that
+outer cycle. The trace records the pooled batch root mean squared error for
+regression. Full-data ELBO values and their Monte Carlo standard errors are
+available in full-batch mode. In minibatch mode these fields are \code{NA}.
+The fitting seed controls the initial weights. Relative to this seed, the
+warm-start and variational batch schedules use offsets 1,000 and 3,000.
+The variational fit uses offset 4,000. These initial seed offsets wrap modulo
+\eqn{2^{31}}.
+
 With the Jeffreys prior, the objective uses the unnormalized joint density
 with the arbitrary additive constant of the log prior set to zero. Under this
 convention the endpoint value is a diagnostic for the variational fit.

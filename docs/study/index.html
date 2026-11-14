@@ -94,9 +94,15 @@
     </section>
     <section id="causal-inference" class="panel">
       <h2>401(k) eligibility and household assets</h2>
-      <p>Supplement Section S7 compares six network methods for estimating the effect of 401(k) eligibility on net financial assets. All methods use the same five folds to predict eligibility and household assets before computing the augmented inverse probability weighted estimate.</p>
-      <p><a href="data/401k_analysis.csv" download>Download the public analysis data and five fold assignments (CSV)</a>. The sample contains 9,915 households from the 1991 Survey of Income and Program Participation.</p>
-      <p><a href="data/causal_401k_replication.zip">Download the data, R code and Table S6 results</a>. To reproduce the ten-layer, 25-unit GLT-BNN example in Section S7.4, extract the archive and run <code>Rscript --vanilla example_401k.R</code> from its top directory.</p>
+      <p>How much does eligibility for an employer-sponsored 401(k) plan change household net financial assets? The example uses 9,915 households from the 1991 Survey of Income and Program Participation.</p>
+      <p>With gltbnn 0.2.1 installed, run the example directly in R. The package includes the survey data.</p>
+      <pre><code>demo("aipw401k", package = "gltbnn", ask = FALSE)</code></pre>
+      <p>The ten-layer, 25-unit GLT-BNN gives an estimated average effect of $8,080 (standard error $1,135, 95% confidence interval $5,855 to $10,305) in 1991 dollars.</p>
+      <ul>
+        <li><a href="data/example_401k.R" download>Standalone R example from Section S7.4</a></li>
+        <li><a href="data/401k_analysis.csv" download>Public analysis data and fold assignments (CSV)</a></li>
+        <li><a href="data/causal_401k_replication.zip">Full Table S6 replication with the offline package installer</a></li>
+      </ul>
     </section>
   </main>
 </body></html>

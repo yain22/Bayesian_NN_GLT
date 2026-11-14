@@ -23,8 +23,23 @@
   gradient
 }
 
-# Full-batch likelihood warm start shared by all three shrinkage priors.
-.bnn_initialize <- function(x, y, hidden, seed, steps, outcome = "continuous", n_classes = NULL) {
+.bnn_batch_schedule <- function(n, size, steps, seed) {
+  set.seed(seed)
+  groups <- ceiling(seq_len(n) / size)
+  batches <- vector("list", steps)
+  done <- 0L
+  while (done < steps) {
+    epoch <- unname(split(sample.int(n), groups))
+    count <- min(length(epoch), steps - done)
+    batches[done + seq_len(count)] <- epoch[seq_len(count)]
+    done <- done + count
+  }
+  batches
+}
+
+# Likelihood warm start shared by all three shrinkage priors.
+.bnn_initialize <- function(x, y, hidden, seed, steps, outcome = "continuous", n_classes = NULL,
+                            batches = NULL) {
   set.seed(seed)
   inputs <- c(ncol(x), hidden) + 1L
   output_units <- if (outcome == "categorical") n_classes - 1L else 1L
@@ -34,12 +49,22 @@
   })
   first <- second <- lapply(weights, function(w) w * 0)
   for (iteration in seq_len(steps)) {
-    forward <- .bnn_forward(x, weights)
+    if (is.null(batches)) {
+      batch_x <- x
+      batch_y <- y
+    } else {
+      ids <- batches[[iteration]]
+      batch_x <- x[ids, , drop = FALSE]
+      batch_y <- y[ids]
+    }
+    forward <- .bnn_forward(batch_x, weights)
     if (outcome == "continuous") {
-      back <- matrix((forward$y - y) / length(y), ncol = 1L)
+      back <- matrix((forward$y - batch_y) / length(batch_y), ncol = 1L)
+    } else if (outcome == "binary" && !is.null(batches)) {
+      back <- (stats::plogis(forward$logits) - (batch_y - 1L)) / length(batch_y)
     } else {
       log_probs <- .bnn_class_log_probs(forward$logits, outcome)
-      back <- -.bnn_class_score(log_probs, y, outcome) / length(y)
+      back <- -.bnn_class_score(log_probs, batch_y, outcome) / length(batch_y)
     }
     gradient <- .bnn_backprop(back, forward, weights)
     for (l in seq_along(weights)) {

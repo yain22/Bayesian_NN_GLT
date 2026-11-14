@@ -4,13 +4,19 @@ This supplement replication estimates the average effect of eligibility for a 40
 
 ## Run the GLT example in Supplement Section S7.4
 
-From the extracted replication directory, run
+The standalone script uses the public functions and survey data in **gltbnn 0.2.1**. With that package installed, run the script from any working directory.
 
 ~~~sh
 Rscript --vanilla example_401k.R
 ~~~
 
-The example reads the included household data and five fold assignments. For each held-out fold it fits separate GLT networks for the two outcome regressions and the eligibility probability, using ten hidden layers of 25 units. It prints the AIPW estimate, standard error and 95% confidence limits in 1991 dollars. Rounded to the nearest dollar, these are 8,080, 1,135, 5,855 and 10,305, respectively.
+The downloadable replication archive includes the R source package for offline installation. From the extracted archive directory, run the following once in R if the package is needed.
+
+~~~r
+install.packages("gltbnn_0.2.1.tar.gz", repos = NULL, type = "source")
+~~~
+
+The example builds five eligibility-stratified folds and calls `gltbnn_fit()` for two outcome regressions and one eligibility model in each fold. Each GLT network has ten hidden layers of 25 units. The script averages the household AIPW scores and prints the effect ($8,080), standard error ($1,135), and 95% confidence interval ($5,855 to $10,305), in 1991 dollars.
 
 ## Reproduce the full comparison
 

@@ -81,14 +81,20 @@ To reproduce one comparison, run the [C2 replication script](tools/replication/c
 
 ## Causal inference
 
-Supplement Section S7 estimates the average effect of 401(k) eligibility on net financial assets using 9,915 households from the 1991 Survey of Income and Program Participation. The public analysis file includes the nine adjustment variables and the five fold assignments used for every fit. [Analysis data (CSV)](tools/replication/401k/data/analysis.csv) · [Original data (Stata)](tools/replication/401k/data/sipp1991.dta) · [Data provenance](tools/replication/401k/data/source_notes.txt)
+How much does eligibility for an employer-sponsored 401(k) plan change household net financial assets? This example uses 9,915 households from the 1991 Survey of Income and Program Participation.
 
-To reproduce the ten-layer, 25-unit GLT-BNN example in S7.4, extract the archive and run the following command from the extracted directory. It fits both outcome regressions and the eligibility model across five folds, then prints the AIPW effect, standard error and confidence limits in 1991 dollars. [Download the data and R code](docs/study/data/causal_401k_replication.zip) · [Browse the replication, including the full Table S6 analysis](tools/replication/401k/)
+**Run the example in R.** Install gltbnn 0.2.1 using the [installation instructions](#installation), then run the command below. The package includes the data. The demo prints the R code as it fits two asset regressions and an eligibility model in each of five folds, then combines the predictions to estimate the average effect.
 
-~~~sh
-Rscript --vanilla example_401k.R
+~~~r
+demo("aipw401k", package = "gltbnn", ask = FALSE)
 ~~~
+
+**Expected result.** With ten hidden layers of 25 units, the estimated average effect of eligibility on net financial assets is **$8,080** (standard error **$1,135**, 95% confidence interval **$5,855 to $10,305**), in 1991 dollars.
+
+- [Read the standalone R example from S7.4](demo/aipw401k.R) to see the `gltbnn_fit()`, `predict()` and AIPW calculations.
+- [Download the analysis CSV](tools/replication/401k/data/analysis.csv) for the nine adjustment variables and fold assignments, or get the [original Stata file](tools/replication/401k/data/sipp1991.dta) and [data source notes](tools/replication/401k/data/source_notes.txt).
+- [Download the complete Table S6 replication](docs/study/data/causal_401k_replication.zip) for all six methods, their results and an offline package installer.
 
 ## License
 
-The package is available under the [MIT license](LICENSE.md).
+The package code is available under the [MIT license](LICENSE.md). The bundled public 401(k) data are distributed under [CC BY 4.0](inst/COPYRIGHTS).
