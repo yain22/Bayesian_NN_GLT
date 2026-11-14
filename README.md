@@ -79,6 +79,10 @@ Select the signal design, training signal-to-noise ratio, depth and width to com
 
 To reproduce one comparison, run the [C2 replication script](tools/replication/c2-additive.R) with the package installed. It generates the data, fits all six methods from a common initialization, and reports held-out errors and 90% interval coverage. With `jsonlite` installed, pass `--write-neuron-scales` from the repository root to regenerate the fitted-neuron panel’s individual weight and bias scales.
 
+## Causal inference
+
+Supplement Section S7 estimates the effect of 401(k) eligibility on net financial assets for 9,915 households. The six network methods fit the two outcome regressions and the eligibility propensity score on five shared folds. The replication archive includes the data preparation, fitting and scoring code, effect estimates with confidence intervals, and held-out nuisance diagnostics. [Download the 401(k) replication archive](docs/study/data/causal_401k_replication.zip)
+
 ## License
 
 The package is available under the [MIT license](LICENSE.md).
