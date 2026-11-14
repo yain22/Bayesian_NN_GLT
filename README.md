@@ -113,15 +113,15 @@ demo("aipw401k", package = "gltbnn", ask = FALSE)
 
 **Expected result.** With ten hidden layers of 25 units, the cross-fitted, adjusted difference in net financial assets between eligible and ineligible households is **$8,080** (standard error **$1,135**, 95% confidence interval **$5,855 to $10,305**), in 1991 dollars.
 
-![Six adjusted differences in net financial assets, with 95% confidence intervals. The highlighted GLT-BNN estimate is $8,080 ($5,855 to $10,305).](docs/study/data/eligibility-401k.png)
+![Six adjusted differences in net financial assets from Table 11, with 95% confidence intervals. The highlighted GLT-BNN estimate is $8,080 ($5,855 to $10,305).](docs/study/data/eligibility-401k.png)
 
-*Eligible minus ineligible households, in 1991 dollars. All six methods use the same five folds and ten hidden layers of 25 units (Supplement Table S6, last row). Lines are pointwise 95% confidence intervals.* [Estimates (CSV)](tools/replication/401k/reference/aipw_estimates.csv) · [Plotting script](tools/replication/401k/plot_401k.py)
+*Eligible minus ineligible households, in 1991 dollars. All six methods use the same five folds and ten hidden layers of 25 units (Table 11 in Section 6.5, last row). Lines are pointwise 95% confidence intervals.* [Estimates (CSV)](tools/replication/401k/reference/aipw_estimates.csv) · [Plotting script](tools/replication/401k/plot_401k.py)
 
 A total-effect interpretation requires the adjustment assumptions in Supplement S7.1. In particular, the analysis uses current individual retirement account (IRA) participation as a covariate. If eligibility changed whether a household held IRA assets, adjusting for IRA participation could remove part of the effect.
 
-- [Read the standalone R example from S7.4](demo/aipw401k.R) to see the `gltbnn_fit()`, `predict()` and AIPW calculations.
+- [Read the standalone R example from S7.3](demo/aipw401k.R) to see the `gltbnn_fit()`, `predict()` and AIPW calculations.
 - [Download the analysis CSV](tools/replication/401k/data/analysis.csv) for the nine adjustment variables and fold assignments, or get the [original Stata file](tools/replication/401k/data/sipp1991.dta) and [data source notes](tools/replication/401k/data/source_notes.txt).
-- [Download the complete Table S6 replication](docs/study/data/causal_401k_replication.zip) for all six methods, their results and an offline package installer.
+- [Download the complete Table 11 replication](docs/study/data/causal_401k_replication.zip) for all six methods, their results and an offline package installer.
 
 ## License
 

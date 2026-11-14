@@ -1,4 +1,4 @@
-"""Plot the worked architecture in Table S6. Input: the replication estimates CSV.
+"""Plot the worked architecture in Table 11 of Section 6.5. Input: the replication estimates CSV.
 
 Usage: python plot_401k.py aipw_estimates.csv eligibility-401k.png
 Requires matplotlib. No household data are needed.
