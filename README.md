@@ -89,7 +89,7 @@ To reproduce one comparison, run the [C2 replication script](tools/replication/c
 
 **Can a network recognize all ten digits?** Section 6.3 trains six methods on **60,000 images** and evaluates them on **10,000 test images**. Across the 36 fits, GLT with two hidden layers of 25 units correctly classified **9,628 digits (96.28%)**. GL with five 25-unit layers gave the lowest mean log loss (0.125).
 
-[Table 9 scores](tools/replication/mnist/summary/scores.csv) · [Full replication in R and saved fits](tools/replication/mnist/) · [Try the small R demo (1,000 training and 300 test images)](docs/classification/mnist.R)
+[Table 9 scores](tools/replication/mnist/summary/scores.csv) · [Rescore the 36 saved fits](tools/replication/mnist/#rescore-the-36-saved-fits) · [Train all 36 networks from scratch](tools/replication/mnist/#train-all-36-networks-from-scratch) · [Try the small R demo (1,000 training and 300 test images)](docs/classification/mnist.R)
 
 ### Fashion-MNIST T-shirts and pullovers
 
@@ -111,7 +111,7 @@ How do net financial assets differ between households with and without access to
 demo("aipw401k", package = "gltbnn", ask = FALSE)
 ~~~
 
-**Expected result.** With ten hidden layers of 25 units, the cross-fitted, adjusted difference in net financial assets between eligible and ineligible households is **$8,080** (standard error **$1,135**, 95% confidence interval **$5,855 to $10,305**), in 1991 dollars.
+**Expected result.** GLT-BNN with ten hidden layers of 25 units gives a cross-fitted, adjusted difference in net financial assets of **$8,080** between eligible and ineligible households (standard error **$1,135**, 95% confidence interval **$5,855 to $10,305**), in 1991 dollars.
 
 ![Six adjusted differences in net financial assets from Table 11, with 95% confidence intervals. The highlighted GLT-BNN estimate is $8,080 ($5,855 to $10,305).](docs/study/data/eligibility-401k.png)
 

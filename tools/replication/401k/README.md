@@ -4,16 +4,22 @@ This analysis reproduces Table 11 in Section 6.5 of the main paper. It estimates
 
 ## Run the GLT example in Supplement Section S7.3
 
-The standalone script uses the public functions and survey data in **gltbnn 0.2.1**. With that package installed, run the script from any working directory.
+The standalone script uses the public functions and survey data in **gltbnn 0.2.1**. Extract `causal_401k_replication.zip`. Its top-level folder contains both `example_401k.R` and the offline installer, `gltbnn_0.2.1.tar.gz`. If the package is needed, start R in that folder and run:
+
+~~~r
+install.packages("gltbnn_0.2.1.tar.gz", repos = NULL, type = "source")
+~~~
+
+With the package installed, run the following shell command from the folder containing `example_401k.R`:
 
 ~~~sh
 Rscript --vanilla example_401k.R
 ~~~
 
-The downloadable replication archive includes the R source package for offline installation. From the extracted archive directory, run the following once in R if the package is needed.
+To run the installed demo from any working directory, use this command in R:
 
 ~~~r
-install.packages("gltbnn_0.2.1.tar.gz", repos = NULL, type = "source")
+demo("aipw401k", package = "gltbnn", ask = FALSE)
 ~~~
 
 The example builds five eligibility-stratified folds and calls `gltbnn_fit()` for two outcome regressions and one eligibility model in each fold. Each GLT network has ten hidden layers of 25 units. The script averages the household AIPW scores and prints the adjusted difference ($8,080), standard error ($1,135), and 95% confidence interval ($5,855 to $10,305), in 1991 dollars.
