@@ -69,7 +69,7 @@ For neuron $k$ in layer $l$, the vector $\mathbf{w}_{kl}$ contains its $d_l=K_{l
 | `"GL"` | Independent standard half-Cauchy multipliers $r_{kl,j}$ give $\lambda_{kl,j}=\tau_l r_{kl,j}$. |
 | `"GLT"` | The coefficient scales follow a generalized Pareto distribution conditional on the layer scale $\tau_l$ and learned tail shape $\xi_l$. |
 
-G and GL use a half-Cauchy layer scale with scale parameter $1/M_l$. For GLT, $\tau_l\mid\xi_l$ has an inverse-gamma prior with shape $1+M_l/\xi_l$ and scale 1.
+G and GL learn the layer scale $\tau_l$ under a half-Cauchy prior with fixed scale parameter $1/M_l$. For GLT, $\tau_l\mid\xi_l$ has an inverse-gamma prior with shape $1+M_l/\xi_l$ and scale 1.
 
 Trace incoming connections in the architecture illustration, or compare mean-response and future-observation intervals from three fitted networks. [Architecture illustration](https://yain22.github.io/Bayesian_NN_GLT/illustration/) · [Prediction illustration](https://yain22.github.io/Bayesian_NN_GLT/prediction/)
 

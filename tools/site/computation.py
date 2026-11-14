@@ -34,11 +34,12 @@ def model_section(prior, title, explanation, formulas, interpretation):
 sections = [
     model_section(
         "G", "One scale per hidden layer",
-        "The layer scale has a half-Cauchy prior with scale parameter 1/<i>M</i>, "
-        "where <i>M</i> counts the weights and biases in that layer. The update for the squared "
-        "layer scale combines the expected squares of all <i>M</i> coefficients. "
+        "The layer size fixes the half-Cauchy prior scale at 1/<i>M</i><sub>l</sub>, where "
+        "<i>M</i><sub>l</sub> counts the hidden weights and biases in layer <i>l</i>. "
+        "The fitted layer scale is random. Its squared-scale update uses the expected square of every coefficient. "
         "Their next weight updates use the same scale precision.",
-        [r"\lambda_{kl,j}=\tau_l,\qquad P_{kl,j}=\mathbb{E}_q(\tau_l^{-2})."],
+        [r"\lambda_{kl,j}=\tau_l,\qquad P_{kl,j}=\mathbb{E}_q(\tau_l^{-2}).",
+         r"\chi_{\tau,l}\sim\operatorname{IG}(1/2,M_l^2),\qquad \tau_l^2\mid\chi_{\tau,l}\sim\operatorname{IG}(1/2,1/\chi_{\tau,l})."],
         "The example returns one row per layer. <code>geometric_layer_scale</code> is the "
         "geometric mean of the fitted layer scale, and <code>scale_precision</code> is its "
         "expected inverse square.",
@@ -47,10 +48,13 @@ sections = [
         "GL", "One local multiplier per coefficient",
         "Each hidden weight and bias has its own half-Cauchy multiplier. A fitting cycle "
         "updates each squared multiplier and its auxiliary from that coefficient’s expected square, "
-        "then updates the shared layer scale and its auxiliary. The variational factors for "
-        "the layer scale and each multiplier are independent.",
+        "then updates the shared layer scale and its auxiliary. The layer scale and individual multipliers "
+        "have independent variational factors. Their products share the same fitted layer scale, so the "
+        "derived coefficient scales in a layer can be dependent under <i>q</i>. The fitted weights and "
+        "biases have independent Gaussian factors.",
         [r"\lambda_{kl,j}=\tau_l r_{kl,j},\qquad r_{kl,j}\sim C^+(0,1).",
-         r"P_{kl,j}=\mathbb{E}_q(\tau_l^{-2})\,\mathbb{E}_q(r_{kl,j}^{-2})."],
+         r"P_{kl,j}=\mathbb{E}_q(\tau_l^{-2})\,\mathbb{E}_q(r_{kl,j}^{-2}).",
+         r"\chi_{r,kl,j}\sim\operatorname{IG}(1/2,1),\qquad r_{kl,j}^2\mid\chi_{r,kl,j}\sim\operatorname{IG}(1/2,1/\chi_{r,kl,j})."],
         "For the first hidden unit the example displays the girth weight, height weight and bias "
         "in that order. Each has its own scale precision. <code>geometric_prior_sd</code> "
         "is the geometric mean of its conditional prior standard deviation on the standardized scale.",
@@ -58,7 +62,9 @@ sections = [
     model_section(
         "GLT", "A learned tail shape in each layer",
         "Each scalar coefficient scale follows a generalized Pareto law given the layer scale "
-        "and tail shape. A fitting cycle updates the individual scales, the layer scale, the "
+        "and tail shape. In the fitted approximation each coefficient scale has its own independent "
+        "variational factor, separate from the layer-scale and tail-shape factors. "
+        "A fitting cycle updates the individual scales, the layer scale, the "
         "coefficient auxiliaries and finally the tail shape. One-dimensional quadrature supplies "
         "the local-scale and tail-shape moments.",
         [r"\lambda_{kl,j}\mid\tau_l,\xi_l\sim\operatorname{GPD}(\tau_l,\xi_l),",
@@ -100,6 +106,7 @@ page = """<!doctype html>
   <p>With Gaussian outcomes, each hidden weight or bias has conditional variance σ²λ². In a fitting cycle, the Gaussian weight factors supply an expected square for each coefficient. After updating the observation variance and output scale, the algorithm updates the hidden scales. Their expected inverse squares, denoted by <i>P</i> below, multiply the fitted noise precision in the next weight update.</p>
   <p>These examples use the package defaults of 600 initialization steps, 60 fitting cycles and the Jeffreys prior on the standardized observation variance. Each fits the model on the training trees and predicts mean volume in cubic feet for the held-out trees. <a href="../#install">Install gltbnn</a> to run the scripts.</p>
   <p>In the supplement, Section S1 derives the shared variational updates. Section S2 gives the G-BNN algorithm, S3 the GL-BNN algorithm and S4 the GLT-BNN algorithm.</p>
+  <p>The half-Cauchy expansions below use random auxiliaries χ<sub>τ,l</sub> for the layer and χ<sub>r,kl,j</sub> for the GL coefficient. In a fitted layer’s R state, <code>$aux</code> stores the G or GL layer auxiliary factor and <code>$nu</code> stores the GL coefficient auxiliary factors. Under GLT, <code>$nu</code> stores the generalized Pareto mixing factors. Within an inverse-gamma factor, <code>a</code> is its shape parameter.</p>
 </header>
 """ + "\n".join(sections) + """
 <section id="checks" class="section-grid" aria-labelledby="checks-title">

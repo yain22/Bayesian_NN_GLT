@@ -5,7 +5,7 @@
   <title>Bayesian neural network shrinkage · gltbnn</title>
   <meta name="description" content="Explore coefficient shrinkage and the output layers for continuous, binary and unordered categorical responses in a Bayesian neural network.">
   <link rel="icon" href="../assets/mark.svg"><link rel="stylesheet" href="style.css?v=outcomes">
-  <script defer src="network.js?v=readout"></script><script defer src="plots.js"></script><script defer src="hierarchy.js"></script><script defer src="classification-network.js"></script><script defer src="outcomes.js"></script><script defer src="app.js?v=outcomes"></script>
+  <script defer src="network.js?v=readout"></script><script defer src="plots.js"></script><script defer src="hierarchy.js?v=chi"></script><script defer src="classification-network.js"></script><script defer src="outcomes.js"></script><script defer src="app.js?v=outcomes"></script>
 </head>
 <body><a class="skip-link" href="#topics">Skip to the mathematical explorer</a><div class="shell">
 <header class="masthead"><a href="../" class="brand"><img class="brandmark" src="../assets/mark.svg" alt=""><span>gltbnn</span></a>
@@ -14,7 +14,7 @@
 <p>Select a hidden unit \(k\) in layer \(l\), then click an incoming edge to explore coordinate \(j\) of \(\mathbf w_{kl}\). Under GL and GLT each hidden coefficient has its own scale \(\lambda_{kl,j}\). G shares one scale across the layer. Select the output to follow the final eight activations into the prediction.</p></header>
 <nav class="tabbar" id="topics" aria-label="Mathematical explorer" role="tablist">
 @tabs@
-</nav><noscript><p>The conditional standard deviation of coordinate \(j\) is \(\sigma\lambda_{kl,j}\). G uses a shared layer scale. GL and GLT draw a separate scale for each coefficient, including the bias. Enable JavaScript to select an edge and explore the three priors.</p></noscript>
+</nav><noscript><p>The conditional standard deviation of coordinate \(j\) is \(\sigma\lambda_{kl,j}\). G shares one scale across the layer. GL multiplies that shared scale by a separate multiplier for each coefficient, including the bias. GLT draws a coefficient scale given the layer scale and tail shape. Enable JavaScript to select an edge and explore the three priors.</p></noscript>
 <div class="lab-grid" id="explorer"><section id="regression-network-panel" class="network-panel" aria-labelledby="network-title">
 <span class="section-label">Network architecture</span><div class="panel-top"><h2 id="network-title"><span id="hidden-weight-title">The incoming weight vector \(\mathbf w_{[[kl]]}\)</span><span id="output-weight-title" hidden>The output weight vector \(\mathbf v\)</span></h2></div>
 <div class="network-wrap"><svg id="network" aria-label="Selectable regression network with two hidden layers"></svg></div>

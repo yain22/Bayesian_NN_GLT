@@ -46,14 +46,14 @@ def choice(prior, body, form=None):
     return f'<div {attr} hidden>{body}</div>'
 
 src = src.replace('@scalelaws@',''.join(choice(p,s) for p,s in scales.items()))
-layer = r'\[\tau_{[[l]]}\sim C^+(0,a_{[[l]]}),\quad a_{[[l]]}=1/M_{[[l]]}=1/[[m]].\]'
-base = r'\[t_{[[l]]}=\tau_{[[l]]}^2,\quad a_{[[l]]}=1/[[m]],\]\[a_{\tau,[[l]]}\sim\operatorname{IG}(1/2,a_{[[l]]}^{-2}),\]\[t_{[[l]]}\mid a_{\tau,[[l]]}\sim\operatorname{IG}(1/2,1/a_{\tau,[[l]]}).\]'
+layer = r'\[\tau_{[[l]]}\sim C^+(0,1/M_{[[l]]}),\quad M_{[[l]]}=[[m]].\] The layer size fixes the prior scale at \(1/[[m]]\).'
+base = r'\[t_{[[l]]}=\tau_{[[l]]}^2,\quad M_{[[l]]}=[[m]],\]\[\chi_{\tau,[[l]]}\sim\operatorname{IG}(1/2,M_{[[l]]}^2),\]\[t_{[[l]]}\mid\chi_{\tau,[[l]]}\sim\operatorname{IG}(1/2,1/\chi_{\tau,[[l]]}).\] '
 tail = r'\[\log\xi_{[[l]]}\sim\mathcal N(0,1)\big|_{(-\log 2,\infty)},\]\[\tau_{[[l]]}\mid\xi_{[[l]]}\sim\operatorname{IG}(1+[[m]]/\xi_{[[l]]},1).\]'
 laws = {
     ('G','original'): layer + r'\[\lambda_{[[kl]],[[j]]}=\tau_{[[l]]}.\] All [[m]] hidden coefficients in this layer share this scale.',
-    ('G','expanded'): base + r'Integrating over \(a_{\tau,[[l]]}\) recovers the half-Cauchy law for \(\sqrt{t_{[[l]]}}\).',
+    ('G','expanded'): base + r'Integrating over the random auxiliary \(\chi_{\tau,[[l]]}\) recovers the half-Cauchy law for \(\sqrt{t_{[[l]]}}\).',
     ('GL','original'): layer + r'\[r_{[[kl]],[[j]]}\sim C^+(0,1),\quad\lambda_{[[kl]],[[j]]}=\tau_{[[l]]}r_{[[kl]],[[j]]}.\] Each coefficient draws an independent multiplier, independently of the layer scale.',
-    ('GL','expanded'): base + r'\[t_{r,[[kl]],[[j]]}=r_{[[kl]],[[j]]}^2,\quad a_{r,[[kl]],[[j]]}\sim\operatorname{IG}(1/2,1),\]\[t_{r,[[kl]],[[j]]}\mid a_{r,[[kl]],[[j]]}\sim\operatorname{IG}(1/2,1/a_{r,[[kl]],[[j]]}).\] Integrating out the auxiliary variables recovers the half-Cauchy scales.',
+    ('GL','expanded'): base + r'\[t_{r,[[kl]],[[j]]}=r_{[[kl]],[[j]]}^2,\quad\chi_{r,[[kl]],[[j]]}\sim\operatorname{IG}(1/2,1),\]\[t_{r,[[kl]],[[j]]}\mid\chi_{r,[[kl]],[[j]]}\sim\operatorname{IG}(1/2,1/\chi_{r,[[kl]],[[j]]}).\] Integrating out the random layer and coefficient auxiliaries recovers the half-Cauchy scales.',
     ('GLT','original'): tail + r'\[\lambda_{[[kl]],[[j]]}\mid\tau_{[[l]]},\xi_{[[l]]}\sim\operatorname{GPD}(\tau_{[[l]]},\xi_{[[l]]}).\] Given the layer parameters, its [[m]] scalar local scales are independent.',
     ('GLT','expanded'): tail + r'\[\nu_{[[kl]],[[j]]}\mid\xi_{[[l]]}\sim\operatorname{IG}(1/\xi_{[[l]]},1/\xi_{[[l]]}),\]\[\lambda_{[[kl]],[[j]]}\mid\tau_{[[l]]},\nu_{[[kl]],[[j]]}\sim\operatorname{Exp}(\tau_{[[l]]}\nu_{[[kl]],[[j]]}).\] The exponential has mean \(\tau_{[[l]]}\nu_{[[kl]],[[j]]}\). Integrating out the inverse-gamma mixing variable gives the generalized Pareto law.'
 }
