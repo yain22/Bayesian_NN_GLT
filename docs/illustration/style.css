@@ -268,6 +268,19 @@ svg.chart { padding: 5px 3px 0; }
   background: #dce5df;
 }
 .scale-fill { display: block; height: 100%; border-radius: inherit; background: var(--blue); }
+.class-logit {
+  display:flex; justify-content:space-between; gap:1rem; padding-block:.4rem;
+  border-bottom:1px solid var(--line); color:var(--ink);
+}
+.class-logit strong, .class-prob-row {font-variant-numeric:tabular-nums;}
+.class-prob-row {
+  display:grid; grid-template-columns:4.5em 1fr 4.8em; align-items:center;
+  gap:.55rem; min-height:26px; color:var(--muted); font-size:.88rem;
+}
+.class-prob-row > :last-child {text-align:right;}
+.class-prob-row .scale-fill {background:#87a8ae;}
+.class-prob-row.inspected-class {font-weight:650; color:var(--ink);}
+.class-prob-row.inspected-class .scale-fill {background:var(--blue);}
 .scale-value { text-align: right; }
 .metric-list {
   display: grid;

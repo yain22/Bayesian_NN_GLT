@@ -10,7 +10,7 @@ from latex2mathml.converter import convert
 
 source = Path(__file__).resolve().parent
 src = (source / 'explorer.html.in').read_text(encoding='utf8')
-topics = {'spread':'Weight prior','scales':'Layer &amp; coefficient scales','hierarchy':'Prior hierarchies','tail':'Tail probability','prune':'Pruning','output':'Output layer'}
+topics = {'spread':'Weight prior','scales':'Layer &amp; coefficient scales','hierarchy':'Prior hierarchies','tail':'Tail probability','prune':'Pruning','output':'Output layer','extensions':'Outcome extensions'}
 tabs = []
 for i,(key,title) in enumerate(topics.items()):
     active = 'true' if i == 0 else 'false'
@@ -94,7 +94,7 @@ for j in [1, 2, 3, 4, None]:
     leaves.append(f'<li class="coordinate-leaf" data-coordinate="{j or "bias"}"{layer_attr}><span class="coordinate-source">{origin}</span>'
                   f'<span class="coordinate-law">{normal}</span></li>')
 src = src.replace('@selected-leaves@', ''.join(leaves))
-initial = {'k':'2', 'l':'1', 'kl':'21', 'prev':'0', 'width':'4', 'd':'4', 'inputs':'3', 'j':'1', 'm':'16'}
+initial = {'k':'2', 'l':'1', 'kl':'21', 'prev':'0', 'width':'4', 'd':'4', 'inputs':'3', 'j':'1', 'm':'16', 'head':'1', 'edge':'1'}
 slot = re.compile(r'\[\[(\w+)\]\]')
 
 def number_element(tag, key):

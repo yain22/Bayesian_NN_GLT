@@ -11,8 +11,8 @@
   }
   const layers = [null, makeLayer(4,4), makeLayer(8,5)];
   const state = {layer:1, unit:2, j:1, sigma:1, prior:"GL", form:"original", method:"ghosh", chance:95, topic:"spread", outputJ:1, kappa:1};
-  const selectedNumbers = all("[data-selection]");
-  const selectedFormulas = all("math[data-selection-tex]");
+  const selectedNumbers = all("[data-selection]").filter(n => !n.closest("#class-network-panel"));
+  const selectedFormulas = all("math[data-selection-tex]").filter(n => !n.closest("#class-network-panel"));
   const layerPassages = all("[data-in-layer]");
   let displayedPair;
   let lastHiddenTopic = "spread";
@@ -232,6 +232,13 @@
   }
 
   function render() {
+    const extensions = state.topic === "extensions";
+    item("regression-network-panel").hidden = extensions;
+    item("class-network-panel").hidden = !extensions;
+    if (extensions) {
+      window.renderOutcomeExplorer();
+      return;
+    }
     const output = state.topic === "output";
     item("hidden-weight-title").hidden = output;
     item("output-weight-title").hidden = !output;
@@ -254,7 +261,7 @@
 
   function showTopic(topic) {
     state.topic = topic;
-    if (topic !== "output") lastHiddenTopic = topic;
+    if (topic !== "output" && topic !== "extensions") lastHiddenTopic = topic;
     for (const tab of tabs) {
       const active = tab.id === "tab-"+topic;
       tab.setAttribute("aria-selected",active); tab.tabIndex = active ? 0 : -1;
