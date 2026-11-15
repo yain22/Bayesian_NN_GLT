@@ -337,7 +337,7 @@
           "code": "control = list(outer = 60L, weight_steps = 10L, init_steps = 600L,\n               lr = 0.003, grad_clip = 10, max_backtracks = 10L,\n               logsd_bounds = c(-15, 3), weight_draws = 4L,\n               noise_draws = 16L, monitor_draws = 64L, endpoint_draws = 256L)"
         },
         {
-          "text": "weight_draws controls each stochastic gradient. noise_draws controls the residual expectation for the noise update. monitor_draws sets the full-batch ELBO bank. endpoint_draws sets the independent endpoint bank. The four draw counts must be even integers of at least two. The step-size cap lr, gradient-norm cap grad_clip, backtracking limit and bounds on log standard deviations affect the weight optimizer."
+          "text": "weight_draws controls each stochastic gradient. noise_draws controls the residual expectation for the noise update. monitor_draws sets the full-batch ELBO bank. endpoint_draws sets the independent endpoint bank. All four draw counts must be even integers of at least two. With just two monitoring or endpoint draws, R returns an ELBO estimate but reports NA for the corresponding Monte Carlo standard error. Its calculation needs at least two antithetic pairs (four draws). The step-size cap lr, gradient-norm cap grad_clip, backtracking limit and bounds on log standard deviations affect the weight optimizer."
         },
         {
           "detail": "Model settings, minibatches and prediction draws",
