@@ -105,6 +105,10 @@ page = """<!doctype html>
   <p>Each example predicts timber volume from trunk girth and height in the R <code>trees</code> dataset. Every fifth tree is held out. All three fits use the same two hidden layers, starting weights and training split, so you can inspect how changing the prior affects shrinkage.</p>
   <p>With Gaussian outcomes, each hidden weight or bias has conditional variance σ²λ². In a fitting cycle, the Gaussian weight factors supply an expected square for each coefficient. After updating the observation variance and output scale, the algorithm updates the hidden scales. Their expected inverse squares, denoted by <i>P</i> below, multiply the fitted noise precision in the next weight update.</p>
   <p>These examples use the package defaults of 600 initialization steps, 60 fitting cycles and the Jeffreys prior on the standardized observation variance. Each fits the model on the training trees and predicts mean volume in cubic feet for the held-out trees. <a href="../#install">Install gltbnn</a> to run the scripts.</p>
+  <p>To fit a GLT network for 180 cycles, supply the predictor matrix <code>x</code> and response <code>y</code>, and set the cycle budget in <code>control</code>.</p>
+  <pre><code>gltbnn_fit(x, y, prior = "GLT",
+           control = list(outer = 180L, weight_steps = 10L))</code></pre>
+  <p>Increasing <code>outer</code> extends the run while keeping ten successive weight-update attempts per cycle. The variance and shrinkage factors are still updated once per cycle.</p>
   <p>In the supplement, Section S1 derives the shared variational updates. Section S2 gives the G-BNN algorithm, S3 the GL-BNN algorithm and S4 the GLT-BNN algorithm.</p>
   <p>These half-Cauchy expansions use random auxiliaries χ<sub>τ,l</sub> for the layer and χ<sub>r,kl,j</sub> for the GL coefficient. In a fitted layer’s R state, <code>$aux</code> stores the G or GL layer auxiliary factor and <code>$nu</code> stores the GL coefficient auxiliary factors. Under GLT, <code>$nu</code> stores the generalized Pareto mixing factors. Within an inverse-gamma factor, <code>a</code> is its shape parameter.</p>
 </header>
