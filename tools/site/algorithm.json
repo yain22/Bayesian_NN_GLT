@@ -55,7 +55,7 @@
       "summary": "Train one unpenalized network and use its fitted coefficients to initialize the variational means.",
       "blocks": [
         {
-          "text": "The standard run uses 600 full-batch Adam steps on squared-error loss with learning rate 0.003. Initialize each variational standard deviation at 0.01, within the supplied log-standard-deviation bounds. The variational optimizer starts with fresh first and second moment accumulators."
+          "text": "Before the warm start, sample every coefficient in a weight matrix, including biases and readout coefficients, independently from $N(0,2/d)$, with $d$ the number of incoming units plus one for the bias in that matrix. The standard warm start takes 600 full-batch Adam steps on squared-error loss at a fixed rate of 0.003. Set each variational standard deviation to 0.01, within the supplied log-standard-deviation bounds. The variational optimizer starts with fresh first and second moment accumulators. The lr control applies to this variational optimizer."
         },
         {
           "math": "q(\\sigma^2)=\\operatorname{IG}(3,1),\\quad q(u)=\\operatorname{IG}(2,2),\\quad q(\\rho_\\kappa)=\\operatorname{IG}(1,1.04)"
@@ -176,7 +176,7 @@
           "math": "\\theta_{\\rm trial}=\\theta+0.003\\,2^{-b}d,\\qquad b=0,\\ldots,10,\\quad \\theta=(m,\\log s)"
         },
         {
-          "text": "Clip trial log standard deviations to $[-15,3]$. Score the current and trial parameters with the same four perturbations and fixed prior moments. Accept the first finite candidate whose sampled objective meets or exceeds the current value. If all 11 step sizes fail, keep the current factors. The attempt still counts. The next attempt draws fresh perturbations."
+          "text": "Clip trial log standard deviations to $[-15,3]$. Score the current and trial parameters with the same four perturbations and fixed prior moments. Accept the first finite candidate whose sampled objective meets or exceeds the current value. If all 11 step sizes fail, keep the current weight factors. Adam’s gradient moments and the attempt counter advance on every attempt, including rejections, and carry over between cycles. Draw fresh perturbations for the next attempt."
         },
         {
           "text": "After ten attempts, refresh the weight moments and update the variance and shrinkage factors. Ten controls how often those factors are refreshed. A single attempt per cycle is also possible. The study used ten for all three priors."
@@ -302,7 +302,7 @@
               "text": "Pair the likelihood contributions for each perturbation and its negative. For two consecutive checkpoints take the within-pair mean of the two changes. The sample standard deviation of the 32 paired changes divided by $\\sqrt{32}$ gives the reported Monte Carlo standard error of the gain. Fixed perturbations produce different realized weights as $m$ and $s$ change."
             },
             {
-              "text": "At the default budget, record cycles 0 through 60. A small one-cycle change cannot establish that the parameters have stabilized. Return the final factors and reevaluate the endpoint with 256 fresh antithetic draws. This estimate is stored separately. The preset budget gives the three priors the same number of weight-update attempts."
+              "text": "Backtracking tests a sampled weight objective with fixed scales. The full monitored ELBO can decrease after a cycle, and a small one-cycle change cannot establish that the parameters have stabilized. At the default budget, record cycles 0 through 60. Return the final factors and separately reevaluate the endpoint with 256 fresh antithetic draws. The preset budget gives the three priors the same number of weight-update attempts."
             }
           ]
         },
