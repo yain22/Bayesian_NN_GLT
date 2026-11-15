@@ -702,7 +702,7 @@
           "summary": "Pool the updated coefficient-scale means across all hidden weights and biases in the layer.",
           "blocks": [
             {
-              "text": "Use $R_l=\\mathbb E_q(1/\\xi_l)$ and $\\phi_{\\nu_a}$ from before the tail and auxiliary updates in this cycle. The updated local means $u_a$ enter the inverse-gamma rate."
+              "text": "Use $R_l=\\mathbb E_q(1/\\xi_l)$ and $\\phi_{\\nu_a}$ from before the tail and auxiliary updates in this cycle. The updated local means $u_a$ enter the inverse-gamma scale parameter."
             },
             {
               "math": "q^*(\\tau_l)=\\operatorname{IG}\\!\\left(1+M_l(1+R_l),\\;1+\\sum_{a\\in\\mathcal I_l}u_a\\phi_{\\nu_a}\\right)."
