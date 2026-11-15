@@ -1,0 +1,1438 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>R implementation · gltbnn</title><style>:root {
+  --paper: #fcfaf5;
+  --ink: #183447;
+  --navy: #214f70;
+  --rust: #a54b38;
+  --muted: #475c65;
+  --rule: #d7dad3;
+  --serif: "Baskervville", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --sans: "Inter", "Segoe UI", Arial, sans-serif;
+  --mono: "IBM Plex Mono", Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html { scroll-padding-top: 1rem; }
+body { margin: 0; background: var(--paper); color: var(--ink); font: 1rem/1.65 var(--sans); }
+a { color: var(--navy); text-underline-offset: .2em; }
+a:hover { color: var(--rust); }
+a:focus-visible, button:focus-visible { outline: 3px solid #d1884e; outline-offset: 5px; }
+.wrap { width: min(1140px, calc(100% - clamp(2rem, 9vw, 8rem))); margin-inline: auto; }
+.topbar { border-bottom: 1px solid var(--rule); }
+.bar-inner, .footer-inner, .actions, nav { display: flex; align-items: center; }
+.bar-inner { justify-content: space-between; min-height: 4.6rem; gap: 1rem; }
+.wordmark { font: bold 1.8rem/1 var(--serif); letter-spacing: -.06em; text-decoration: none; }
+.wordmark span { color: var(--rust); }
+nav { flex-wrap: wrap; justify-content: flex-end; gap: clamp(.75rem, 2.5vw, 2.25rem); }
+nav a { font-size: .91rem; font-weight: 600; color: var(--ink); text-decoration: none; }
+nav a:hover, .text-link:hover, footer a:hover { text-decoration: underline; }
+.hero { display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(0, .8fr); align-items: center; gap: clamp(1rem, 5vw, 5rem); padding-block: clamp(2.5rem, 6vw, 5rem); }
+.kicker { margin: 0 0 .85rem; color: var(--rust); text-transform: uppercase; font-size: .79rem; font-weight: 700; letter-spacing: .12em; }
+.kicker span { padding-inline: .22em; color: #8a8176; }
+h1, h2, h3 { font-family: var(--serif); font-weight: 500; color: var(--ink); }
+h1 { margin: 0; font-size: clamp(2.8rem, 5.6vw, 5rem); line-height: 1.02; letter-spacing: -.055em; text-wrap: balance; }
+.intro { margin: 1.2rem 0 0; max-width: 57ch; font-size: clamp(1.03rem, 1.6vw, 1.2rem); color: var(--muted); line-height: 1.55; }
+.actions { gap: 1.4rem; flex-wrap: wrap; margin-top: 1.8rem; }
+.button { display: inline-flex; align-items: center; gap: .9rem; background: var(--navy); color: #fff; border-radius: 5px; padding: .66rem 1.15rem; text-decoration: none; font-weight: 600; }
+.button:hover { background: #163d55; color: #fff; }
+.text-link { font-weight: 600; text-decoration: none; }
+.hero-mark { display: grid; place-items: center; }
+.hero-mark img { width: clamp(135px, 19vw, 230px); max-width: 96%; height: auto; }
+.section-grid, .illustrations { border-top: 1px solid var(--rule); padding-block: clamp(2rem, 5vw, 3.6rem); }
+.section-grid { display: grid; grid-template-columns: minmax(0, .8fr) minmax(0, 1.35fr); column-gap: clamp(2rem, 6vw, 6rem); align-items: start; }
+h2 { margin: 0 0 .6rem; font-size: clamp(1.85rem, 3.2vw, 2.75rem); line-height: 1.1; letter-spacing: -.035em; }
+.section-grid p, .topic p { margin: .75rem 0 0; max-width: 58ch; color: var(--muted); }
+code { font-family: var(--mono); }
+p code { color: var(--navy); background: #eeeae1; padding: .1em .28em; border-radius: .15em; font-size: .88em; overflow-wrap: anywhere; }
+.codebox { min-width: 0; border: 1px solid #254657; border-radius: 6px; overflow: hidden; background: #172f3e; color: #ecf1ef; }
+.codebar { display: flex; align-items: center; justify-content: space-between; min-height: 2.45rem; padding: 0 1.15rem; border-bottom: 1px solid #3b515a; background: #203b4b; color: #d8e2e2; font: .81rem/1.2 var(--sans); }
+.copy { background: transparent; border: 1px solid #70848a; color: #f4f7f5; padding: .25rem .5rem; border-radius: 3px; font: inherit; cursor: pointer; }
+.copy:hover { background: #335466; }
+pre { margin: 0; padding: 1.1rem 1.15rem; font: .88rem/1.65 var(--mono); overflow-x: auto; tab-size: 2; }
+.str { color: #f4caad; }
+.section-grid .result-note { color: #4d5d63; font-size: .88rem; margin-top: .85rem; }
+.illustration-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem; }
+.topic { padding: 1.2rem 1.5rem 1.4rem; text-decoration: none; border: 1px solid var(--rule); border-radius: 5px; background: #fffdfa; }
+.topic:hover { border-color: #7390a0; }
+h3 { display: flex; justify-content: space-between; gap: 1rem; font-size: 1.6rem; line-height: 1.2; letter-spacing: -.025em; margin: 0; }
+.topic h3 span { font: 1.1rem var(--sans); color: var(--rust); }
+.topic p { font-size: .95rem; }
+footer { border-top: 1px solid var(--rule); }
+.footer-inner { align-items: baseline; justify-content: space-between; gap: 2rem; padding-block: 1.5rem; color: var(--muted); font-size: .84rem; }
+.footer-inner p { margin: 0; max-width: 75ch; }
+.footer-inner a { white-space: nowrap; }
+.sr-only, .skip:not(:focus) { position: absolute; width: 1px; height: 1px; clip-path: inset(50%); overflow: hidden; white-space: nowrap; }
+.skip:focus { position: absolute; top: .5rem; left: .5rem; padding: .5rem; background: white; }
+@media (max-width: 760px) {
+  .section-grid { grid-template-columns: minmax(0, 1fr); gap: 1.2rem; }
+  .hero { grid-template-columns: minmax(0, 1fr) minmax(110px, .36fr); }
+  .illustration-grid { gap: .8rem; }
+}
+@media (max-width: 560px) {
+  .bar-inner { padding-block: .85rem; align-items: baseline; flex-wrap: wrap; gap: .6rem 1rem; }
+  nav a { font-size: .82rem; }
+  .hero { grid-template-columns: 1fr; position: relative; padding-top: 1.9rem; }
+  .hero-mark { position: absolute; top: 1rem; right: 0; }
+  .hero-mark img { width: 55px; }
+  .kicker { margin-bottom: 1.5rem; }
+  h1 { font-size: clamp(2.5rem, 9.5vw, 3.1rem); }
+  .intro { margin-top: .9rem; }
+  .actions { gap: 1rem; margin-top: 1.25rem; }
+  .illustration-grid { grid-template-columns: 1fr; }
+  .footer-inner { flex-wrap: wrap; gap: .75rem; }
+  pre { padding: .85rem; font-size: .79rem; }
+}
+
+main {max-width:62rem;margin:auto;padding:1rem clamp(1rem,4vw,3rem) 3rem}h1 {font-size:clamp(2.4rem,6vw,3.8rem);margin-block:1.25rem}h2 {font-size:1.35rem;overflow-wrap:anywhere}section {border-top:1px solid var(--rule);margin-top:2rem}pre {background:#f1f1eb;border-radius:4px}.location,summary {color:var(--muted)}details a {display:inline-block;margin:.18rem .4rem;overflow-wrap:anywhere}summary {cursor:pointer}</style></head><body><main><a href="algorithms.html">Algorithm walkthrough</a><h1>R implementation</h1><p>These functions and quadrature constants come from the package source. File names and starting line numbers identify each definition in this release.</p><details><summary>Definition index</summary><a href="#bnn-class-log-probs">.bnn_class_log_probs</a> <a href="#bnn-class-score">.bnn_class_score</a> <a href="#bnn-class-loglik">.bnn_class_loglik</a> <a href="#gltbnn-engine-class-draws">.gltbnn_engine_class_draws</a> <a href="#bnn-scalar-rule">.bnn_scalar_rule</a> <a href="#bnn-scalar-locals">.bnn_scalar_locals</a> <a href="#bnn-local-ig">.bnn_local_ig</a> <a href="#bnn-coefficient-tail">.bnn_coefficient_tail</a> <a href="#bnn-coefficient-init">.bnn_coefficient_init</a> <a href="#bnn-coefficient-terms">.bnn_coefficient_terms</a> <a href="#bnn-coefficient-update">.bnn_coefficient_update</a> <a href="#bnn-weight-objective">.bnn_weight_objective</a> <a href="#bnn-pair-means">.bnn_pair_means</a> <a href="#bnn-elbo">.bnn_elbo</a> <a href="#bnn-adam-step">.bnn_adam_step</a> <a href="#gltbnn-engine-fit">.gltbnn_engine_fit</a> <a href="#bnn-forward">.bnn_forward</a> <a href="#bnn-backprop">.bnn_backprop</a> <a href="#bnn-batch-schedule">.bnn_batch_schedule</a> <a href="#bnn-initialize">.bnn_initialize</a> <a href="#bnn-draw-weights">.bnn_draw_weights</a> <a href="#bnn-normal-draw">.bnn_normal_draw</a> <a href="#bnn-antithetic-draws">.bnn_antithetic_draws</a> <a href="#bnn-weight-moments">.bnn_weight_moments</a> <a href="#bnn-sse">.bnn_sse</a> <a href="#gltbnn-engine-draws">.gltbnn_engine_draws</a> <a href="#bnn-ig">.bnn_ig</a> <a href="#bnn-log-ratio">.bnn_log_ratio</a> <a href="#bnn-product-parts">.bnn_product_parts</a> <a href="#bnn-log-precision-ratio">.bnn_log_precision_ratio</a> <a href="#bnn-gamma-curvature">.bnn_gamma_curvature</a> <a href="#bnn-ig-kl">.bnn_ig_kl</a> <a href="#bnn-ig-log-prior">.bnn_ig_log_prior</a> <a href="#bnn-tail-stat">.bnn_tail_stat</a> <a href="#bnn-init-groups">.bnn_init_groups</a> <a href="#bnn-prior-terms">.bnn_prior_terms</a> <a href="#bnn-update-groups">.bnn_update_groups</a> <a href="#bnn-quad-positive">.bnn_quad_positive</a> <a href="#bnn-quad-quadrature-settings">.bnn_quad_quadrature_settings</a> <a href="#bnn-quad-integrate">.bnn_quad_integrate</a> <a href="#bnn-quad-local-integral">.bnn_quad_local_integral</a> <a href="#bnn-local-factor">.bnn_local_factor</a> <a href="#bnn-quad-tail-g">.bnn_quad_tail_g</a> <a href="#bnn-tail-factor">.bnn_tail_factor</a> <a href="#bnn-quad-tail-moments">.bnn_quad_tail_moments</a> <a href="#gltbnn-fit">gltbnn_fit</a> <a href="#print-gltbnn-fit">print.gltbnn_fit</a> <a href="#gltbnn-labels">.gltbnn_labels</a> <a href="#gltbnn-matrix">.gltbnn_matrix</a> <a href="#gltbnn-scale-x">.gltbnn_scale_x</a> <a href="#gltbnn-integer">.gltbnn_integer</a> <a href="#gltbnn-control">.gltbnn_control</a> <a href="#gltbnn-with-seed">.gltbnn_with_seed</a> <a href="#predict-gltbnn-fit">predict.gltbnn_fit</a> <a href="#gltbnn-shrinkage">gltbnn_shrinkage</a></details><section id="bnn-class-log-probs"><p class="location">R/engine-classification.R · line 3</p><h2><code>.bnn_class_log_probs</code></h2><pre tabindex="0"><code>.bnn_class_log_probs &lt;- function(logits, outcome) {
+  if (outcome == &quot;binary&quot;) {
+    eta &lt;- logits[, 1L]
+    return(cbind(stats::plogis(-eta, log.p = TRUE), stats::plogis(eta, log.p = TRUE)))
+  }
+  all_logits &lt;- cbind(logits, 0)
+  largest &lt;- cbind(seq_len(nrow(logits)), max.col(all_logits, ties.method = &quot;first&quot;))
+  shifted &lt;- all_logits - all_logits[largest]
+  # Separate the leading exp(0) so a nearly certain class retains its small
+  # negative log probability even when 1 + sum(other terms) rounds to one.
+  other_terms &lt;- exp(shifted)
+  other_terms[largest] &lt;- 0
+  shifted - log1p(rowSums(other_terms))
+}</code></pre></section>
+<section id="bnn-class-score"><p class="location">R/engine-classification.R · line 18</p><h2><code>.bnn_class_score</code></h2><pre tabindex="0"><code>.bnn_class_score &lt;- function(log_probs, y, outcome) {
+  if (outcome == &quot;binary&quot;) {
+    # Evaluate the small complementary probability directly near a perfect fit.
+    return(matrix(ifelse(y == 2L, exp(log_probs[, 1L]), -exp(log_probs[, 2L])), ncol = 1L))
+  }
+  last &lt;- ncol(log_probs)
+  score &lt;- -exp(log_probs[, -last, drop = FALSE])
+  rows &lt;- which(y != last)
+  observed &lt;- cbind(rows, y[rows])
+  score[observed] &lt;- -expm1(log_probs[observed])
+  score
+}</code></pre></section>
+<section id="bnn-class-loglik"><p class="location">R/engine-classification.R · line 31</p><h2><code>.bnn_class_loglik</code></h2><pre tabindex="0"><code>.bnn_class_loglik &lt;- function(log_probs, y) {
+  sum(log_probs[cbind(seq_along(y), y)])
+}</code></pre></section>
+<section id="gltbnn-engine-class-draws"><p class="location">R/engine-classification.R · line 35</p><h2><code>.gltbnn_engine_class_draws</code></h2><pre tabindex="0"><code>.gltbnn_engine_class_draws &lt;- function(fit, x, draws, summarize = FALSE) {
+  shape &lt;- c(nrow(x), fit$config$n_classes)
+  result &lt;- array(0, dim = if (summarize) shape else c(shape, draws))
+  for (b in seq_len(draws)) {
+    weights &lt;- .bnn_draw_weights(fit$parameters, .bnn_normal_draw(fit$parameters))
+    logits &lt;- .bnn_forward(x, weights)$logits
+    if (any(!is.finite(logits))) {
+      stop(&quot;Predicted logits exceed the finite numerical range. Check newdata and its predictor units.&quot;,
+           call. = FALSE)
+    }
+    probabilities &lt;- exp(.bnn_class_log_probs(logits, fit$config$outcome))
+    if (summarize) {
+      result &lt;- result + probabilities
+    } else {
+      result[, , b] &lt;- probabilities
+    }
+  }
+  if (summarize) result / draws else result
+}</code></pre></section>
+<section id="bnn-scalar-rule"><p class="location">R/engine-coefficients.R · line 2</p><h2><code>.bnn_scalar_rule</code></h2><pre tabindex="0"><code>.bnn_scalar_rule &lt;- local({
+  n &lt;- 32L
+  j &lt;- seq_len(n - 1L)
+  J &lt;- matrix(0, n, n)
+  J[cbind(j, j + 1L)] &lt;- j / sqrt(4 * j^2 - 1)
+  ev &lt;- eigen(J + t(J), symmetric = TRUE)
+  list(nodes = (1 + ev$values) / 2, weights = ev$vectors[1, ]^2)
+})</code></pre></section>
+<section id="bnn-scalar-locals"><p class="location">R/engine-coefficients.R · line 15</p><h2><code>.bnn_scalar_locals</code></h2><pre tabindex="0"><code>.bnn_scalar_locals &lt;- function(A, B, d = 1L, normalizer_only = FALSE) {
+  if (length(A) != length(B) || any(!is.finite(A) | A &lt;= 0 | !is.finite(B) | B &lt;= 0)) {
+    stop(&quot;Scalar local kernel requires one positive finite A and B for each coefficient.&quot;)
+  }
+  log_a &lt;- log(A)
+  log_b &lt;- log(B)
+  m &lt;- (log_b - log_a) / 3
+  log_q &lt;- (2 * log_a + log_b) / 3
+  q &lt;- exp(log_q)
+  # The endpoints suppress the exponential tails by at least exp(-70) on
+  # ordinary scales, including the first-moment integrand.
+  upper &lt;- log1p(80 / q + 14 / sqrt(q))
+  lower &lt;- -.5 * log1p(160 / q + 28 / sqrt(q))
+  tiny &lt;- q &lt; 1e-300
+  if (any(tiny)) {
+    upper[tiny] &lt;- log(80 + 14 * sqrt(q[tiny]) + q[tiny]) - log_q[tiny]
+    lower[tiny] &lt;- -.5 * (log(160 + 28 * sqrt(q[tiny]) + q[tiny]) - log_q[tiny])
+  }
+  if (any(!is.finite(upper) | !is.finite(lower))) stop(&quot;Local scale exceeds quadrature range.&quot;)
+  segments &lt;- pmax(1L, ceiling(pmax(-lower, upper) / 6))
+  z &lt;- raw_first &lt;- raw_log &lt;- raw_energy &lt;- numeric(length(q))
+  for (count in unique(segments)) {
+    idx &lt;- which(segments == count)
+    Q &lt;- q[idx]
+    tiny_q &lt;- tiny[idx]
+    total &lt;- first &lt;- log_scale &lt;- energy &lt;- numeric(length(idx))
+    for (width in list(lower[idx] / count, upper[idx] / count)) {
+      for (panel in seq_len(count)) {
+        for (j in seq_along(.bnn_scalar_rule$nodes)) {
+          s &lt;- width * ((panel - 1L) + .bnn_scalar_rule$nodes[j])
+          cost &lt;- Q * (expm1(s) + .5 * expm1(-2 * s))
+          if (any(tiny_q)) {
+            b &lt;- log_q[idx[tiny_q]]
+            u &lt;- s[tiny_q]
+            cost[tiny_q] &lt;- exp(b + u) + .5 * exp(b - 2*u) - 1.5*Q[tiny_q]
+          }
+          small &lt;- abs(s) &lt; 1e-4
+          if (any(small)) {
+            a &lt;- s[small]
+            cost[small] &lt;- (Q[small] * a) * a * (1.5 + a * (-.5 + a * (.375 - .125 * a)))
+          }
+          if (d != 1L) cost &lt;- cost + (d - 1L) * s
+          weight &lt;- abs(width) * .bnn_scalar_rule$weights[j]
+          mass &lt;- weight * exp(-cost)
+          total &lt;- total + mass
+          first_exponent &lt;- s - cost
+          if (any(tiny_q)) first_exponent[tiny_q] &lt;- first_exponent[tiny_q] + log_q[idx[tiny_q]]
+          first &lt;- first + weight * exp(first_exponent)
+          log_scale &lt;- log_scale + mass * s
+          energy &lt;- energy + mass * cost
+        }
+      }
+    }
+    z[idx] &lt;- total
+    raw_first[idx] &lt;- first
+    raw_log[idx] &lt;- log_scale
+    raw_energy[idx] &lt;- energy
+  }
+  # The d=2 grouped first moment needs only the d=1 log normalizer. Its
+  # unused scalar moments can exceed double precision for subnormal rates.
+  if (normalizer_only) return(log(z) - 1.5*q + (1-d)*m)
+  zeta &lt;- m + raw_log / z
+  log_u &lt;- m + log(raw_first / z)
+  if (any(tiny)) log_u[tiny] &lt;- log_u[tiny] - log_q[tiny]
+  # Integration by parts yields B E[lambda^-2] = A E[lambda] exactly.
+  u &lt;- exp(log_u)
+  log_phi &lt;- log_a - log_b + log_u
+  if (d != 1L) log_phi &lt;- log_phi + log1p((d-1L)*exp(-log_a-log_u))
+  phi &lt;- exp(log_phi)
+  entropy &lt;- log(z) + zeta + raw_energy / z
+  if (any(!is.finite(u) | u &lt;= 0 | !is.finite(phi) | phi &lt;= 0 | !is.finite(entropy))) {
+    stop(&quot;Nonfinite scalar local moments.&quot;)
+  }
+  list(u = u, phi = phi, zeta = zeta, entropy = entropy, A = A, B = B,
+       log_normalizer = log(z) - 1.5 * q + (1-d)*m)
+}</code></pre></section>
+<section id="bnn-local-ig"><p class="location">R/engine-coefficients.R · line 94</p><h2><code>.bnn_local_ig</code></h2><pre tabindex="0"><code>.bnn_local_ig &lt;- function(a, b) {
+  if (!is.finite(a) || a &lt;= 0 || any(!is.finite(b) | b &lt;= 0)) stop(&quot;Invalid local inverse-gamma factor.&quot;)
+  list(a = a, b = b, phi = a / b, zeta = log(b) - digamma(a),
+       entropy = a + log(b) + lgamma(a) - (a + 1) * digamma(a))
+}</code></pre></section>
+<section id="bnn-coefficient-tail"><p class="location">R/engine-coefficients.R · line 100</p><h2><code>.bnn_coefficient_tail</code></h2><pre tabindex="0"><code>.bnn_coefficient_tail &lt;- function(count, C, fixed_shape) {
+  if (is.null(fixed_shape)) return(.bnn_tail_factor(count, C))
+  eta &lt;- log(fixed_shape)
+  list(C = C, K = count, r = 1 / fixed_shape, eta_mean = eta,
+       log_normalizer = .bnn_quad_tail_g(eta, count, C), log_prior_support = 0)
+}</code></pre></section>
+<section id="bnn-coefficient-init"><p class="location">R/engine-coefficients.R · line 107</p><h2><code>.bnn_coefficient_init</code></h2><pre tabindex="0"><code>.bnn_coefficient_init &lt;- function(count, prior, fixed_shape = NULL) {
+  g &lt;- list(geometry = &quot;coefficient&quot;, M = count, tau = .bnn_ig(2, 2))
+  if (prior == &quot;GLT&quot;) {
+    g$nu &lt;- .bnn_local_ig(2, rep(2, count))
+    start &lt;- .bnn_scalar_locals(1, 1)
+    g$local &lt;- lapply(start, rep, length.out = count)
+    g$fixed_shape &lt;- fixed_shape
+    g$tail &lt;- .bnn_coefficient_tail(count, count * g$tau$zeta + sum(g$nu$zeta + g$nu$phi), fixed_shape)
+  } else {
+    g$aux &lt;- .bnn_ig(1, 1)
+    if (prior == &quot;GL&quot;) {
+      g$local &lt;- .bnn_local_ig(2, rep(2, count))
+      g$nu &lt;- .bnn_local_ig(1, rep(1, count))
+    }
+  }
+  g
+}</code></pre></section>
+<section id="bnn-coefficient-terms"><p class="location">R/engine-coefficients.R · line 125</p><h2><code>.bnn_coefficient_terms</code></h2><pre tabindex="0"><code>.bnn_coefficient_terms &lt;- function(g, prior) {
+  M &lt;- g$M
+  if (prior == &quot;GLT&quot;) {
+    C &lt;- M * g$tau$zeta + sum(g$nu$zeta + g$nu$phi)
+    hyper &lt;- -M * g$tau$zeta - sum(g$nu$zeta) - g$tau$phi * sum(g$local$u * g$nu$phi) +
+      sum(g$local$entropy) + g$tail$log_normalizer - g$tail$log_prior_support -
+      (C - g$tail$C) * g$tail$r - 2 * g$tau$zeta - sum(g$nu$zeta) - g$tau$phi +
+      g$tau$entropy + sum(g$nu$entropy)
+    return(list(precision = g$local$phi, logvar = 2 * g$local$zeta, hyper = hyper))
+  }
+  hyper &lt;- .bnn_ig_log_prior(g$tau, .5, g$aux$phi, -g$aux$zeta) + g$tau$entropy +
+    .bnn_ig_log_prior(g$aux, .5, M^2, log(M^2)) + g$aux$entropy
+  if (prior == &quot;G&quot;) {
+    return(list(precision = rep(g$tau$phi, M), logvar = rep(g$tau$zeta, M), hyper = hyper))
+  }
+  hyper &lt;- hyper + sum(.bnn_ig_log_prior(g$local, .5, g$nu$phi, -g$nu$zeta) +
+    g$local$entropy + .bnn_ig_log_prior(g$nu, .5, 1, 0) + g$nu$entropy)
+  list(precision = g$tau$phi * g$local$phi, logvar = g$tau$zeta + g$local$zeta, hyper = hyper)
+}</code></pre></section>
+<section id="bnn-coefficient-update"><p class="location">R/engine-coefficients.R · line 145</p><h2><code>.bnn_coefficient_update</code></h2><pre tabindex="0"><code>.bnn_coefficient_update &lt;- function(g, prior, moments, phi) {
+  M &lt;- g$M
+  if (length(moments) != M) stop(&quot;Coefficient moments must cover each weight and bias.&quot;)
+  if (prior == &quot;GLT&quot;) {
+    g$local &lt;- .bnn_scalar_locals(g$tau$phi * g$nu$phi, phi * moments)
+    g$tau &lt;- .bnn_ig(1 + M * (1 + g$tail$r), 1 + sum(g$local$u * g$nu$phi))
+    g$nu &lt;- .bnn_local_ig(1 + g$tail$r, g$local$u * g$tau$phi + g$tail$r)
+    g$tail &lt;- .bnn_coefficient_tail(M, M * g$tau$zeta + sum(g$nu$zeta + g$nu$phi), g$fixed_shape)
+  } else {
+    local_precision &lt;- 1
+    if (prior == &quot;GL&quot;) {
+      g$local &lt;- .bnn_local_ig(1, g$nu$phi + phi * moments * g$tau$phi / 2)
+      local_precision &lt;- g$local$phi
+      g$nu &lt;- .bnn_local_ig(1, 1 + local_precision)
+    }
+    g$tau &lt;- .bnn_ig((M + 1) / 2, g$aux$phi + phi * sum(moments * local_precision) / 2)
+    g$aux &lt;- .bnn_ig(1, M^2 + g$tau$phi)
+  }
+  g
+}</code></pre></section>
+<section id="bnn-weight-objective"><p class="location">R/engine-fit.R · line 2</p><h2><code>.bnn_weight_objective</code></h2><pre tabindex="0"><code>.bnn_weight_objective &lt;- function(parameters, x, y, phi, rates, epsilon, gradient = FALSE,
+                                  outcome = &quot;continuous&quot;) {
+  moments &lt;- .bnn_weight_moments(parameters, coefficient = TRUE)
+  value &lt;- sum(vapply(parameters$logsd, sum, numeric(1))) -
+    .5 * sum(vapply(seq_along(moments), function(l) sum(rates[[l]] * moments[[l]]), numeric(1)))
+  if (gradient) gm &lt;- gs &lt;- lapply(parameters$mu, function(m) m * 0)
+  draws &lt;- length(epsilon)
+  for (z in epsilon) {
+    weights &lt;- .bnn_draw_weights(parameters, z)
+    forward &lt;- .bnn_forward(x, weights)
+    if (outcome == &quot;continuous&quot;) {
+      residual &lt;- y - forward$y
+      value &lt;- value - .5 * phi * sum(residual^2) / draws
+      if (gradient) score &lt;- matrix(phi * residual, ncol = 1L)
+    } else {
+      log_probs &lt;- .bnn_class_log_probs(forward$logits, outcome)
+      value &lt;- value + phi * .bnn_class_loglik(log_probs, y) / draws
+      if (gradient) score &lt;- phi * .bnn_class_score(log_probs, y, outcome)
+    }
+    if (gradient) {
+      back &lt;- .bnn_backprop(score, forward, weights)
+      for (l in seq_along(weights)) {
+        grad &lt;- back[[l]] / draws
+        gm[[l]] &lt;- gm[[l]] + grad
+        gs[[l]] &lt;- gs[[l]] + grad * exp(parameters$logsd[[l]]) * z[[l]]
+      }
+    }
+  }
+  if (!gradient) return(value)
+  for (l in seq_along(gm)) {
+    gm[[l]] &lt;- gm[[l]] - rates[[l]] * parameters$mu[[l]]
+    gs[[l]] &lt;- gs[[l]] + 1 - rates[[l]] * exp(2 * parameters$logsd[[l]])
+  }
+  list(value = value, gradient = c(gm, gs))
+}</code></pre></section>
+<section id="bnn-pair-means"><p class="location">R/engine-fit.R · line 38</p><h2><code>.bnn_pair_means</code></h2><pre tabindex="0"><code>.bnn_pair_means &lt;- function(x) {
+  h &lt;- length(x) / 2L
+  (x[seq_len(h)] + x[h + seq_len(h)]) / 2
+}</code></pre></section>
+<section id="bnn-elbo"><p class="location">R/engine-fit.R · line 44</p><h2><code>.bnn_elbo</code></h2><pre tabindex="0"><code>.bnn_elbo &lt;- function(state, parameters, x, y, priors, epsilon, noise_prior = NULL,
+                      outcome = &quot;continuous&quot;) {
+  moments &lt;- .bnn_weight_moments(parameters, coefficient = TRUE)
+  output &lt;- length(moments)
+  gaussian_entropy &lt;- function(ls) sum((1 + log(2 * pi)) / 2 + ls)
+  output_dim &lt;- length(parameters$mu[[output]])
+  hidden_log_scale_sq &lt;- 0
+  hidden_precision &lt;- 1
+  noise_terms &lt;- NULL
+  if (outcome == &quot;continuous&quot;) {
+    noise &lt;- state$noise
+    hidden_log_scale_sq &lt;- noise$zeta
+    hidden_precision &lt;- noise$phi
+    sse &lt;- .bnn_sse(parameters, x, y, epsilon)
+    observation &lt;- -length(y) * (log(2 * pi) + noise$zeta) / 2 - noise$phi * mean(sse) / 2
+    centered_draws &lt;- noise$phi * (mean(sse) - sse) / 2
+    noise_terms &lt;- if (is.null(noise_prior)) {
+      c(noise_prior = -noise$zeta, noise_entropy = noise$entropy)
+    } else {
+      c(noise_neg_kl = -.bnn_ig_kl(noise, noise_prior[[&quot;shape&quot;]], noise_prior[[&quot;scale&quot;]]))
+    }
+  } else {
+    loglik &lt;- vapply(epsilon, function(z) {
+      weights &lt;- .bnn_draw_weights(parameters, z)
+      logits &lt;- .bnn_forward(x, weights)$logits
+      .bnn_class_loglik(.bnn_class_log_probs(logits, outcome), y)
+    }, numeric(1))
+    observation &lt;- mean(loglik)
+    centered_draws &lt;- loglik - observation
+  }
+  terms &lt;- c(
+    observation = observation,
+    noise_terms,
+    output_weight_prior = -output_dim * (log(2 * pi) + state$u$zeta) / 2 -
+      state$u$phi * sum(moments[[output]]) / 2,
+    output_weight_entropy = gaussian_entropy(parameters$logsd[[output]]),
+    output_u_prior = .bnn_ig_log_prior(state$u, .5, state$rho$phi, -state$rho$zeta),
+    output_rho_prior = .bnn_ig_log_prior(state$rho, .5, 1 / 25, log(1 / 25)),
+    output_hyper_entropy = state$u$entropy + state$rho$entropy,
+    hidden_weight_prior = 0, hidden_entropy = 0, prior_hyper = 0
+  )
+  for (l in seq_along(priors)) {
+    pr &lt;- priors[[l]]
+    terms[&quot;hidden_weight_prior&quot;] &lt;- terms[&quot;hidden_weight_prior&quot;] - .5 * sum(
+      log(2 * pi) + hidden_log_scale_sq + pr$logvar + hidden_precision * moments[[l]] * pr$precision)
+    terms[&quot;hidden_entropy&quot;] &lt;- terms[&quot;hidden_entropy&quot;] + gaussian_entropy(parameters$logsd[[l]])
+    terms[&quot;prior_hyper&quot;] &lt;- terms[&quot;prior_hyper&quot;] + pr$hyper
+  }
+  if (any(!is.finite(terms))) stop(&quot;Nonfinite ELBO component during fitting.&quot;)
+  value &lt;- sum(terms)
+  pairs &lt;- .bnn_pair_means(centered_draws)
+  summary &lt;- if (outcome == &quot;continuous&quot;) list(expected_sse = mean(sse)) else list(expected_loglik = observation)
+  c(list(value = value, components = terms), summary,
+    list(mcse = stats::sd(pairs) / sqrt(length(pairs)), sample_values = value + centered_draws))
+}</code></pre></section>
+<section id="bnn-adam-step"><p class="location">R/engine-fit.R · line 100</p><h2><code>.bnn_adam_step</code></h2><pre tabindex="0"><code>.bnn_adam_step &lt;- function(parameters, adam, iteration, x, y, hidden_precision, rates, control,
+                           outcome = &quot;continuous&quot;, n_total = nrow(x)) {
+  epsilon &lt;- .bnn_antithetic_draws(parameters, control$weight_draws)
+  likelihood_precision &lt;- hidden_precision * (n_total / nrow(x))
+  objective &lt;- .bnn_weight_objective(parameters, x, y, likelihood_precision, rates, epsilon, TRUE, outcome)
+  grad &lt;- lapply(objective$gradient, function(g) g / n_total)
+  norm &lt;- sqrt(sum(vapply(grad, function(g) sum(g^2), numeric(1))))
+  if (!is.finite(objective$value)) stop(&quot;Nonfinite weight objective.&quot;)
+  if (!is.finite(norm)) {
+    # Finite gradient entries can overflow when squared. The unit direction
+    # and the clipping decision both remain available on a rescaled vector.
+    largest &lt;- max(vapply(grad, function(g) max(abs(g)), numeric(1)))
+    if (!is.finite(largest)) stop(&quot;Nonfinite weight gradient.&quot;)
+    scaled &lt;- lapply(grad, function(g) g / largest)
+    scaled_norm &lt;- sqrt(sum(vapply(scaled, function(g) sum(g^2), numeric(1))))
+    norm &lt;- largest * scaled_norm
+    if (norm &gt; control$grad_clip) {
+      grad &lt;- lapply(scaled, function(g) (g / scaled_norm) * control$grad_clip)
+    }
+  } else if (norm &gt; control$grad_clip) {
+    grad &lt;- lapply(grad, function(g) g * control$grad_clip / norm)
+  }
+  adam$m &lt;- Map(function(m, g) .9 * m + .1 * g, adam$m, grad)
+  adam$v &lt;- Map(function(v, g) .999 * v + .001 * g^2, adam$v, grad)
+  denominator &lt;- lapply(adam$v, function(v) sqrt(v / (1 - .999^iteration)) + 1e-8)
+  direction &lt;- Map(function(m, den) (m / (1 - .9^iteration)) / den, adam$m, denominator)
+  slopes &lt;- Map(function(g, d) sum(g * d), grad, direction)
+  fallback &lt;- sum(unlist(slopes)) &lt;= 0
+  if (fallback) direction &lt;- Map(`/`, grad, denominator)
+
+  # Reuse the gradient draws for candidate scoring so that sampling noise
+  # cannot produce spurious improvements within this backtracking step.
+  accepted &lt;- FALSE
+  gain &lt;- 0
+  indices &lt;- seq_along(parameters$mu)
+  for (bt in 0:control$max_backtracks) {
+    scale &lt;- control$lr * 2^(-bt)
+    candidate &lt;- Map(function(p, d) p + scale * d, c(parameters$mu, parameters$logsd), direction)
+    cp &lt;- list(mu = candidate[indices], logsd = candidate[length(indices) + indices])
+    cp$logsd &lt;- lapply(cp$logsd, function(z) {
+      z[] &lt;- pmax(control$logsd_bounds[1], pmin(control$logsd_bounds[2], as.vector(z)))
+      z
+    })
+    value &lt;- .bnn_weight_objective(cp, x, y, likelihood_precision, rates, epsilon, outcome = outcome)
+    if (is.finite(value) &amp;&amp; value &gt;= objective$value) {
+      parameters &lt;- cp
+      gain &lt;- value - objective$value
+      accepted &lt;- TRUE
+      break
+    }
+  }
+  list(parameters = parameters, adam = adam,
+       record = data.frame(step = iteration, accepted = accepted, backtracks = bt,
+                           direction_fallback = fallback, sample_objective = objective$value,
+                           sample_gain = gain, gradient_norm = norm))
+}</code></pre></section>
+<section id="gltbnn-engine-fit"><p class="location">R/engine-fit.R · line 157</p><h2><code>.gltbnn_engine_fit</code></h2><pre tabindex="0"><code>.gltbnn_engine_fit &lt;- function(x, y, hidden, prior, control, seed, noise_prior = NULL,
+                               outcome = &quot;continuous&quot;, n_classes = NULL, geometry = &quot;coefficient&quot;,
+                               initial_weights = NULL, progress = NULL, fixed_shape = NULL,
+                               batches = NULL, milestones = integer(), on_milestone = NULL) {
+  started &lt;- proc.time()[[&quot;elapsed&quot;]]
+  continuous &lt;- outcome == &quot;continuous&quot;
+  if (!is.null(control$batch_size) &amp;&amp; is.null(batches)) {
+    # Independent random streams for initialization, the two schedules, and VI.
+    stream &lt;- function(offset) as.integer((as.double(seed) + offset) %% 2147483648)
+    if (is.null(initial_weights)) {
+      warm_batches &lt;- .bnn_batch_schedule(nrow(x), control$batch_size, control$init_steps, stream(1000))
+      initial_weights &lt;- .bnn_initialize(x, y, hidden, seed, control$init_steps, outcome,
+                                         n_classes, batches = warm_batches)
+    }
+    batches &lt;- .bnn_batch_schedule(nrow(x), control$batch_size,
+                                   as.double(control$outer) * control$weight_steps, stream(3000))
+    seed &lt;- stream(4000)
+  }
+  batch_fit &lt;- !is.null(batches)
+  if (length(milestones) &amp;&amp; (!is.function(on_milestone) || !is.numeric(milestones) ||
+      any(!is.finite(milestones) | milestones != floor(milestones) |
+          milestones &lt; 1L | milestones &gt; control$outer))) stop(&quot;Invalid milestone cycles or callback.&quot;)
+  if (batch_fit) {
+    if (!is.list(batches) || length(batches) != as.double(control$outer) * control$weight_steps ||
+        any(!vapply(batches, function(ids) is.numeric(ids) &amp;&amp; length(ids) &gt; 0L &amp;&amp;
+          all(is.finite(ids) &amp; ids == floor(ids) &amp; ids &gt;= 1L &amp; ids &lt;= nrow(x)), logical(1)))) {
+      stop(&quot;A minibatch fit requires one nonempty vector of training indices per weight step.&quot;)
+    }
+  }
+  shape0 &lt;- if (is.null(noise_prior)) 0 else noise_prior[[&quot;shape&quot;]]
+  scale0 &lt;- if (is.null(noise_prior)) 0 else noise_prior[[&quot;scale&quot;]]
+  dimensions &lt;- c(ncol(x), hidden[-length(hidden)]) + 1L
+  coefficient &lt;- geometry == &quot;coefficient&quot;
+  if (!is.null(fixed_shape) &amp;&amp; (!coefficient || prior != &quot;GLT&quot; || length(fixed_shape) != 1L ||
+      !is.finite(fixed_shape) || fixed_shape &lt;= .5)) stop(&quot;A fixed tail requires coefficient GLT and shape &gt; 1/2.&quot;)
+  group_counts &lt;- if (coefficient) as.double(hidden) * dimensions else hidden
+  group_sizes &lt;- if (coefficient) rep(1L, length(hidden)) else dimensions
+  weights &lt;- initial_weights
+  if (is.null(weights)) weights &lt;- .bnn_initialize(x, y, hidden, seed, control$init_steps, outcome, n_classes)
+  output &lt;- length(weights)
+  initial_logsd &lt;- max(control$logsd_bounds[1L], min(log(.01), control$logsd_bounds[2L]))
+  parameters &lt;- list(mu = weights, logsd = lapply(weights, function(w) matrix(initial_logsd, nrow(w), ncol(w))))
+  state &lt;- list(g = Map(function(k, d) .bnn_init_groups(k, d, prior, geometry, fixed_shape), group_counts, group_sizes),
+                u = .bnn_ig(2, 2), rho = .bnn_ig(1, 1.04))
+  hidden_precision &lt;- 1
+  if (continuous) {
+    state$noise &lt;- .bnn_ig(3, 1)
+    hidden_precision &lt;- state$noise$phi
+  }
+  layer_priors &lt;- function(groups) Map(function(g, k) .bnn_prior_terms(g, k, prior), groups, group_counts)
+  priors &lt;- layer_priors(state$g)
+  set.seed(as.integer(as.double(seed) %% 2147483646 + 1))
+  # For scheduled large-data experiments, the archived protocol monitors the
+  # pooled batch SSE rather than materializing full-data ELBO draws.
+  if (batch_fit) {
+    monitor &lt;- list(value = NA_real_, mcse = NA_real_, components = numeric())
+  } else {
+    monitor_draws &lt;- .bnn_antithetic_draws(parameters, control$monitor_draws)
+    monitor &lt;- .bnn_elbo(state, parameters, x, y, priors, monitor_draws, noise_prior, outcome)
+  }
+  trace &lt;- list(data.frame(outer = 0L, elbo = monitor$value, elbo_mcse = monitor$mcse,
+                           gain = NA_real_, paired_gain_mcse = NA_real_, noise_precision = hidden_precision,
+                           accepted = 0L, rejected = 0L, backtracks = 0L, direction_fallbacks = 0L,
+                           seconds = proc.time()[[&quot;elapsed&quot;]] - started))
+  components &lt;- if (batch_fit) list() else list(data.frame(outer = 0L, as.list(monitor$components), check.names = FALSE))
+  if (batch_fit &amp;&amp; continuous) trace[[1L]]$pooled_batch_rmse &lt;- NA_real_
+  steps &lt;- vector(&quot;list&quot;, control$outer)
+  finish &lt;- function(done) {
+    set.seed(as.integer((as.double(seed) + 100000) %% 2147483646 + 1))
+    endpoint &lt;- if (batch_fit) {
+      list(value = NA_real_, mcse = NA_real_, note = &quot;The pooled minibatch protocol omits the full-data ELBO.&quot;)
+    } else {
+      .bnn_elbo(state, parameters, x, y, priors,
+                .bnn_antithetic_draws(parameters, control$endpoint_draws), noise_prior, outcome)
+    }
+    endpoint$sample_values &lt;- NULL
+    history &lt;- do.call(rbind, trace)
+    if (!continuous) history$noise_precision &lt;- NULL
+    ctl &lt;- control
+    ctl$outer &lt;- done
+    list(state = state, parameters = parameters, config = list(n = nrow(x), p = ncol(x), K = hidden,
+         L = length(hidden), d = dimensions, M = as.double(hidden) * dimensions, geometry = geometry,
+         prior = prior, outcome = outcome, n_classes = n_classes, fixed_shape = fixed_shape), control = ctl,
+         trace = history, components = do.call(rbind, components),
+         weight_steps = do.call(rbind, steps[seq_len(done)]), endpoint = endpoint,
+         seed = seed, status = &quot;fixed_budget&quot;, outer = done, seconds = proc.time()[[&quot;elapsed&quot;]] - started)
+  }
+  zero &lt;- lapply(c(parameters$mu, parameters$logsd), function(z) z * 0)
+  adam &lt;- list(m = zero, v = zero)
+  iteration &lt;- 0L
+  for (outer in seq_len(control$outer)) {
+    rates &lt;- c(lapply(priors, function(pr) hidden_precision * pr$precision), list(state$u$phi))
+    block &lt;- vector(&quot;list&quot;, control$weight_steps)
+    for (j in seq_len(control$weight_steps)) {
+      iteration &lt;- iteration + 1L
+      if (batch_fit) {
+        ids &lt;- batches[[iteration]]
+        update &lt;- .bnn_adam_step(parameters, adam, iteration, x[ids, , drop = FALSE], y[ids],
+                                 hidden_precision, rates, control, outcome, n_total = nrow(x))
+      } else {
+        update &lt;- .bnn_adam_step(parameters, adam, iteration, x, y, hidden_precision, rates, control, outcome)
+      }
+      parameters &lt;- update$parameters
+      adam &lt;- update$adam
+      block[[j]] &lt;- data.frame(outer = outer, update$record)
+    }
+    steps[[outer]] &lt;- do.call(rbind, block)
+    moments &lt;- .bnn_weight_moments(parameters, coefficient)
+    if (continuous) {
+      residual_draws &lt;- .bnn_antithetic_draws(parameters, control$noise_draws)
+      if (batch_fit) {
+        cycle_steps &lt;- (outer - 1L) * control$weight_steps + seq_len(control$weight_steps)
+        seen &lt;- unlist(batches[cycle_steps], use.names = FALSE)
+        sse &lt;- mean(.bnn_sse(parameters, x[seen, , drop = FALSE], y[seen], residual_draws)) *
+          (nrow(x) / length(seen))
+      } else {
+        sse &lt;- mean(.bnn_sse(parameters, x, y, residual_draws))
+      }
+      penalty &lt;- sum(vapply(seq_along(hidden), function(l) sum(moments[[l]] * priors[[l]]$precision), numeric(1)))
+      state$noise &lt;- .bnn_ig(shape0 + (length(y) + sum(hidden * dimensions)) / 2,
+                             scale0 + (sse + penalty) / 2)
+      hidden_precision &lt;- state$noise$phi
+    }
+    state$u &lt;- .bnn_ig((length(weights[[output]]) + 1) / 2, sum(moments[[output]]) / 2 + state$rho$phi)
+    state$rho &lt;- .bnn_ig(1, state$u$phi + 1 / 25)
+    for (l in seq_along(hidden)) {
+      state$g[[l]] &lt;- .bnn_update_groups(state$g[[l]], group_counts[l], group_sizes[l], prior,
+                                         moments[[l]], hidden_precision)
+    }
+    priors &lt;- layer_priors(state$g)
+    if (batch_fit) {
+      next_monitor &lt;- monitor
+      gain_mcse &lt;- NA_real_
+    } else {
+      next_monitor &lt;- .bnn_elbo(state, parameters, x, y, priors, monitor_draws, noise_prior, outcome)
+      paired_gain &lt;- .bnn_pair_means(next_monitor$sample_values - monitor$sample_values)
+      gain_mcse &lt;- stats::sd(paired_gain) / sqrt(length(paired_gain))
+    }
+    records &lt;- steps[[outer]]
+    trace[[outer + 1L]] &lt;- data.frame(
+      outer = outer, elbo = next_monitor$value, elbo_mcse = next_monitor$mcse,
+      gain = next_monitor$value - monitor$value, paired_gain_mcse = gain_mcse,
+      noise_precision = hidden_precision, accepted = sum(records$accepted), rejected = sum(!records$accepted),
+      backtracks = sum(records$backtracks), direction_fallbacks = sum(records$direction_fallback),
+      seconds = proc.time()[[&quot;elapsed&quot;]] - started)
+    if (batch_fit &amp;&amp; continuous) trace[[outer + 1L]]$pooled_batch_rmse &lt;- sqrt(sse / nrow(x))
+    if (!batch_fit) {
+      components[[outer + 1L]] &lt;- data.frame(outer = outer, as.list(next_monitor$components), check.names = FALSE)
+    }
+    monitor &lt;- next_monitor
+    if (!is.null(progress)) progress(trace[[outer + 1L]])
+    if (outer %in% milestones) {
+      # A callback may itself draw predictions; protect the optimizer stream.
+      .gltbnn_with_seed(seed, on_milestone(outer, finish(outer)))
+    }
+  }
+  finish(control$outer)
+}</code></pre></section>
+<section id="bnn-forward"><p class="location">R/engine-network.R · line 3</p><h2><code>.bnn_forward</code></h2><pre tabindex="0"><code>.bnn_forward &lt;- function(x, weights) {
+  features &lt;- pre &lt;- vector(&quot;list&quot;, length(weights))
+  h &lt;- x
+  for (layer in seq_along(weights)) {
+    features[[layer]] &lt;- cbind(h, 1)
+    pre[[layer]] &lt;- features[[layer]] %*% t(weights[[layer]])
+    h &lt;- if (layer &lt; length(weights)) pmax(pre[[layer]], 0) else pre[[layer]]
+  }
+  list(y = if (ncol(h) == 1L) as.vector(h) else h, logits = h, features = features, pre = pre)
+}</code></pre></section>
+<section id="bnn-backprop"><p class="location">R/engine-network.R · line 14</p><h2><code>.bnn_backprop</code></h2><pre tabindex="0"><code>.bnn_backprop &lt;- function(back, forward, weights) {
+  gradient &lt;- vector(&quot;list&quot;, length(weights))
+  for (layer in rev(seq_along(weights))) {
+    gradient[[layer]] &lt;- crossprod(back, forward$features[[layer]])
+    if (layer &gt; 1L) {
+      w &lt;- weights[[layer]]
+      back &lt;- (back %*% w[, -ncol(w), drop = FALSE]) * (forward$pre[[layer - 1L]] &gt; 0)
+    }
+  }
+  gradient
+}</code></pre></section>
+<section id="bnn-batch-schedule"><p class="location">R/engine-network.R · line 26</p><h2><code>.bnn_batch_schedule</code></h2><pre tabindex="0"><code>.bnn_batch_schedule &lt;- function(n, size, steps, seed) {
+  set.seed(seed)
+  groups &lt;- ceiling(seq_len(n) / size)
+  batches &lt;- vector(&quot;list&quot;, steps)
+  done &lt;- 0L
+  while (done &lt; steps) {
+    epoch &lt;- unname(split(sample.int(n), groups))
+    count &lt;- min(length(epoch), steps - done)
+    batches[done + seq_len(count)] &lt;- epoch[seq_len(count)]
+    done &lt;- done + count
+  }
+  batches
+}</code></pre></section>
+<section id="bnn-initialize"><p class="location">R/engine-network.R · line 41</p><h2><code>.bnn_initialize</code></h2><pre tabindex="0"><code>.bnn_initialize &lt;- function(x, y, hidden, seed, steps, outcome = &quot;continuous&quot;, n_classes = NULL,
+                            batches = NULL) {
+  set.seed(seed)
+  inputs &lt;- c(ncol(x), hidden) + 1L
+  output_units &lt;- if (outcome == &quot;categorical&quot;) n_classes - 1L else 1L
+  units &lt;- c(hidden, output_units)
+  weights &lt;- lapply(seq_along(units), function(l) {
+    matrix(stats::rnorm(units[l] * inputs[l], sd = sqrt(2 / inputs[l])), nrow = units[l])
+  })
+  first &lt;- second &lt;- lapply(weights, function(w) w * 0)
+  for (iteration in seq_len(steps)) {
+    if (is.null(batches)) {
+      batch_x &lt;- x
+      batch_y &lt;- y
+    } else {
+      ids &lt;- batches[[iteration]]
+      batch_x &lt;- x[ids, , drop = FALSE]
+      batch_y &lt;- y[ids]
+    }
+    forward &lt;- .bnn_forward(batch_x, weights)
+    if (outcome == &quot;continuous&quot;) {
+      back &lt;- matrix((forward$y - batch_y) / length(batch_y), ncol = 1L)
+    } else if (outcome == &quot;binary&quot; &amp;&amp; !is.null(batches)) {
+      back &lt;- (stats::plogis(forward$logits) - (batch_y - 1L)) / length(batch_y)
+    } else {
+      log_probs &lt;- .bnn_class_log_probs(forward$logits, outcome)
+      back &lt;- -.bnn_class_score(log_probs, batch_y, outcome) / length(batch_y)
+    }
+    gradient &lt;- .bnn_backprop(back, forward, weights)
+    for (l in seq_along(weights)) {
+      first[[l]] &lt;- .9 * first[[l]] + .1 * gradient[[l]]
+      second[[l]] &lt;- .999 * second[[l]] + .001 * gradient[[l]]^2
+      weights[[l]] &lt;- weights[[l]] - .003 * (first[[l]] / (1 - .9^iteration)) /
+        (sqrt(second[[l]] / (1 - .999^iteration)) + 1e-8)
+    }
+  }
+  weights
+}</code></pre></section>
+<section id="bnn-draw-weights"><p class="location">R/engine-network.R · line 80</p><h2><code>.bnn_draw_weights</code></h2><pre tabindex="0"><code>.bnn_draw_weights &lt;- function(parameters, epsilon) {
+  Map(function(m, s, z) m + exp(s) * z, parameters$mu, parameters$logsd, epsilon)
+}</code></pre></section>
+<section id="bnn-normal-draw"><p class="location">R/engine-network.R · line 84</p><h2><code>.bnn_normal_draw</code></h2><pre tabindex="0"><code>.bnn_normal_draw &lt;- function(parameters) {
+  lapply(parameters$mu, function(w) matrix(stats::rnorm(length(w)), nrow(w), ncol(w)))
+}</code></pre></section>
+<section id="bnn-antithetic-draws"><p class="location">R/engine-network.R · line 88</p><h2><code>.bnn_antithetic_draws</code></h2><pre tabindex="0"><code>.bnn_antithetic_draws &lt;- function(parameters, draws) {
+  positive &lt;- lapply(seq_len(draws / 2L), function(i) .bnn_normal_draw(parameters))
+  c(positive, lapply(positive, function(draw) lapply(draw, function(z) -z)))
+}</code></pre></section>
+<section id="bnn-weight-moments"><p class="location">R/engine-network.R · line 94</p><h2><code>.bnn_weight_moments</code></h2><pre tabindex="0"><code>.bnn_weight_moments &lt;- function(parameters, coefficient = FALSE) {
+  Map(function(m, s) {
+    moments &lt;- m^2 + exp(2 * s)
+    if (coefficient) moments else rowSums(moments)
+  }, parameters$mu, parameters$logsd)
+}</code></pre></section>
+<section id="bnn-sse"><p class="location">R/engine-network.R · line 101</p><h2><code>.bnn_sse</code></h2><pre tabindex="0"><code>.bnn_sse &lt;- function(parameters, x, y, epsilon) {
+  vapply(epsilon, function(z) {
+    prediction &lt;- .bnn_forward(x, .bnn_draw_weights(parameters, z))$y
+    sum((y - prediction)^2)
+  }, numeric(1))
+}</code></pre></section>
+<section id="gltbnn-engine-draws"><p class="location">R/engine-network.R · line 108</p><h2><code>.gltbnn_engine_draws</code></h2><pre tabindex="0"><code>.gltbnn_engine_draws &lt;- function(fit, x, draws, predictive) {
+  result &lt;- matrix(0, nrow = nrow(x), ncol = draws)
+  for (b in seq_len(draws)) {
+    weights &lt;- .bnn_draw_weights(fit$parameters, .bnn_normal_draw(fit$parameters))
+    result[, b] &lt;- .bnn_forward(x, weights)$y
+  }
+  if (predictive) {
+    # One posterior noise variance per joint draw, with independent errors by row.
+    precision &lt;- stats::rgamma(draws, shape = fit$state$noise$a, rate = fit$state$noise$b)
+    errors &lt;- matrix(stats::rnorm(length(result)), nrow = nrow(x), ncol = draws)
+    result &lt;- result + sweep(errors, 2L, sqrt(precision), &quot;/&quot;)
+  }
+  result
+}</code></pre></section>
+<section id="bnn-ig"><p class="location">R/engine-priors.R · line 3</p><h2><code>.bnn_ig</code></h2><pre tabindex="0"><code>.bnn_ig &lt;- function(a, b) {
+  if (!is.finite(a) || !is.finite(b) || a &lt;= 0 || b &lt;= 0) {
+    stop(&quot;Invalid inverse-gamma variational parameters.&quot;)
+  }
+  if (a &gt;= 1e4) {
+    # Stirling expansions avoid subtracting terms of order a * log(a).
+    inv &lt;- 1 / a
+    psi_gap &lt;- inv / 2 + inv^2 / 12 - inv^4 / 120
+    remainder &lt;- inv / 12 - inv^3 / 360 + inv^5 / 1260
+    log_ratio &lt;- .bnn_log_ratio(b, a)
+    zeta &lt;- log_ratio + psi_gap
+    entropy &lt;- log_ratio + .5 * (log(2 * pi) - log(a)) + remainder + (a * psi_gap + psi_gap)
+  } else {
+    zeta &lt;- log(b) - digamma(a)
+    entropy &lt;- a + log(b) + lgamma(a) - (a + 1) * digamma(a)
+  }
+  list(a = a, b = b, phi = a / b, zeta = zeta, entropy = entropy)
+}</code></pre></section>
+<section id="bnn-log-ratio"><p class="location">R/engine-priors.R · line 22</p><h2><code>.bnn_log_ratio</code></h2><pre tabindex="0"><code>.bnn_log_ratio &lt;- function(x, y) {
+  if (x &gt;= y / 2 &amp;&amp; x &lt;= 2 * y) return(log1p((x - y) / y))
+  ratio &lt;- x / y
+  if (ratio &gt;= .Machine$double.xmin &amp;&amp; is.finite(ratio)) log(ratio) else log(x) - log(y)
+}</code></pre></section>
+<section id="bnn-product-parts"><p class="location">R/engine-priors.R · line 31</p><h2><code>.bnn_product_parts</code></h2><pre tabindex="0"><code>.bnn_product_parts &lt;- function(x, y) {
+  splitter &lt;- 2^27 + 1
+  cx &lt;- splitter * x
+  cy &lt;- splitter * y
+  x_high &lt;- cx - (cx - x)
+  y_high &lt;- cy - (cy - y)
+  x_low &lt;- x - x_high
+  y_low &lt;- y - y_high
+  product &lt;- x * y
+  error &lt;- (((x_high * y_high - product) + x_high * y_low) + x_low * y_high) + x_low * y_low
+  c(product, error)
+}</code></pre></section>
+<section id="bnn-log-precision-ratio"><p class="location">R/engine-priors.R · line 44</p><h2><code>.bnn_log_precision_ratio</code></h2><pre tabindex="0"><code>.bnn_log_precision_ratio &lt;- function(q, shape, scale) {
+  # log{(q$a / q$b) / (shape / scale)}. Scaling by powers of two keeps
+  # the products finite without rounding a division of the input parameters.
+  values &lt;- c(q$a, scale, shape, q$b)
+  powers &lt;- pmin(floor(log2(values)), .Machine$double.max.exp - 1L)
+  m &lt;- values / 2^powers
+  shift &lt;- (powers[1L] + powers[2L]) - (powers[3L] + powers[4L])
+  if (abs(shift) &gt; 2) return(shift * log(2) + .bnn_log_ratio(m[1L] * m[2L], m[3L] * m[4L]))
+  numerator &lt;- .bnn_product_parts(m[1L] * 2^shift, m[2L])
+  denominator &lt;- .bnn_product_parts(m[3L], m[4L])
+  difference &lt;- (numerator[1L] - denominator[1L]) + (numerator[2L] - denominator[2L])
+  log1p(difference / denominator[1L])
+}</code></pre></section>
+<section id="bnn-gamma-curvature"><p class="location">R/engine-priors.R · line 60</p><h2><code>.bnn_gamma_curvature</code></h2><pre tabindex="0"><code>.bnn_gamma_curvature &lt;- function(log_t) {
+  large &lt;- log_t &gt;= log(1e4)
+  out &lt;- numeric(length(log_t))
+  t &lt;- exp(log_t[!large])
+  out[!large] &lt;- 1 - t + t^2 * trigamma(1 + t)
+  inv &lt;- exp(-log_t[large])
+  out[large] &lt;- .5 + inv / 6 - inv^3 / 30 + inv^5 / 42
+  out
+}</code></pre></section>
+<section id="bnn-ig-kl"><p class="location">R/engine-priors.R · line 73</p><h2><code>.bnn_ig_kl</code></h2><pre tabindex="0"><code>.bnn_ig_kl &lt;- function(q, shape, scale) {
+  s &lt;- .bnn_log_ratio(shape, q$a)
+  shape_loss &lt;- 0
+  if (s != 0) {
+    # Integrate the Taylor remainder of lgamma(t) - t*log(t) + t over
+    # log shape. s and the exponential weight are scaled out near equality
+    # and at large positive s, respectively.
+    integrand &lt;- function(v) {
+      weight &lt;- if (s &gt; 1) exp((v - 1) * s) * (-expm1(-v * s)) else expm1(v * s) / s
+      weight * .bnn_gamma_curvature(log(shape) - v * s)
+    }
+    integral &lt;- stats::integrate(integrand, 0, 1, rel.tol = 1e-10, abs.tol = 0)$value
+    shape_loss &lt;- if (s &gt; 1) exp(s + log(s * integral)) else s^2 * integral
+  }
+  z &lt;- .bnn_log_precision_ratio(q, shape, scale)
+  # shape * (exp(z) - 1 - z). Squaring after rescaling preserves small
+  # divergences; the factored positive-tail form avoids overflow in exp(z).
+  if (abs(z) &lt; 1e-3) {
+    mean_loss &lt;- (sqrt(shape) * z)^2 * (.5 + z * (1/6 + z * (1/24 + z * (1/120 + z/720))))
+  } else if (z &gt; 1) {
+    mean_loss &lt;- exp(log(shape) + z + log1p(-(1 + z) * exp(-z)))
+  } else {
+    mean_loss &lt;- shape * (expm1(z) - z)
+  }
+  kl &lt;- shape_loss + mean_loss
+  if (!is.finite(kl)) stop(&quot;The inverse-gamma noise KL exceeds the finite numerical range.&quot;)
+  kl
+}</code></pre></section>
+<section id="bnn-ig-log-prior"><p class="location">R/engine-priors.R · line 102</p><h2><code>.bnn_ig_log_prior</code></h2><pre tabindex="0"><code>.bnn_ig_log_prior &lt;- function(q, a, rate_mean, rate_log) {
+  a * rate_log - lgamma(a) - (a + 1) * q$zeta - rate_mean * q$phi
+}</code></pre></section>
+<section id="bnn-tail-stat"><p class="location">R/engine-priors.R · line 106</p><h2><code>.bnn_tail_stat</code></h2><pre tabindex="0"><code>.bnn_tail_stat &lt;- function(g) {
+  length(g$local) * g$tau$zeta + sum(vapply(g$nu, function(x) x$zeta + x$phi, numeric(1)))
+}</code></pre></section>
+<section id="bnn-init-groups"><p class="location">R/engine-priors.R · line 110</p><h2><code>.bnn_init_groups</code></h2><pre tabindex="0"><code>.bnn_init_groups &lt;- function(K, d, prior, geometry = &quot;unit&quot;, fixed_shape = NULL) {
+  if (geometry == &quot;coefficient&quot;) return(.bnn_coefficient_init(K, prior, fixed_shape))
+  g &lt;- list(tau = .bnn_ig(2, 2))
+  if (prior == &quot;GLT&quot;) {
+    g$nu &lt;- rep(list(.bnn_ig(2, 2)), K)
+    g$local &lt;- rep(list(.bnn_local_factor(1, 1, d)), K)
+    g$tail &lt;- .bnn_tail_factor(K, .bnn_tail_stat(g))
+  } else {
+    g$aux &lt;- .bnn_ig(1, 1)
+    if (prior == &quot;GL&quot;) {
+      g$local &lt;- rep(list(.bnn_ig(2, 2)), K)
+      g$nu &lt;- rep(list(.bnn_ig(1, 1)), K)
+    }
+  }
+  g
+}</code></pre></section>
+<section id="bnn-prior-terms"><p class="location">R/engine-priors.R · line 129</p><h2><code>.bnn_prior_terms</code></h2><pre tabindex="0"><code>.bnn_prior_terms &lt;- function(g, K, prior) {
+  if (identical(g$geometry, &quot;coefficient&quot;)) return(.bnn_coefficient_terms(g, prior))
+  if (prior == &quot;GLT&quot;) {
+    nu_precision &lt;- vapply(g$nu, `[[`, numeric(1), &quot;phi&quot;)
+    nu_log &lt;- vapply(g$nu, `[[`, numeric(1), &quot;zeta&quot;)
+    local_mean &lt;- vapply(g$local, `[[`, numeric(1), &quot;u&quot;)
+    C &lt;- K * g$tau$zeta + sum(nu_log + nu_precision)
+    hyper &lt;- -K * g$tau$zeta - sum(nu_log) - g$tau$phi * sum(local_mean * nu_precision) +
+      sum(vapply(g$local, `[[`, numeric(1), &quot;entropy&quot;)) +
+      g$tail$log_normalizer - g$tail$log_prior_support - (C - g$tail$C) * g$tail$r -
+      2 * g$tau$zeta - sum(nu_log) - g$tau$phi + g$tau$entropy +
+      sum(vapply(g$nu, `[[`, numeric(1), &quot;entropy&quot;))
+    return(list(precision = vapply(g$local, `[[`, numeric(1), &quot;phi&quot;),
+                logvar = 2 * vapply(g$local, `[[`, numeric(1), &quot;zeta&quot;), hyper = hyper))
+  }
+  hyper &lt;- .bnn_ig_log_prior(g$tau, .5, g$aux$phi, -g$aux$zeta) + g$tau$entropy +
+    .bnn_ig_log_prior(g$aux, .5, K^2, log(K^2)) + g$aux$entropy
+  precision &lt;- rep(g$tau$phi, K)
+  logvar &lt;- rep(g$tau$zeta, K)
+  if (prior == &quot;GL&quot;) {
+    for (k in seq_len(K)) {
+      q &lt;- g$local[[k]]
+      aux &lt;- g$nu[[k]]
+      precision[k] &lt;- precision[k] * q$phi
+      logvar[k] &lt;- logvar[k] + q$zeta
+      hyper &lt;- hyper + .bnn_ig_log_prior(q, .5, aux$phi, -aux$zeta) + q$entropy +
+        .bnn_ig_log_prior(aux, .5, 1, 0) + aux$entropy
+    }
+  }
+  list(precision = precision, logvar = logvar, hyper = hyper)
+}</code></pre></section>
+<section id="bnn-update-groups"><p class="location">R/engine-priors.R · line 161</p><h2><code>.bnn_update_groups</code></h2><pre tabindex="0"><code>.bnn_update_groups &lt;- function(g, K, d, prior, moments, phi) {
+  if (identical(g$geometry, &quot;coefficient&quot;)) {
+    return(.bnn_coefficient_update(g, prior, as.numeric(moments), phi))
+  }
+  if (prior == &quot;GLT&quot;) {
+    for (k in seq_len(K)) {
+      g$local[[k]] &lt;- .bnn_local_factor(g$tau$phi * g$nu[[k]]$phi, phi * moments[k], d)
+    }
+    local_rates &lt;- vapply(seq_len(K), function(k) g$local[[k]]$u * g$nu[[k]]$phi, numeric(1))
+    g$tau &lt;- .bnn_ig(1 + K * (1 + g$tail$r), 1 + sum(local_rates))
+    for (k in seq_len(K)) {
+      g$nu[[k]] &lt;- .bnn_ig(1 + g$tail$r, g$local[[k]]$u * g$tau$phi + g$tail$r)
+    }
+    g$tail &lt;- .bnn_tail_factor(K, .bnn_tail_stat(g))
+  } else {
+    local_precision &lt;- rep(1, K)
+    if (prior == &quot;GL&quot;) {
+      for (k in seq_len(K)) {
+        g$local[[k]] &lt;- .bnn_ig((d + 1) / 2, g$nu[[k]]$phi + phi * moments[k] * g$tau$phi / 2)
+        local_precision[k] &lt;- g$local[[k]]$phi
+        g$nu[[k]] &lt;- .bnn_ig(1, 1 + local_precision[k])
+      }
+    }
+    g$tau &lt;- .bnn_ig((K * d + 1) / 2, g$aux$phi + phi * sum(moments * local_precision) / 2)
+    g$aux &lt;- .bnn_ig(1, K^2 + g$tau$phi)
+  }
+  g
+}</code></pre></section>
+<section id="bnn-quad-positive"><p class="location">R/engine-quadrature.R · line 4</p><h2><code>.bnn_quad_positive</code></h2><pre tabindex="0"><code>.bnn_quad_positive &lt;- function(x, label) {
+  if (!length(x) || any(!is.finite(x)) || any(x &lt;= 0))
+    stop(label, &quot; must be finite and positive.&quot;)
+  invisible(x)
+}</code></pre></section>
+<section id="bnn-quad-quadrature-settings"><p class="location">R/engine-quadrature.R · line 10</p><h2><code>.bnn_quad_quadrature_settings</code></h2><pre tabindex="0"><code>.bnn_quad_quadrature_settings &lt;- function(rel_tol, subdivisions) {
+  if (length(rel_tol) != 1L || !is.finite(rel_tol) || rel_tol &lt;= 0 || rel_tol &gt;= 1 ||
+      length(subdivisions) != 1L || !is.finite(subdivisions) || subdivisions &lt; 20 ||
+      subdivisions != as.integer(subdivisions)) stop(&quot;Invalid quadrature settings.&quot;)
+  invisible(NULL)
+}</code></pre></section>
+<section id="bnn-quad-integrate"><p class="location">R/engine-quadrature.R · line 17</p><h2><code>.bnn_quad_integrate</code></h2><pre tabindex="0"><code>.bnn_quad_integrate &lt;- function(f, lower, upper, rel_tol, subdivisions,
+                                 extra = numeric(), roundoff_tol = rel_tol) {
+  breaks &lt;- sort(unique(c(lower, upper,
+    c(-8, -4, 0, 4, 8, extra)[c(-8, -4, 0, 4, 8, extra) &gt; lower &amp;
+                              c(-8, -4, 0, 4, 8, extra) &lt; upper])))
+  values &lt;- errors &lt;- numeric(length(breaks) - 1L)
+  retried &lt;- FALSE
+  for (j in seq_along(values)) {
+    ans &lt;- stats::integrate(f, breaks[j], breaks[j + 1L], rel.tol = rel_tol,
+      abs.tol = rel_tol / length(values), subdivisions = subdivisions,
+      stop.on.error = FALSE)
+    if (ans$message != &quot;OK&quot; &amp;&amp; roundoff_tol &gt; rel_tol) {
+      retried &lt;- TRUE
+      ans &lt;- stats::integrate(f, breaks[j], breaks[j + 1L], rel.tol = roundoff_tol,
+        abs.tol = roundoff_tol / length(values), subdivisions = subdivisions,
+        stop.on.error = FALSE)
+    }
+    if (ans$message != &quot;OK&quot;) {
+      condition &lt;- simpleError(ans$message)
+      class(condition) &lt;- c(&quot;gltbnn_quadrature_error&quot;,class(condition))
+      stop(condition)
+    }
+    values[j] &lt;- ans$value
+    errors[j] &lt;- ans$abs.error
+  }
+  list(value = sum(values), abs_error = sum(errors), retried = retried)
+}</code></pre></section>
+<section id="bnn-quad-local-integral"><p class="location">R/engine-quadrature.R · line 45</p><h2><code>.bnn_quad_local_integral</code></h2><pre tabindex="0"><code>.bnn_quad_local_integral &lt;- function(A, B, d, power, rel_tol, subdivisions) {
+  coefficient &lt;- 1 - d + power
+  la &lt;- log(A); lb &lt;- log(B)
+  derivative &lt;- function(t) {
+    z &lt;- max(if (coefficient == 0) -Inf else log(abs(coefficient)), la + t, lb - 2 * t)
+    term &lt;- if (coefficient == 0) 0 else sign(coefficient) * exp(log(abs(coefficient)) - z)
+    term - exp(la + t - z) + exp(lb - 2 * t - z)
+  }
+  midpoint &lt;- (lb - la) / 3
+  radius &lt;- 1
+  for (j in 1:60) {
+    lower &lt;- midpoint - radius; upper &lt;- midpoint + radius
+    if (derivative(lower) &gt; 0 &amp;&amp; derivative(upper) &lt; 0) break
+    radius &lt;- radius * 2
+  }
+  if (!(derivative(lower) &gt; 0 &amp;&amp; derivative(upper) &lt; 0))
+    stop(&quot;Could not bracket a local quadrature mode.&quot;)
+  mode &lt;- stats::uniroot(derivative, c(lower, upper), tol = 1e-12)$root
+  at &lt;- exp(la + mode); bt &lt;- exp(lb - 2 * mode)
+  scale &lt;- 1 / sqrt(at + 2 * bt)
+  .bnn_quad_positive(scale, &quot;Local quadrature scale&quot;)
+  log_height &lt;- coefficient * mode - at - bt / 2
+  remainder &lt;- function(x) {
+    ans &lt;- expm1(x) - x
+    small &lt;- abs(x) &lt; 1e-3
+    t &lt;- x[small]
+    ans[small] &lt;- t^2 * (.5 + t*(1/6 + t*(1/24 + t/120)))
+    ans
+  }
+  offset &lt;- function(delta) {
+    exponent &lt;- (coefficient-at+bt)*delta - at*remainder(delta) - bt/2*remainder(-2*delta)
+    exponent[!is.finite(exponent)] &lt;- -Inf
+    exponent
+  }
+  density &lt;- function(z) exp(offset(scale*z))
+  integral &lt;- .bnn_quad_integrate(density, -Inf, Inf, rel_tol, subdivisions)
+  .bnn_quad_positive(integral$value, &quot;Local quadrature integral&quot;)
+  list(log_value = log_height + log(scale) + log(integral$value),
+       mode = mode, scale = scale, density = density, offset = offset, integral = integral)
+}</code></pre></section>
+<section id="bnn-local-factor"><p class="location">R/engine-quadrature.R · line 86</p><h2><code>.bnn_local_factor</code></h2><pre tabindex="0"><code>.bnn_local_factor &lt;- function(A, B, d, rel_tol = 1e-10,
+                                     subdivisions = 2000L) {
+  .bnn_quad_quadrature_settings(rel_tol, subdivisions)
+  .bnn_quad_positive(c(A, B), &quot;Local kernel parameters&quot;)
+  if (length(A) != 1L || length(B) != 1L || length(d) != 1L ||
+      !is.finite(d) || d &lt; 1 || d != as.integer(d)) stop(&quot;Invalid local group dimension.&quot;)
+  log_q &lt;- (2 * log(A) + log(B)) / 3
+  broad &lt;- log_q &lt; log(1e-3)
+  if ((broad &amp;&amp; d == 1L) || log_q &gt; log(1e4) + 2 * log(d)) {
+    # The scalar rule resolves a broad d=1 plateau. In the concentrated
+    # regime, the (1-d)s tilt shifts the mode by less than one hundredth of
+    # a kernel SD; direct moments preserve the entropy on the lambda scale.
+    ans &lt;- .bnn_scalar_locals(A, B, d)
+    ans$d &lt;- d
+    ans$identity_residual &lt;- B * ans$phi - A * ans$u - (d - 1)
+    ans$estimated_relative_integration_error &lt;- NA_real_
+    return(ans)
+  }
+  base &lt;- .bnn_quad_local_integral(A, B, d, 0, rel_tol, subdivisions)
+  first &lt;- if (d == 2L &amp;&amp; broad) {
+    # The numerator of E[lambda] has the d=1 kernel. Its broad log-scale
+    # plateau is resolved by the scalar rule&#x27;s split panels.
+    list(log_value = .bnn_scalar_locals(A,B,normalizer_only=TRUE))
+  } else {
+    .bnn_quad_local_integral(A, B, d, 1, rel_tol, subdivisions)
+  }
+  inverse &lt;- .bnn_quad_local_integral(A, B, d, -2, rel_tol, subdivisions)
+  centered &lt;- .bnn_quad_integrate(function(z) z * base$density(z),
+    -Inf, Inf, rel_tol, subdivisions)
+  # Express moment ratios relative to the denominator mode before adding
+  # their large log heights. This avoids subtracting nearly equal heights.
+  log_ratio &lt;- function(numerator, power) {
+    if (is.null(numerator$integral)) return(numerator$log_value - base$log_value)
+    base$offset(numerator$mode - base$mode) + power*numerator$mode +
+      log(numerator$scale / base$scale) + log(numerator$integral$value / base$integral$value)
+  }
+  u &lt;- exp(log_ratio(first,1))
+  phi &lt;- exp(log_ratio(inverse,-2))
+  zeta &lt;- base$mode + base$scale * centered$value / base$integral$value
+  .bnn_quad_positive(c(u, phi), &quot;Local quadrature moments&quot;)
+  entropy_cost &lt;- .bnn_quad_integrate(function(z) {
+    h &lt;- base$offset(base$scale*z)
+    ifelse(is.finite(h), -h*exp(h), 0)
+  }, -Inf, Inf, rel_tol, subdivisions)
+  entropy &lt;- log(base$scale) + log(base$integral$value) + zeta +
+    entropy_cost$value / base$integral$value
+  list(log_normalizer = base$log_value, u = u, phi = phi, zeta = zeta,
+       entropy = entropy, A = A, B = B, d = d,
+       identity_residual = B * phi - A * u - (d - 1),
+       estimated_relative_integration_error = max(
+         base$integral$abs_error / base$integral$value,
+         if (!is.null(first$integral)) first$integral$abs_error / first$integral$value else NA_real_,
+         inverse$integral$abs_error / inverse$integral$value))
+}</code></pre></section>
+<section id="bnn-quad-tail-g"><p class="location">R/engine-quadrature.R · line 143</p><h2><code>.bnn_quad_tail_g</code></h2><pre tabindex="0"><code>.bnn_quad_tail_g &lt;- function(eta, K, C) {
+  r &lt;- exp(-eta)
+  -(K * eta + C) * r - K * (lgamma(1 + r) + eta) - lgamma(1 + K * r)
+}</code></pre></section>
+<section id="bnn-tail-factor"><p class="location">R/engine-quadrature.R · line 148</p><h2><code>.bnn_tail_factor</code></h2><pre tabindex="0"><code>.bnn_tail_factor &lt;- function(K, C, mu = 0, rho = 1,
+                                    rel_tol = 1e-10, subdivisions = 2000L) {
+  compute &lt;- function(use_score) .bnn_quad_tail_moments(K,C,mu,rho,rel_tol,subdivisions,use_score)
+  tryCatch(compute(FALSE), gltbnn_quadrature_error = function(e) {
+    tryCatch(compute(TRUE), gltbnn_quadrature_error = function(last) {
+      stop(&quot;Could not resolve GLT tail quadrature for a layer with &quot;, K,
+           &quot; scale groups in double precision (&quot;,conditionMessage(last),&quot;).&quot;,call.=FALSE)
+    })
+  })
+}</code></pre></section>
+<section id="bnn-quad-tail-moments"><p class="location">R/engine-quadrature.R · line 159</p><h2><code>.bnn_quad_tail_moments</code></h2><pre tabindex="0"><code>.bnn_quad_tail_moments &lt;- function(K, C, mu, rho, rel_tol, subdivisions, use_score) {
+  .bnn_quad_quadrature_settings(rel_tol, subdivisions)
+  .bnn_quad_positive(c(K, rho), &quot;Tail dimensions/reference scale&quot;)
+  if (length(K) != 1L || K != as.integer(K) || length(C) != 1L ||
+      !is.finite(C) || length(mu) != 1L || !is.finite(mu) || length(rho) != 1L)
+    stop(&quot;Invalid tail kernel parameters.&quot;)
+  boundary &lt;- -log(2)
+  log_kernel &lt;- function(eta) stats::dnorm(eta, mu, rho, log = TRUE) +
+    .bnn_quad_tail_g(eta, K, C)
+  derivative &lt;- function(eta) {
+    r &lt;- exp(-eta)
+    gp &lt;- r * (K * eta + C - K + K * digamma(1 + r) +
+                 K * digamma(1 + K * r)) - K
+    -(eta - mu) / rho^2 + gp
+  }
+  upper &lt;- max(boundary + 8, mu + 12 * rho, log1p(abs(C) + K) + 8)
+  for (iteration in 1:20) {
+    grid &lt;- seq(boundary, upper, length.out = 513L)
+    heights &lt;- log_kernel(grid)
+    interior &lt;- which(heights[2:512] &gt;= heights[1:511] &amp;
+                       heights[2:512] &gt;= heights[3:513]) + 1L
+    candidates &lt;- c(boundary, upper)
+    if (length(interior)) for (j in interior) candidates &lt;- c(candidates,
+      stats::optimize(log_kernel, c(grid[j - 1L], grid[j + 1L]), maximum = TRUE,
+               tol = 1e-11)$maximum)
+    mode &lt;- candidates[which.max(log_kernel(candidates))]
+    peak &lt;- log_kernel(mode)
+    if (log_kernel(upper) &lt; peak - 50 &amp;&amp; derivative(upper) &lt; 0) break
+    upper &lt;- upper + max(8 * rho, upper - boundary)
+  }
+  if (!(log_kernel(upper) &lt; peak - 50 &amp;&amp; derivative(upper) &lt; 0))
+    stop(&quot;Could not stabilize the tail quadrature range.&quot;)
+  boundary_case &lt;- mode == boundary
+  if (boundary_case &amp;&amp; derivative(boundary) &gt; 0) {
+    # A narrow maximum can lie between the truncation boundary and the very
+    # first grid point. For the fitted N(0,1) log-shape prior the log kernel,
+    # written as a function of r=1/xi, is strictly concave on 0 &lt; r &lt;= 2.
+    # Find the first descending zero even if both sampled heights miss it.
+    right &lt;- grid[which(derivative(grid) &lt;= 0)[1L]]
+    mode &lt;- stats::uniroot(derivative, c(boundary, right), tol = 1e-14)$root
+    peak &lt;- log_kernel(mode)
+  }
+  rmode &lt;- exp(-mode)
+  gp &lt;- derivative(mode) + (mode - mu) / rho^2
+  curvature &lt;- 1 / rho^2 + gp + K - K * rmode +
+    K * rmode^2 * trigamma(1 + rmode) + K^2 * rmode^2 * trigamma(1 + K * rmode)
+  if (mode == boundary) {
+    scale &lt;- 1 / (abs(derivative(boundary)) + sqrt(max(curvature, 1/rho^2)))
+  } else {
+    scale &lt;- if (is.finite(curvature) &amp;&amp; curvature &gt; 0) 1 / sqrt(curvature) else rho
+  }
+  .bnn_quad_positive(scale, &quot;Tail quadrature scale&quot;)
+  lower_z &lt;- (boundary - mode) / scale
+  other_modes &lt;- (candidates - mode) / scale
+  breaks &lt;- as.vector(outer(other_modes, c(-1, 0, 1), &quot;+&quot;))
+  if (boundary_case) {
+    # Do not insert the distant grid endpoint as a quadrature breakpoint.
+    # An adaptive rule on [8, many thousands] can miss the exponential
+    # shoulder of a boundary maximum and falsely report a tiny error.
+    breaks &lt;- c(-32,-16,-8,-4,-2,-1,0,1,2,4,8,16,32,64)
+  }
+  offset &lt;- function(eta) {
+    value &lt;- log_kernel(eta) - peak
+    if (use_score) {
+      # If large nearly equal log densities defeat both QUADPACK tolerances,
+      # integrate the score over the displacement from the mode. Four
+      # Gauss–Legendre nodes resolve the smoothly varying score over each
+      # short displacement. Distant tails can use direct subtraction.
+      delta &lt;- eta - mode
+      near &lt;- abs(delta) &lt; .15
+      h &lt;- delta[near]
+      nodes &lt;- c(.0694318442029737,.3300094782075719,.6699905217924281,.9305681557970262)
+      weights &lt;- c(.1739274225687269,.3260725774312731,.3260725774312731,.1739274225687269)
+      average &lt;- numeric(length(h))
+      for (j in seq_along(nodes))
+        average &lt;- average + weights[j]*derivative(mode + h*nodes[j])
+      value[near] &lt;- h*average
+    }
+    value
+  }
+  density &lt;- function(z) {
+    exponent &lt;- offset(mode + scale * z)
+    exponent[!is.finite(exponent)] &lt;- -Inf
+    exp(exponent)
+  }
+  # Large layers can lose a few digits subtracting the log densities at eta
+  # and at the mode. Retry only a panel whose requested tolerance failed.
+  roundoff_tol &lt;- max(rel_tol, 1e-8)
+  integral &lt;- .bnn_quad_integrate(density, lower_z, Inf,
+    rel_tol, subdivisions, extra = breaks, roundoff_tol = roundoff_tol)
+  .bnn_quad_positive(integral$value, &quot;Tail quadrature integral&quot;)
+  retried &lt;- integral$retried
+  expectation &lt;- function(f) {
+    ans &lt;- .bnn_quad_integrate(function(z) {
+      eta &lt;- mode + scale * z
+      w &lt;- density(z)
+      result &lt;- numeric(length(z))
+      positive &lt;- w &gt; 0
+      result[positive] &lt;- f(eta[positive]) * w[positive]
+      result
+    }, lower_z, Inf, rel_tol, subdivisions, extra = breaks, roundoff_tol = roundoff_tol)
+    if (ans$retried) retried &lt;&lt;- TRUE
+    ans$value / integral$value
+  }
+  logZ &lt;- peak + log(scale) + log(integral$value)
+  log_support &lt;- stats::pnorm((mu - boundary) / rho, log.p = TRUE)
+  r &lt;- if (boundary_case) {
+    2 * (1 + expectation(function(eta) expm1(boundary - eta)))
+  } else {
+    expectation(function(eta) exp(-eta))
+  }
+  normal_log &lt;- expectation(function(eta) stats::dnorm(eta, mu, rho, log = TRUE))
+  # A large peak makes the individual log density and entropy contributions
+  # poorly conditioned even if the requested integration tolerance succeeded.
+  centered_entropy &lt;- use_score || boundary_case || abs(peak)*rel_tol &gt; 1e-4
+  if (!centered_entropy &amp;&amp; !retried)
+    g_mean &lt;- expectation(function(eta) .bnn_quad_tail_g(eta, K, C))
+  if (centered_entropy || retried) {
+    expected_offset &lt;- expectation(offset)
+    g_mean &lt;- peak + expected_offset - normal_log
+    entropy &lt;- log(scale) + log(integral$value) - expected_offset
+  } else {
+    entropy &lt;- logZ - normal_log - g_mean
+  }
+  if (!is.finite(r) || r &lt;= 0 || r &gt; 2) stop(&quot;Tail quadrature violated 0 &lt; E[1/xi] &lt;= 2.&quot;)
+  list(log_normalizer = logZ, r = r, eta_mean = expectation(identity),
+       log_prior_support = log_support, expected_log_reference = normal_log,
+       expected_log_factor = g_mean, entropy_eta = entropy,
+       C = C, K = K, mu = mu, rho = rho, mode = mode,
+       estimated_relative_integration_error = integral$abs_error / integral$value)
+}</code></pre></section>
+<section id="gltbnn-fit"><p class="location">R/gltbnn.R · line 2</p><h2><code>gltbnn_fit</code></h2><pre tabindex="0"><code>gltbnn_fit &lt;- function(x, y, hidden = c(10L, 10L), prior = c(&quot;GLT&quot;, &quot;GL&quot;, &quot;G&quot;),
+                       control = list(), seed = 1L, noise_prior = NULL,
+                       outcome = c(&quot;continuous&quot;, &quot;binary&quot;, &quot;categorical&quot;),
+                       geometry = c(&quot;coefficient&quot;, &quot;unit&quot;)) {
+  prior &lt;- match.arg(prior)
+  outcome &lt;- match.arg(outcome)
+  geometry &lt;- match.arg(geometry)
+  x &lt;- .gltbnn_matrix(x, &quot;x&quot;)
+  if (nrow(x) &lt; 2L || !is.null(dim(y)) || length(y) != nrow(x)) {
+    stop(&quot;Supply at least two observations and one response per row of x.&quot;,
+         call. = FALSE)
+  }
+  if (!is.numeric(hidden) || !is.null(dim(hidden)) || !length(hidden) ||
+      any(!is.finite(hidden)) || any(hidden != floor(hidden)) ||
+      any(hidden &lt; 1 | hidden &gt; .Machine$integer.max)) {
+    stop(&quot;hidden must contain the positive integer width of each hidden layer.&quot;,
+         call. = FALSE)
+  }
+  hidden &lt;- as.integer(hidden)
+  control &lt;- .gltbnn_control(control)
+  seed &lt;- .gltbnn_integer(seed, &quot;seed&quot;, minimum = 0L)
+  if (!is.null(noise_prior)) {
+    if (outcome != &quot;continuous&quot;) {
+      stop(&quot;noise_prior applies only to continuous outcomes.&quot;, call. = FALSE)
+    }
+    if (!is.numeric(noise_prior) || !is.null(dim(noise_prior)) ||
+        length(noise_prior) != 2L || !setequal(names(noise_prior), c(&quot;shape&quot;, &quot;scale&quot;)) ||
+        any(!is.finite(noise_prior)) || any(noise_prior &lt;= 0)) {
+      stop(&quot;noise_prior must be NULL or a positive finite numeric vector named shape and scale.&quot;,
+           call. = FALSE)
+    }
+    noise_prior &lt;- noise_prior[c(&quot;shape&quot;, &quot;scale&quot;)]
+  }
+  prep &lt;- list(x_center = colMeans(x), x_scale = apply(x, 2L, stats::sd))
+  class_levels &lt;- NULL
+  if (outcome == &quot;continuous&quot;) {
+    if (!is.numeric(y) || any(!is.finite(y))) {
+      stop(&quot;Continuous outcomes require finite numeric responses.&quot;, call. = FALSE)
+    }
+    prep$y_center &lt;- mean(y)
+    prep$y_scale &lt;- stats::sd(y)
+    if (any(!is.finite(prep$x_scale) | prep$x_scale &lt;= 0) ||
+        !is.finite(prep$y_scale) || prep$y_scale &lt;= 0) {
+      stop(&quot;Each training predictor and the response must have a positive finite sample standard deviation.&quot;,
+           call. = FALSE)
+    }
+    response &lt;- (as.numeric(y) - prep$y_center) / prep$y_scale
+  } else {
+    labels &lt;- .gltbnn_labels(y, outcome)
+    class_levels &lt;- levels(labels)
+    response &lt;- as.integer(labels)
+    if (any(!is.finite(prep$x_scale))) {
+      stop(&quot;Training predictor standard deviations must be finite.&quot;, call. = FALSE)
+    }
+    prep$x_keep &lt;- which(prep$x_scale &gt; 0)
+    if (!length(prep$x_keep)) {
+      stop(&quot;Classification requires at least one varying training predictor.&quot;, call. = FALSE)
+    }
+  }
+
+  standardized_x &lt;- .gltbnn_scale_x(x, prep)
+  engine &lt;- .gltbnn_with_seed(seed, .gltbnn_engine_fit(
+    standardized_x, response, hidden, prior, control, seed, noise_prior,
+    outcome = outcome, n_classes = length(class_levels), geometry = geometry
+  ))
+  structure(list(prior = prior, hidden = hidden, n = nrow(x), p = ncol(x),
+                 predictor_names = colnames(x), preprocess = prep, seed = seed,
+                 control = control, noise_prior = noise_prior, engine = engine,
+                 outcome = outcome, levels = class_levels, geometry = geometry),
+            class = &quot;gltbnn_fit&quot;)
+}</code></pre></section>
+<section id="print-gltbnn-fit"><p class="location">R/gltbnn.R · line 74</p><h2><code>print.gltbnn_fit</code></h2><pre tabindex="0"><code>print.gltbnn_fit &lt;- function(x, ...) {
+  widths &lt;- paste(x$hidden, collapse = &quot;, &quot;)
+  family &lt;- if (is.null(x$outcome)) &quot;continuous&quot; else x$outcome
+  description &lt;- switch(family, continuous = &quot;Gaussian regression&quot;,
+                        binary = &quot;binary classification&quot;, categorical = &quot;categorical classification&quot;)
+  cat(sprintf(&quot;Bayesian neural network for %s (%s prior)\n&quot;, description, x$prior),
+      sprintf(&quot;Training dimensions (observations x predictors): %d x %d\n&quot;, x$n, x$p),
+      sprintf(&quot;Hidden layer widths: %s\n&quot;, widths),
+      sprintf(&quot;Outer iterations: %d\n&quot;, x$control$outer), sep = &quot;&quot;)
+  cat(&quot;Shrinkage geometry:&quot;, if (is.null(x$geometry)) &quot;unit&quot; else x$geometry, &quot;\n&quot;)
+  if (family != &quot;continuous&quot;) cat(&quot;Class levels:&quot;, paste(x$levels, collapse = &quot;, &quot;), &quot;\n&quot;)
+  invisible(x)
+}</code></pre></section>
+<section id="gltbnn-labels"><p class="location">R/gltbnn.R · line 88</p><h2><code>.gltbnn_labels</code></h2><pre tabindex="0"><code>.gltbnn_labels &lt;- function(y, outcome) {
+  if (!(is.factor(y) || is.character(y) || is.numeric(y) || is.logical(y)) ||
+      anyNA(y) || (is.numeric(y) &amp;&amp; any(!is.finite(y)))) {
+    stop(&quot;Classification requires a factor or a vector of nonmissing class labels.&quot;,
+         call. = FALSE)
+  }
+  labels &lt;- if (is.factor(y)) y else factor(y)
+  if (anyNA(levels(labels)) || any(!nzchar(levels(labels)))) {
+    stop(&quot;Class labels must be nonmissing and nonempty.&quot;, call. = FALSE)
+  }
+  if (any(tabulate(as.integer(labels), nbins = nlevels(labels)) == 0L)) {
+    stop(&quot;Each declared class must be observed in training; remove unused factor levels.&quot;,
+         call. = FALSE)
+  }
+  if (outcome == &quot;binary&quot; &amp;&amp; nlevels(labels) != 2L) {
+    stop(&quot;Binary outcomes require exactly two observed classes.&quot;, call. = FALSE)
+  }
+  if (nlevels(labels) &lt; 2L) {
+    stop(&quot;Categorical outcomes require at least two observed classes.&quot;, call. = FALSE)
+  }
+  labels
+}</code></pre></section>
+<section id="gltbnn-matrix"><p class="location">R/gltbnn.R · line 111</p><h2><code>.gltbnn_matrix</code></h2><pre tabindex="0"><code>.gltbnn_matrix &lt;- function(x, label) {
+  if (is.data.frame(x)) {
+    numeric_columns &lt;- vapply(x, function(column) {
+      is.numeric(column) &amp;&amp; is.null(dim(column))
+    }, logical(1))
+    if (all(numeric_columns)) x &lt;- as.matrix(x)
+  }
+  if (!is.matrix(x) || !is.numeric(x) || !nrow(x) || !ncol(x) || any(!is.finite(x))) {
+    stop(label, &quot; must be a nonempty numeric matrix or numeric data frame with finite entries.&quot;,
+         call. = FALSE)
+  }
+  nms &lt;- colnames(x)
+  if (!is.null(nms) &amp;&amp; (anyNA(nms) || any(!nzchar(nms)) || anyDuplicated(nms))) {
+    stop(label, &quot; must have unique, nonempty column names when names are supplied.&quot;,
+         call. = FALSE)
+  }
+  storage.mode(x) &lt;- &quot;double&quot;
+  x
+}</code></pre></section>
+<section id="gltbnn-scale-x"><p class="location">R/gltbnn.R · line 131</p><h2><code>.gltbnn_scale_x</code></h2><pre tabindex="0"><code>.gltbnn_scale_x &lt;- function(x, prep) {
+  keep &lt;- prep$x_keep
+  if (is.null(keep)) keep &lt;- seq_len(ncol(x))
+  x &lt;- x[, keep, drop = FALSE]
+  sweep(sweep(x, 2L, prep$x_center[keep], &quot;-&quot;), 2L, prep$x_scale[keep], &quot;/&quot;)
+}</code></pre></section>
+<section id="gltbnn-integer"><p class="location">R/gltbnn.R · line 138</p><h2><code>.gltbnn_integer</code></h2><pre tabindex="0"><code>.gltbnn_integer &lt;- function(value, name, minimum = 1L) {
+  if (!is.numeric(value) || length(value) != 1L || !is.null(dim(value)) ||
+      !is.finite(value) || value != floor(value) ||
+      value &lt; minimum || value &gt; .Machine$integer.max) {
+    stop(name, &quot; must be an integer of at least &quot;, minimum, &quot; within R&#x27;s integer range.&quot;,
+         call. = FALSE)
+  }
+  as.integer(value)
+}</code></pre></section>
+<section id="gltbnn-control"><p class="location">R/gltbnn.R · line 148</p><h2><code>.gltbnn_control</code></h2><pre tabindex="0"><code>.gltbnn_control &lt;- function(control) {
+  defaults &lt;- list(outer = 60L, weight_steps = 10L, init_steps = 600L,
+                   lr = 0.003, weight_draws = 4L, noise_draws = 16L,
+                   monitor_draws = 64L, endpoint_draws = 256L, grad_clip = 10,
+                   logsd_bounds = c(-15, 3), max_backtracks = 10L)
+  if (!is.list(control) || is.data.frame(control) ||
+      (length(control) &amp;&amp; (is.null(names(control)) || anyDuplicated(names(control)) ||
+                            !all(names(control) %in% c(names(defaults), &quot;batch_size&quot;))))) {
+    stop(&quot;control must be a list with unique names selected from the fitting controls.&quot;,
+         call. = FALSE)
+  }
+  defaults[names(control)] &lt;- control
+  if (is.null(defaults$batch_size)) {
+    defaults$batch_size &lt;- NULL
+  } else {
+    defaults$batch_size &lt;- .gltbnn_integer(defaults$batch_size, &quot;batch_size&quot;)
+  }
+  for (nm in c(&quot;outer&quot;, &quot;weight_steps&quot;, &quot;init_steps&quot;, &quot;max_backtracks&quot;)) {
+    defaults[[nm]] &lt;- .gltbnn_integer(defaults[[nm]], nm)
+  }
+  for (nm in c(&quot;weight_draws&quot;, &quot;noise_draws&quot;, &quot;monitor_draws&quot;, &quot;endpoint_draws&quot;)) {
+    defaults[[nm]] &lt;- .gltbnn_integer(defaults[[nm]], nm, minimum = 2L)
+    if (defaults[[nm]] %% 2L != 0L) stop(nm, &quot; must be even.&quot;, call. = FALSE)
+  }
+  for (nm in c(&quot;lr&quot;, &quot;grad_clip&quot;)) {
+    v &lt;- defaults[[nm]]
+    if (!is.numeric(v) || length(v) != 1L || !is.null(dim(v)) || !is.finite(v) || v &lt;= 0) {
+      stop(nm, &quot; must be a positive finite number.&quot;, call. = FALSE)
+    }
+  }
+  b &lt;- defaults$logsd_bounds
+  if (!is.numeric(b) || length(b) != 2L || !is.null(dim(b)) ||
+      any(!is.finite(b)) || b[1L] &gt;= b[2L]) {
+    stop(&quot;logsd_bounds must contain two increasing finite numbers.&quot;, call. = FALSE)
+  }
+  variance_bounds &lt;- exp(2 * b)
+  if (any(variance_bounds == 0) || any(!is.finite(variance_bounds))) {
+    stop(&quot;Both logsd_bounds must yield positive finite variances under exp(2 * bound).&quot;,
+         call. = FALSE)
+  }
+  defaults
+}</code></pre></section>
+<section id="gltbnn-with-seed"><p class="location">R/gltbnn.R · line 192</p><h2><code>.gltbnn_with_seed</code></h2><pre tabindex="0"><code>.gltbnn_with_seed &lt;- function(seed, expr) {
+  previous &lt;- get0(&quot;.Random.seed&quot;, envir = .GlobalEnv, inherits = FALSE)
+  on.exit({
+    if (is.null(previous)) {
+      if (exists(&quot;.Random.seed&quot;, envir = .GlobalEnv, inherits = FALSE)) {
+        rm(&quot;.Random.seed&quot;, envir = .GlobalEnv)
+      }
+    } else {
+      assign(&quot;.Random.seed&quot;, previous, envir = .GlobalEnv)
+    }
+  })
+  set.seed(seed)
+  force(expr)
+}</code></pre></section>
+<section id="predict-gltbnn-fit"><p class="location">R/predict.R · line 1</p><h2><code>predict.gltbnn_fit</code></h2><pre tabindex="0"><code>predict.gltbnn_fit &lt;- function(object, newdata, type = NULL,
+                              draws = 256L, level = 0.95, seed = 1L, ...) {
+  if (...length()) stop(&quot;Unused arguments supplied to predict().&quot;, call. = FALSE)
+  # Fits saved before outcome selection was introduced are Gaussian.
+  classification &lt;- !is.null(object$outcome) &amp;&amp; object$outcome %in% c(&quot;binary&quot;, &quot;categorical&quot;)
+  choices &lt;- if (classification) c(&quot;class&quot;, &quot;prob&quot;, &quot;prob_draws&quot;) else
+    c(&quot;mean&quot;, &quot;mean_draws&quot;, &quot;response_draws&quot;, &quot;mean_interval&quot;, &quot;prediction_interval&quot;)
+  type &lt;- match.arg(type, choices)
+  draws &lt;- .gltbnn_integer(draws, &quot;draws&quot;)
+  seed &lt;- .gltbnn_integer(seed, &quot;seed&quot;, minimum = 0L)
+  interval &lt;- type %in% c(&quot;mean_interval&quot;, &quot;prediction_interval&quot;)
+  if (interval) {
+    if (draws &lt; 2L) stop(&quot;Intervals require at least two draws.&quot;, call. = FALSE)
+    if (!is.numeric(level) || length(level) != 1L || !is.null(dim(level)) ||
+        !is.finite(level) || level &lt;= 0 || level &gt;= 1) {
+      stop(&quot;level must be a number strictly between zero and one.&quot;, call. = FALSE)
+    }
+  }
+  x &lt;- .gltbnn_matrix(newdata, &quot;newdata&quot;)
+  if (ncol(x) != object$p) {
+    stop(&quot;The number of predictors in newdata must match the training data.&quot;, call. = FALSE)
+  }
+  if (!is.null(object$predictor_names) &amp;&amp; !is.null(colnames(x))) {
+    if (!setequal(colnames(x), object$predictor_names)) {
+      stop(&quot;Predictor names in newdata must match the training data.&quot;, call. = FALSE)
+    }
+    x &lt;- x[, object$predictor_names, drop = FALSE]
+  }
+  standardized_x &lt;- .gltbnn_scale_x(x, object$preprocess)
+  if (any(!is.finite(standardized_x))) {
+    stop(&quot;The training-scale transformation overflows for newdata. Check its values and predictor units.&quot;,
+         call. = FALSE)
+  }
+  if (classification) {
+    probabilities &lt;- .gltbnn_with_seed(seed, .gltbnn_engine_class_draws(
+      object$engine, standardized_x, draws, summarize = type != &quot;prob_draws&quot;
+    ))
+    if (type == &quot;prob_draws&quot;) {
+      dimnames(probabilities) &lt;- list(rownames(x), object$levels, NULL)
+      return(probabilities)
+    }
+    dimnames(probabilities) &lt;- list(rownames(x), object$levels)
+    if (type == &quot;prob&quot;) return(probabilities)
+    winning_class &lt;- max.col(probabilities, ties.method = &quot;first&quot;)
+    labels &lt;- factor(object$levels[winning_class], levels = object$levels)
+    names(labels) &lt;- rownames(x)
+    return(labels)
+  }
+  predictive &lt;- type %in% c(&quot;response_draws&quot;, &quot;prediction_interval&quot;)
+  samples &lt;- .gltbnn_with_seed(seed, .gltbnn_engine_draws(
+    object$engine, standardized_x, draws, predictive
+  ))
+  samples &lt;- samples * object$preprocess$y_scale + object$preprocess$y_center
+  if (any(!is.finite(samples))) {
+    stop(&quot;Prediction exceeds the finite numerical range. Check newdata and the response scale.&quot;, call. = FALSE)
+  }
+  rownames(samples) &lt;- rownames(x)
+  if (type == &quot;mean&quot;) return(rowMeans(samples))
+  if (interval) {
+    tail_probability &lt;- (1 - level) / 2
+    bounds &lt;- t(apply(samples, 1L, stats::quantile,
+                      probs = c(tail_probability, 1 - tail_probability), names = FALSE))
+    colnames(bounds) &lt;- c(&quot;lower&quot;, &quot;upper&quot;)
+    return(bounds)
+  }
+  samples
+}</code></pre></section>
+<section id="gltbnn-shrinkage"><p class="location">R/shrinkage.R · line 1</p><h2><code>gltbnn_shrinkage</code></h2><pre tabindex="0"><code>gltbnn_shrinkage &lt;- function(fit) {
+  if (!inherits(fit, &quot;gltbnn_fit&quot;)) {
+    stop(&quot;fit must be a model returned by gltbnn_fit().&quot;, call. = FALSE)
+  }
+  state &lt;- fit$engine$state
+  log_reference_variance &lt;- if (is.null(state$noise)) 0 else state$noise$zeta
+  coefficient_geometry &lt;- identical(fit$engine$config$geometry, &quot;coefficient&quot;)
+  by_layer &lt;- lapply(seq_along(fit$hidden), function(layer) {
+    width &lt;- fit$hidden[layer]
+    dimension &lt;- fit$engine$config$d[layer]
+    group &lt;- state$g[[layer]]
+    if (coefficient_geometry) {
+      unit &lt;- rep(seq_len(width), each = dimension)
+      coordinate &lt;- rep(seq_len(dimension), width)
+      # Scale factors follow the weight matrix&#x27;s column-major storage order.
+      index &lt;- unit + (coordinate - 1L) * width
+      rows &lt;- data.frame(layer = layer, unit = unit, coordinate = coordinate,
+                         is_bias = coordinate == dimension, group_size = 1L)
+    } else {
+      index &lt;- seq_len(width)
+      rows &lt;- data.frame(layer = layer, unit = index, group_size = dimension)
+    }
+    terms &lt;- .bnn_prior_terms(group, length(index), fit$prior)
+    # The inverse-gamma factor represents tau under GLT and tau^2 under G/GL.
+    # For GLT, tail$r = E_q[1/xi] and tail$eta_mean = E_q[log xi].
+    log_layer_scale &lt;- if (fit$prior == &quot;GLT&quot;) group$tau$zeta else group$tau$zeta / 2
+    rows$scale_precision &lt;- terms$precision[index]
+    rows$geometric_prior_sd &lt;- exp((log_reference_variance + terms$logvar[index]) / 2)
+    rows$geometric_layer_scale &lt;- exp(log_layer_scale)
+    rows$geometric_tail_shape &lt;- if (fit$prior == &quot;GLT&quot;) exp(group$tail$eta_mean) else NA_real_
+    rows
+  })
+  do.call(rbind, by_layer)
+}</code></pre></section></main></body></html>

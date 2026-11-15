@@ -97,7 +97,7 @@ page = """<!doctype html>
 <a class="skip" href="#content">Skip to content</a>
 <header class="topbar"><div class="wrap bar-inner">
   <a class="wordmark" href="../" aria-label="gltbnn home">glt<span>bnn</span></a>
-  <nav aria-label="Computational methods"><a href="#g">G-BNN</a><a href="#gl">GL-BNN</a><a href="#glt">GLT-BNN</a><a href="#checks">Numerical checks</a><a href="../reference.pdf">R reference</a></nav>
+  <nav aria-label="Computational methods"><a href="#g">G-BNN</a><a href="#gl">GL-BNN</a><a href="#glt">GLT-BNN</a><a href="algorithms.html">Fitting algorithms</a><a href="#checks">Numerical checks</a><a href="../reference.pdf">R reference</a></nav>
 </div></header>
 <main id="content" class="wrap">
 <header class="guide-intro">

@@ -57,7 +57,7 @@ head(predict(fit, flowers[holdout, 1:4], type = "prob"))
 
 ## What each prior shrinks
 
-The package website’s computation guide explains the updates for G, GL and GLT. Its [interactive ELBO replay](https://yain22.github.io/Bayesian_NN_GLT/computation/elbo-replay.html) follows three matched fits for each simulation setting and initialization. Its [R scripts](docs/computation/) fit all three priors to the same training trees, predict volume for six held-out trees and reproduce the GLT quadrature check in Supplement Section S5.1.
+The [step-by-step fitting algorithms](https://yain22.github.io/Bayesian_NN_GLT/computation/algorithms.html) show the equations, R implementation and fitting budget for G, GL and GLT. The [interactive ELBO replay](https://yain22.github.io/Bayesian_NN_GLT/computation/elbo-replay.html) follows three matched fits for each simulation setting and initialization. The [R scripts](docs/computation/) fit all three priors to the same training trees, predict volume for six held-out trees and reproduce the GLT quadrature check in Supplement Section S5.1.
 
 For Gaussian regression, the package standardizes the training response and uses the Jeffreys prior $p(\sigma^2)\propto1/\sigma^2$ by default. Posterior propriety with this prior depends on the data. To use the supplement's proper inverse-gamma alternative, pass positive hyperparameters, for example `noise_prior = c(shape = 2, scale = 1)`.
 

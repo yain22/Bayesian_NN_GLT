@@ -7,7 +7,7 @@
 <style>
 :root{color-scheme:light;--ink:#183447;--paper:#fcfaf5;--navy:#214f70;--rust:#98452f;--green:#326852;--muted:#475c65;--rule:#d3d8d2;--sans:Inter,"Segoe UI",Arial,sans-serif;--serif:Baskervville,"Palatino Linotype",Palatino,Georgia,serif}
 *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:1rem/1.52 var(--sans)}[hidden]{display:none!important}
-header,main{width:min(100% - 2.4rem,960px);margin:auto}header{padding:1.05rem 0;border-bottom:1px solid var(--rule);display:flex;align-items:center;gap:1.6rem}
+header,main{width:min(100% - 2.4rem,960px);margin:auto}header{padding:1.05rem 0;border-bottom:1px solid var(--rule);display:flex;align-items:center;flex-wrap:wrap;gap:.55rem 1.6rem}
 .brand{font:bold 1.7rem var(--serif);letter-spacing:-.055em;text-decoration:none}.brand span{color:var(--rust)}a{color:var(--navy);text-underline-offset:.18em}h1{font:500 clamp(2rem,5vw,3.7rem)/1.08 var(--serif);margin:2rem 0 .65rem;letter-spacing:-.035em}p{margin:.5rem 0 1.1rem;max-width:80ch}
 .controls,.timebar{display:flex;align-items:end;flex-wrap:wrap;gap:.6rem 1.1rem}.controls{margin:1.15rem 0}.controls label{display:grid;gap:.22rem;font-weight:600;font-size:.88rem}select,button{font:inherit;border:1px solid #87999b;border-radius:.28rem;background:white;color:var(--ink);padding:.39rem .65rem}button{cursor:pointer;font-weight:600}button:disabled{opacity:.47;cursor:default}button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #b36e31;outline-offset:3px}
 .sheet{background:#fff;border:1px solid var(--rule);padding:clamp(.7rem,2vw,1.35rem);border-radius:.4rem;margin:.9rem 0 1.25rem}
@@ -21,7 +21,7 @@ header,main{width:min(100% - 2.4rem,960px);margin:auto}header{padding:1.05rem 0;
 .timebar{align-items:center;gap:.45rem}#play{background:var(--navy);color:white;border-color:var(--navy);min-width:5.5rem}input[type=range]{width:100%;margin:.9rem 0 .25rem;accent-color:var(--navy)}.cycle{font-variant-numeric:tabular-nums;font-weight:700}table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:.91rem}th,td{text-align:right;padding:.22rem .28rem}th:first-child{text-align:left}thead th{font-size:.78rem;color:var(--muted);border-bottom:1px solid var(--rule)}tbody th{font-weight:600}.key{display:inline-block;width:1.6rem;margin:0 .45rem .22rem 0;border-top:3px solid currentColor}.key.GL{border-top-style:dashed}.key.GLT{border-top-style:dotted}
 .notes{font-size:.91rem}.notes p{margin:.5rem 0}.links{border-top:1px solid var(--rule);padding-top:.9rem;margin:1.05rem 0 2rem}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}@media(max-width:560px){.readouts{grid-template-columns:1fr;gap:.65rem}.controls{gap:.45rem .65rem}.controls label{font-size:.82rem}.chartrow{grid-template-columns:2.8rem minmax(0,1fr)}.xticks,.xlabel{margin-left:2.8rem}.chart{min-height:180px}h1{margin-top:1.15rem}}
 </style></head>
-<body><header><a class="brand" href="../">glt<span>bnn</span></a><a href="index.html#checks">Computation guide</a></header>
+<body><header><a class="brand" href="../">glt<span>bnn</span></a><a href="index.html#checks">Computation guide</a><a href="algorithms.html">Fitting algorithms</a></header>
 <main><h1>Replay variational fitting</h1>
 <p>Follow three Bayesian neural networks from the same initial weights on the same training data. Each line joins recorded estimates of the evidence lower bound (ELBO) for one shrinkage prior.</p>
 <div class="controls" id="choices" hidden>

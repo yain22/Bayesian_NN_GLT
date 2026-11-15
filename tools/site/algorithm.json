@@ -1,0 +1,826 @@
+{
+  "title": "Variational fitting, step by step",
+  "intro": "Follow a full-batch Gaussian regression fit from initialization to prediction. Choose a prior to see its shrinkage updates within the common fitting cycle.",
+  "shared_steps": {
+    "model": {
+      "id": "model",
+      "title": "Set up the regression network",
+      "summary": "Use the training rows to define the scales of the inputs and response. Carry those same scales forward to prediction.",
+      "blocks": [
+        {
+          "text": "Let $K_0=p$ and let $K_l$ be the width of hidden layer $l$. Its $M_l=K_l(K_{l-1}+1)$ coefficients include a bias for every receiving unit. Within a layer write $a=(k,j)$ for one of these coefficients. The output vector $\\mathbf v$ includes its intercept and has length $d_o=K_L+1$."
+        },
+        {
+          "math": "\\mathbf h_0=\\mathbf x,\\qquad \\mathbf h_l=\\max\\{0,\\mathbf W_l(\\mathbf h_{l-1}^\\top,1)^\\top\\}"
+        },
+        {
+          "math": "f_{\\mathcal W}(\\mathbf x)=\\mathbf v^\\top(\\mathbf h_L^\\top,1)^\\top,\\qquad Y_i\\mid\\mathcal W,\\sigma^2\\sim N(f_{\\mathcal W}(\\mathbf x_i),\\sigma^2)"
+        },
+        {
+          "text": "Fit on predictors and responses standardized by their training sample means and standard deviations. The paper uses a Jeffreys prior $p(\\sigma^2)\\propto 1/\\sigma^2$. The hidden-weight prior conditional on the scales is $w_a\\sim N(0,\\sigma^2\\lambda_a^2)$. The output prior is $\\mathbf v\\mid u\\sim N(\\mathbf 0,u\\mathbf I)$ with $\\sqrt u=\\kappa\\sim C^+(0,5)$."
+        },
+        {
+          "detail": "Variational factors and inverse-gamma convention",
+          "blocks": [
+            {
+              "text": "Each scalar hidden or output weight has its own $N(m_j,s_j^2)$ factor. The noise variance, output-scale variables and variables in the selected shrinkage hierarchy have separate factors. Independence under this fitted approximation lets their moments multiply in a coordinate update."
+            },
+            {
+              "math": "\\operatorname{IG}(a,b):\\quad q(z)=\\frac{b^a}{\\Gamma(a)}z^{-a-1}\\exp(-b/z),\\quad z>0"
+            },
+            {
+              "text": "For $q(X)=\\operatorname{IG}(a,b)$, write $\\phi_X=E_q[X^{-1}]=a/b$ and $\\zeta_X=E_q[\\log X]=\\log b-\\psi(a)$. We abbreviate the noise precision $\\phi_{\\sigma^2}$ to $\\phi$. The same inverse-gamma shape and scale convention is used throughout."
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "label": "gltbnn_fit",
+          "href": "source.html#gltbnn-fit"
+        },
+        {
+          "label": ".bnn_forward",
+          "href": "source.html#bnn-forward"
+        },
+        {
+          "label": ".bnn_ig",
+          "href": "source.html#bnn-ig"
+        }
+      ]
+    },
+    "initialize": {
+      "id": "initialize",
+      "title": "Initialize a single fit",
+      "summary": "Train one unpenalized network and use its fitted coefficients to initialize the variational means.",
+      "blocks": [
+        {
+          "text": "The standard run uses 600 full-batch Adam steps on squared-error loss with learning rate 0.003. Initialize each variational standard deviation at 0.01, within the supplied log-standard-deviation bounds. The variational optimizer starts with fresh first and second moment accumulators."
+        },
+        {
+          "math": "q(\\sigma^2)=\\operatorname{IG}(3,1),\\quad q(u)=\\operatorname{IG}(2,2),\\quad q(\\rho_\\kappa)=\\operatorname{IG}(1,1.04)"
+        },
+        {
+          "text": "The starting value of $\\phi$ is therefore 3. The output-scale auxiliary $\\rho_\\kappa$ comes from $u\\mid\\rho_\\kappa\\sim\\operatorname{IG}(1/2,1/\\rho_\\kappa)$ and $\\rho_\\kappa\\sim\\operatorname{IG}(1/2,5^{-2})$. The next step initializes the hidden scales for the selected prior."
+        },
+        {
+          "detail": "Where the ten starting values in Figure S10 enter",
+          "blocks": [
+            {
+              "text": "Each start in Figure S10 generates a complete fit. A given setting and start use the same data and starting weights across the three priors. Ten such starts for each of nine settings and three priors give 270 trajectories. Each trajectory has its own 60 outer cycles."
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "label": ".bnn_initialize",
+          "href": "source.html#bnn-initialize"
+        },
+        {
+          "label": ".gltbnn_engine_fit",
+          "href": "source.html#gltbnn-engine-fit"
+        }
+      ]
+    },
+    "start-cycle": {
+      "id": "start-cycle",
+      "title": "Set the current shrinkage precisions",
+      "summary": "Record the full-batch objective at initialization. At the beginning of each cycle, read the latest variance and scale moments.",
+      "blocks": [
+        {
+          "math": "P_a=E_q[\\lambda_a^{-2}],\\qquad \\pi_a=\\phi P_a,\\qquad \\pi_{o,j}=E_q[u^{-1}]"
+        },
+        {
+          "text": "The selected hierarchy supplies $P_a$ for each hidden weight or bias. The noise precision multiplies hidden-weight precisions in Gaussian regression. All output coefficients have precision $\\pi_{o,j}$, independent of the observation variance. Keep these precisions fixed during this cycle’s weight updates."
+        },
+        {
+          "text": "For the baseline full-batch ELBO at cycle 0, generate 32 independent standard-normal perturbation vectors and pair each with its negative. Save this monitoring bank. The weight optimizer and the variance update use separate draws. The objective-monitoring step below shows the calculation at cycle 0 and every subsequent checkpoint."
+        }
+      ],
+      "sources": [
+        {
+          "label": ".bnn_coefficient_terms",
+          "href": "source.html#bnn-coefficient-terms"
+        },
+        {
+          "label": ".gltbnn_engine_fit",
+          "href": "source.html#gltbnn-engine-fit"
+        },
+        {
+          "label": ".bnn_elbo",
+          "href": "source.html#bnn-elbo"
+        }
+      ]
+    },
+    "backpropagation": {
+      "id": "backpropagation",
+      "title": "Backpropagate through sampled networks",
+      "summary": "Each proposed update changes the variational means and log standard deviations of all hidden and output coefficients together.",
+      "blocks": [
+        {
+          "text": "Write $\\ell_j=\\log s_j$. For one attempt, generate two independent standard-normal vectors and their negatives, giving four perturbations $\\epsilon^{(b)}$. Draw a complete set of weights $\\mathcal W^{(b)}=m+s\\odot\\epsilon^{(b)}$ for each forward pass. The sampled weight objective, up to terms fixed in this block, is"
+        },
+        {
+          "math": "\\widehat J=-\\frac{\\phi}{2B}\\sum_{b=1}^B\\sum_{i=1}^n\\{y_i-f_{\\mathcal W^{(b)}}(\\mathbf x_i)\\}^2-\\frac12\\sum_j\\pi_j(m_j^2+s_j^2)+\\sum_j\\ell_j."
+        },
+        {
+          "text": "At draw $b$, begin at the output with the residual score $\\phi(y_i-f_{\\mathcal W^{(b)}}(\\mathbf x_i))$. Backpropagate this score through the sampled weights and the active ReLU gates. Denote the resulting derivative of the sampled data log likelihood with respect to weight $w_j^{(b)}$ by $g_j^{(b)}$."
+        },
+        {
+          "math": "\\frac{\\partial\\widehat J}{\\partial m_j}=\\frac1B\\sum_b g_j^{(b)}-\\pi_jm_j,\\qquad \\frac{\\partial\\widehat J}{\\partial\\ell_j}=\\frac1B\\sum_b g_j^{(b)}s_j\\epsilon_j^{(b)}+1-\\pi_js_j^2."
+        },
+        {
+          "text": "The factors $1$ and $s_j\\epsilon_j^{(b)}$ are the derivatives of $w_j^{(b)}$ with respect to $m_j$ and $\\ell_j$. The terms outside the averages are the exact Gaussian prior and entropy gradients. ReLU activations and their composition across layers generally prevent a closed-form Gaussian weight update."
+        },
+        {
+          "detail": "Trace one hidden connection",
+          "blocks": [
+            {
+              "text": "For a unit with preactivation $z$ and activation $h=\\max(0,z)$, multiply the derivative arriving from the next layer by $\\mathbf{1}\\{z>0\\}$. Multiply that result by the sending activation to obtain the derivative for its incoming weight. Use a sending activation of one for a bias. Sum over training rows. The implementation uses derivative zero at $z=0$."
+            },
+            {
+              "text": "As an illustration, let $f=v\\max(0,wx)$ on one row with $x=2$, $y=3$, $w=0.5$, $v=1$ and $\\phi=1$. The forward pass gives $f=1$. The output score is $3-1=2$, the gate is open, and the derivative for $w$ is $2\\times1\\times1\\times2=4$. If $s=0.1$ and $\\epsilon=1$, this draw contributes 4 to the likelihood gradient for the mean and 0.4 to that for the log standard deviation."
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "label": ".bnn_forward",
+          "href": "source.html#bnn-forward"
+        },
+        {
+          "label": ".bnn_backprop",
+          "href": "source.html#bnn-backprop"
+        },
+        {
+          "label": ".bnn_weight_objective",
+          "href": "source.html#bnn-weight-objective"
+        },
+        {
+          "label": ".bnn_antithetic_draws",
+          "href": "source.html#bnn-antithetic-draws"
+        }
+      ]
+    },
+    "weight-updates": {
+      "id": "weight-updates",
+      "title": "Take ten successive weight-update attempts",
+      "summary": "Adam converts the weight gradients into a proposed change. Each attempt starts from the accepted or retained state of the preceding attempt.",
+      "blocks": [
+        {
+          "text": "Divide the gradient of $\\widehat J$ by $n$, clip its Euclidean norm at 10, and form the bias-corrected Adam direction. The defaults use moments with decay 0.9 and 0.999, a denominator stabilizer of $10^{-8}$ and an initial step size of 0.003. If the direction has nonpositive inner product with the gradient, use the gradient divided by the Adam denominator."
+        },
+        {
+          "math": "\\theta_{\\rm trial}=\\theta+0.003\\,2^{-b}d,\\qquad b=0,\\ldots,10,\\quad \\theta=(m,\\log s)"
+        },
+        {
+          "text": "Clip trial log standard deviations to $[-15,3]$. Score the current and trial parameters with the same four perturbations and fixed prior moments. Accept the first finite candidate whose sampled objective meets or exceeds the current value. If all 11 step sizes fail, keep the current factors. The attempt still counts. The next attempt draws fresh perturbations."
+        },
+        {
+          "text": "After ten attempts, refresh the weight moments and update the variance and shrinkage factors. Ten controls how often those factors are refreshed. A single attempt per cycle is also possible. The study used ten for all three priors."
+        }
+      ],
+      "sources": [
+        {
+          "label": ".bnn_adam_step",
+          "href": "source.html#bnn-adam-step"
+        },
+        {
+          "label": ".bnn_weight_objective",
+          "href": "source.html#bnn-weight-objective"
+        },
+        {
+          "label": ".gltbnn_control",
+          "href": "source.html#gltbnn-control"
+        }
+      ]
+    },
+    "noise": {
+      "id": "noise",
+      "title": "Update the observation variance",
+      "summary": "Use the new weight moments, the current hidden-scale precisions, and a fresh estimate of the residual sum of squares.",
+      "blocks": [
+        {
+          "math": "H_a=m_a^2+s_a^2,\\qquad D_G=\\sum_l M_l,\\qquad \\mathcal R\\approx\\frac1{16}\\sum_{b=1}^{16}\\sum_i(y_i-f_{\\mathcal W^{(b)}}(\\mathbf x_i))^2"
+        },
+        {
+          "text": "Use eight fresh antithetic pairs for $\\mathcal R$. With the Jeffreys prior on $\\sigma^2$ and fitted layer multipliers equal to one, the update is"
+        },
+        {
+          "math": "q(\\sigma^2)=\\operatorname{IG}\\!\\left(\\frac{n+D_G}{2},\\frac{\\mathcal R+\\sum_l\\sum_{a\\in\\mathcal I_l}P_aH_a}{2}\\right)."
+        },
+        {
+          "text": "The conditional normal priors on hidden coefficients supply the $D_G$ contribution to the shape and the shrinkage-weighted sum in the scale. The output coefficients have their own prior scale. Use the new $\\phi=E_q[1/\\sigma^2]$ in the hidden-hierarchy updates that follow."
+        },
+        {
+          "detail": "Proper noise prior and classification",
+          "blocks": [
+            {
+              "text": "With a user-supplied $\\operatorname{IG}(a_0,b_0)$ noise prior, add $a_0$ and $b_0$ to the displayed shape and scale. For binary or unordered categorical outcomes, omit the observation-variance factor, use hidden prior precision $P_a$ and backpropagate the logistic or reference-class softmax log likelihood. The downloadable R examples on the computation page use Gaussian regression."
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "label": ".bnn_weight_moments",
+          "href": "source.html#bnn-weight-moments"
+        },
+        {
+          "label": ".bnn_sse",
+          "href": "source.html#bnn-sse"
+        },
+        {
+          "label": ".gltbnn_engine_fit",
+          "href": "source.html#gltbnn-engine-fit"
+        }
+      ]
+    },
+    "output": {
+      "id": "output",
+      "title": "Update the output scale and its auxiliary",
+      "summary": "Pool the expected squared output weights, including the intercept.",
+      "blocks": [
+        {
+          "math": "H_o=\\sum_{j=1}^{d_o}(m_{o,j}^2+s_{o,j}^2),\\qquad q(u)=\\operatorname{IG}\\!\\left(\\frac{d_o+1}{2},\\frac{H_o}{2}+\\phi_{\\rho_\\kappa}\\right)"
+        },
+        {
+          "math": "q(\\rho_\\kappa)=\\operatorname{IG}\\!\\left(1,\\phi_u+5^{-2}\\right)"
+        },
+        {
+          "text": "Update $q(u)$ first and use its new inverse moment $\\phi_u$ in the auxiliary update. The next weight block uses $\\phi_u$ for all readout weights. Each hidden layer now updates the scale factors specific to the selected prior."
+        }
+      ],
+      "sources": [
+        {
+          "label": ".gltbnn_engine_fit",
+          "href": "source.html#gltbnn-engine-fit"
+        },
+        {
+          "label": ".bnn_ig",
+          "href": "source.html#bnn-ig"
+        }
+      ]
+    },
+    "elbo": {
+      "id": "elbo",
+      "title": "Calculate the full variational objective",
+      "summary": "After updating all factors, record one ELBO estimate for the entire network. This is the value shown in the replay.",
+      "blocks": [
+        {
+          "math": "\\mathcal L(q)=E_q[\\log p(y\\mid\\mathcal W,\\sigma^2)]+E_q[\\log p(\\mathcal W,z)]+H(q)"
+        },
+        {
+          "text": "Here $z$ includes the observation variance, scale variables and auxiliaries. For the Gaussian likelihood use the fixed monitoring bank from cycle 0. With the current $m,s$, form the 64 weight draws $m+s\\odot\\epsilon^{(b)}$ and evaluate the expected log likelihood as"
+        },
+        {
+          "math": "\\widehat L_y=-\\frac{n}{2}\\{\\log(2\\pi)+\\zeta_{\\sigma^2}\\}-\\frac{\\phi}{2B}\\sum_{b=1}^{B}\\sum_{i=1}^n\\{y_i-f_{\\mathcal W^{(b)}}(\\mathbf x_i)\\}^2,\\quad B=64."
+        },
+        {
+          "text": "Add the expected log densities of the Gaussian weights and their scale hierarchy, the noise log prior and the entropy of every fitted factor. The likelihood is the sole Monte Carlo term. G and GL use their inverse-gamma moments. GLT also uses normalized scalar quadrature. Under the Jeffreys variance prior use $E_q[\\log p(\\sigma^2)]=-\\zeta_{\\sigma^2}$ with the arbitrary additive constant set to zero."
+        },
+        {
+          "detail": "Contributions from a hidden weight and an output weight",
+          "blocks": [
+            {
+              "math": "E_q[\\log p(w_a\\mid\\sigma^2,\\lambda_a)]=-\\tfrac12\\{\\log(2\\pi)+\\zeta_{\\sigma^2}+E_q[\\log\\lambda_a^2]+\\phi P_a H_a\\}"
+            },
+            {
+              "math": "E_q[\\log p(v_j\\mid u)]=-\\tfrac12\\{\\log(2\\pi)+\\zeta_u+\\phi_u H_{o,j}\\}"
+            },
+            {
+              "text": "Here $H_{o,j}=m_{o,j}^2+s_{o,j}^2$. Each Gaussian weight or bias adds entropy $\\tfrac12\\log(2\\pi e s_j^2)$. Each inverse-gamma factor contributes $a+\\log b+\\log\\Gamma(a)-(1+a)\\psi(a)$ to the entropy. Include conditional-prior normalizers that depend on a random parent, especially the GLT tail shape. The source link gives the full sum, including the scale priors and auxiliaries."
+            }
+          ]
+        },
+        {
+          "detail": "Monte Carlo uncertainty and the stopping rule",
+          "blocks": [
+            {
+              "text": "Pair the likelihood contributions for each perturbation and its negative. For two consecutive checkpoints take the within-pair mean of the two changes. The sample standard deviation of the 32 paired changes divided by $\\sqrt{32}$ gives the reported Monte Carlo standard error of the gain. Fixed perturbations produce different realized weights as $m$ and $s$ change."
+            },
+            {
+              "text": "At the default budget, record cycles 0 through 60. A small one-cycle change cannot establish that the parameters have stabilized. Return the final factors and reevaluate the endpoint with 256 fresh antithetic draws. This estimate is stored separately. The preset budget gives the three priors the same number of weight-update attempts."
+            }
+          ]
+        },
+        {
+          "code": "fit$engine$trace[, c(\"outer\", \"elbo\", \"gain\", \"paired_gain_mcse\")]\nfit$engine$components\nfit$engine$endpoint$value"
+        }
+      ],
+      "sources": [
+        {
+          "label": ".bnn_elbo",
+          "href": "source.html#bnn-elbo"
+        },
+        {
+          "label": ".bnn_coefficient_terms",
+          "href": "source.html#bnn-coefficient-terms"
+        },
+        {
+          "label": ".gltbnn_engine_fit",
+          "href": "source.html#gltbnn-engine-fit"
+        }
+      ]
+    },
+    "controls": {
+      "id": "controls",
+      "title": "Choose settings for a new fit",
+      "summary": "Use the R control list to change the fitting schedule and Monte Carlo accuracy.",
+      "blocks": [
+        {
+          "text": "The number of cycles is outer (default 60). The number of successive attempts inside each cycle is weight_steps (10). The unpenalized warm start has its own init_steps (600). Each of these takes a positive integer. To compare budgets on a full-batch trajectory, hold the data, architecture, prior, initialization seed and other controls fixed and increase outer."
+        },
+        {
+          "code": "control = list(outer = 60L, weight_steps = 10L, init_steps = 600L,\n               lr = 0.003, grad_clip = 10, max_backtracks = 10L,\n               logsd_bounds = c(-15, 3), weight_draws = 4L,\n               noise_draws = 16L, monitor_draws = 64L, endpoint_draws = 256L)"
+        },
+        {
+          "text": "weight_draws controls each stochastic gradient. noise_draws controls the residual expectation for the noise update. monitor_draws sets the full-batch ELBO bank. endpoint_draws sets the independent endpoint bank. The four draw counts must be even integers of at least two. The step-size cap lr, gradient-norm cap grad_clip, backtracking limit and bounds on log standard deviations affect the weight optimizer."
+        },
+        {
+          "detail": "Model settings, minibatches and prediction draws",
+          "blocks": [
+            {
+              "text": "Specify hidden, prior, geometry, outcome, seed and noise_prior directly in gltbnn_fit(). This walkthrough uses coefficient geometry, continuous outcomes and the default Jeffreys prior. For a proper inverse-gamma prior, supply a named vector with positive shape and scale. The code examples for each prior on the computation page fit the same training rows from the trees dataset."
+            },
+            {
+              "text": "By default batch_size is NULL and each update sees the full training data. If a batch size is supplied, the optimizer scales the likelihood gradient by $n/b$ on a batch of $b$ rows. The noise update uses the rows pooled over that cycle with the corresponding rescaling. Full-data ELBO and MC standard-error fields are then unavailable. Gaussian minibatch fits record pooled-batch RMSE."
+            },
+            {
+              "text": "The draws argument to predict() controls prediction separately and defaults to 256 independent draws. Increasing it reduces Monte Carlo variation in predictions for an already fitted model."
+            }
+          ]
+        }
+      ],
+      "sources": [
+        {
+          "label": ".gltbnn_control",
+          "href": "source.html#gltbnn-control"
+        },
+        {
+          "label": "gltbnn_fit",
+          "href": "source.html#gltbnn-fit"
+        },
+        {
+          "label": "predict.gltbnn_fit",
+          "href": "source.html#predict-gltbnn-fit"
+        }
+      ]
+    }
+  },
+  "priors": {
+    "G": {
+      "title": "G-BNN",
+      "summary": "One half-Cauchy scale pools all hidden coefficients in each layer.",
+      "steps": [
+        "model",
+        "initialize",
+        {
+          "id": "prior-setup",
+          "title": "Initialize the G shrinkage hierarchy",
+          "summary": "Introduce the auxiliary factors that give closed-form scale updates.",
+          "blocks": [
+            {
+              "text": "Repeat the following initialization in every layer $l$. Define $T_l=\\tau_l^2$. The half-Cauchy layer scale has prior scale $1/M_l$, where $M_l$ counts every incoming weight and bias."
+            },
+            {
+              "math": "\\tau_l\\sim C^+(0,1/M_l),\\quad T_l\\mid\\chi_{\\tau,l}\\sim\\operatorname{IG}(1/2,1/\\chi_{\\tau,l}),\\quad \\chi_{\\tau,l}\\sim\\operatorname{IG}(1/2,M_l^2)"
+            },
+            {
+              "text": "Initialize $q(T_l)=\\operatorname{IG}(2,2)$ and $q(\\chi_{\\tau,l})=\\operatorname{IG}(1,1)$."
+            },
+            {
+              "text": "Every coefficient in this layer has $\\lambda_a=\\tau_l$ and $P_a=\\phi_{T_l}$. Initially $P_a=1$ and $\\phi P_a=3$."
+            }
+          ],
+          "sources": [
+            {
+              "label": ".bnn_coefficient_init",
+              "href": "source.html#bnn-coefficient-init"
+            },
+            {
+              "label": ".bnn_coefficient_terms",
+              "href": "source.html#bnn-coefficient-terms"
+            }
+          ]
+        },
+        "start-cycle",
+        "backpropagation",
+        "weight-updates",
+        "noise",
+        "output",
+        {
+          "id": "layer-scale",
+          "title": "Update the layer scale and its auxiliary",
+          "summary": "Pool the expected squares of every hidden weight and bias in the layer.",
+          "blocks": [
+            {
+              "math": "q(T_l)=\\operatorname{IG}\\!\\left(\\frac{M_l+1}{2},\\phi_{\\chi_{\\tau,l}}+\\frac{\\phi}{2}\\sum_{a\\in\\mathcal I_l} H_a\\right)"
+            },
+            {
+              "math": "q(\\chi_{\\tau,l})=\\operatorname{IG}(1,M_l^2+\\phi_{T_l})."
+            },
+            {
+              "text": "Update the layer auxiliary using the new inverse moment of $T_l$. The $M_l^2$ term comes from the inverse square of the half-Cauchy prior scale $1/M_l$."
+            },
+            {
+              "text": "For the next cycle every coefficient in this layer receives the same $P_a=\\phi_{T_l}$. The ELBO uses $E_q[\\log\\lambda_a^2]=\\zeta_{T_l}$."
+            }
+          ],
+          "sources": [
+            {
+              "label": ".bnn_coefficient_update",
+              "href": "source.html#bnn-coefficient-update"
+            },
+            {
+              "label": ".bnn_coefficient_terms",
+              "href": "source.html#bnn-coefficient-terms"
+            }
+          ]
+        },
+        "elbo",
+        "controls",
+        {
+          "id": "predict",
+          "title": "Return the fit and predict a new response",
+          "summary": "Average predictions across the final Gaussian weight factors and convert the regression mean back to the response units.",
+          "blocks": [
+            {
+              "math": "\\widehat Y(\\mathbf x_*)=\\bar y+s_y\\left\\{\\frac1S\\sum_{b=1}^{S}f_{\\mathcal W^{(b)}}(\\mathbf x_*^{\\rm std})\\right\\},\\quad\\mathcal W^{(b)}\\sim q_\\theta(\\mathcal W)"
+            },
+            {
+              "text": "Apply the training predictor centers and standard deviations to the new input. For a predictive draw of a future response, also draw an observation variance from its fitted factor and add Gaussian observation noise on the standardized scale. In classification, average the draw-specific class probabilities."
+            },
+            {
+              "code": "library(gltbnn)\nx <- datasets::trees[c(\"Girth\", \"Height\")]\ny <- datasets::trees$Volume\ntest <- seq(5L, nrow(x), by = 5L)\nfit <- gltbnn_fit(x[-test, ], y[-test], hidden = c(3L, 2L),\n                  prior = \"G\", seed = 31L,\n                  control = list(outer = 60L, weight_steps = 10L))\npredict(fit, x[test, ], type = \"mean\", draws = 256L, seed = 32L)"
+            }
+          ],
+          "sources": [
+            {
+              "label": "predict.gltbnn_fit",
+              "href": "source.html#predict-gltbnn-fit"
+            },
+            {
+              "label": ".gltbnn_engine_draws",
+              "href": "source.html#gltbnn-engine-draws"
+            }
+          ]
+        }
+      ]
+    },
+    "GL": {
+      "title": "GL-BNN",
+      "summary": "A layer scale and a local half-Cauchy multiplier give each hidden coefficient its own effective scale.",
+      "steps": [
+        "model",
+        "initialize",
+        {
+          "id": "prior-setup",
+          "title": "Initialize the GL shrinkage hierarchy",
+          "summary": "Introduce the auxiliary factors that give closed-form scale updates.",
+          "blocks": [
+            {
+              "text": "Repeat the following initialization in every layer $l$. Define $T_l=\\tau_l^2$. The half-Cauchy layer scale has prior scale $1/M_l$, where $M_l$ counts every incoming weight and bias."
+            },
+            {
+              "math": "\\tau_l\\sim C^+(0,1/M_l),\\quad T_l\\mid\\chi_{\\tau,l}\\sim\\operatorname{IG}(1/2,1/\\chi_{\\tau,l}),\\quad \\chi_{\\tau,l}\\sim\\operatorname{IG}(1/2,M_l^2)"
+            },
+            {
+              "text": "Initialize $q(T_l)=\\operatorname{IG}(2,2)$ and $q(\\chi_{\\tau,l})=\\operatorname{IG}(1,1)$."
+            },
+            {
+              "text": "Give each coefficient a standard half-Cauchy multiplier $r_a$ independent of $\\tau_l$ in the original hierarchy. Write $U_a=r_a^2$. Its expansion and the effective scale are"
+            },
+            {
+              "math": "\\lambda_a=\\tau_l r_a,\\qquad U_a\\mid\\chi_{r,a}\\sim\\operatorname{IG}(1/2,1/\\chi_{r,a}),\\quad\\chi_{r,a}\\sim\\operatorname{IG}(1/2,1)."
+            },
+            {
+              "text": "Initialize $q(U_a)=\\operatorname{IG}(2,2)$ and $q(\\chi_{r,a})=\\operatorname{IG}(1,1)$. For this factorization $P_a=\\phi_{T_l}\\phi_{U_a}$, initially one. The first weight block uses $\\phi P_a=3$."
+            }
+          ],
+          "sources": [
+            {
+              "label": ".bnn_coefficient_init",
+              "href": "source.html#bnn-coefficient-init"
+            },
+            {
+              "label": ".bnn_coefficient_terms",
+              "href": "source.html#bnn-coefficient-terms"
+            }
+          ]
+        },
+        "start-cycle",
+        "backpropagation",
+        "weight-updates",
+        "noise",
+        "output",
+        {
+          "id": "local-multipliers",
+          "title": "Update each local horseshoe multiplier",
+          "summary": "Refresh each squared multiplier using the corresponding weight’s expected square and the current shared layer precision.",
+          "blocks": [
+            {
+              "math": "q(U_a)=\\operatorname{IG}\\!\\left(1,\\phi_{\\chi_{r,a}}+\\tfrac12\\phi H_a\\phi_{T_l}\\right)"
+            },
+            {
+              "math": "q(\\chi_{r,a})=\\operatorname{IG}(1,1+\\phi_{U_a})."
+            },
+            {
+              "text": "Use the newly computed $\\phi_{U_a}$ in the auxiliary update. A larger $H_a$ increases the scale parameter of $q(U_a)$ and decreases its inverse moment when the other factors are fixed. The layer update then pools the locally weighted moments."
+            }
+          ],
+          "sources": [
+            {
+              "label": ".bnn_coefficient_update",
+              "href": "source.html#bnn-coefficient-update"
+            },
+            {
+              "label": ".bnn_local_ig",
+              "href": "source.html#bnn-local-ig"
+            }
+          ]
+        },
+        {
+          "id": "layer-scale",
+          "title": "Update the layer scale and its auxiliary",
+          "summary": "Pool the expected squares across the layer using the latest local multipliers.",
+          "blocks": [
+            {
+              "math": "q(T_l)=\\operatorname{IG}\\!\\left(\\frac{M_l+1}{2},\\phi_{\\chi_{\\tau,l}}+\\frac{\\phi}{2}\\sum_{a\\in\\mathcal I_l} H_a\\phi_{U_a}\\right)"
+            },
+            {
+              "math": "q(\\chi_{\\tau,l})=\\operatorname{IG}(1,M_l^2+\\phi_{T_l})."
+            },
+            {
+              "text": "Update the layer auxiliary using the new inverse moment of $T_l$. The $M_l^2$ term comes from the inverse square of the half-Cauchy prior scale $1/M_l$."
+            },
+            {
+              "text": "For the next cycle $P_a=\\phi_{T_l}\\phi_{U_a}$. The ELBO uses $E_q[\\log\\lambda_a^2]=\\zeta_{T_l}+\\zeta_{U_a}$. The common $T_l$ couples the effective scales within a layer."
+            }
+          ],
+          "sources": [
+            {
+              "label": ".bnn_coefficient_update",
+              "href": "source.html#bnn-coefficient-update"
+            },
+            {
+              "label": ".bnn_coefficient_terms",
+              "href": "source.html#bnn-coefficient-terms"
+            }
+          ]
+        },
+        "elbo",
+        "controls",
+        {
+          "id": "predict",
+          "title": "Return the fit and predict a new response",
+          "summary": "Average predictions across the final Gaussian weight factors and convert the regression mean back to the response units.",
+          "blocks": [
+            {
+              "math": "\\widehat Y(\\mathbf x_*)=\\bar y+s_y\\left\\{\\frac1S\\sum_{b=1}^{S}f_{\\mathcal W^{(b)}}(\\mathbf x_*^{\\rm std})\\right\\},\\quad\\mathcal W^{(b)}\\sim q_\\theta(\\mathcal W)"
+            },
+            {
+              "text": "Apply the training predictor centers and standard deviations to the new input. For a predictive draw of a future response, also draw an observation variance from its fitted factor and add Gaussian observation noise on the standardized scale. In classification, average the draw-specific class probabilities."
+            },
+            {
+              "code": "library(gltbnn)\nx <- datasets::trees[c(\"Girth\", \"Height\")]\ny <- datasets::trees$Volume\ntest <- seq(5L, nrow(x), by = 5L)\nfit <- gltbnn_fit(x[-test, ], y[-test], hidden = c(3L, 2L),\n                  prior = \"GL\", seed = 31L,\n                  control = list(outer = 60L, weight_steps = 10L))\npredict(fit, x[test, ], type = \"mean\", draws = 256L, seed = 32L)"
+            }
+          ],
+          "sources": [
+            {
+              "label": "predict.gltbnn_fit",
+              "href": "source.html#predict-gltbnn-fit"
+            },
+            {
+              "label": ".gltbnn_engine_draws",
+              "href": "source.html#gltbnn-engine-draws"
+            }
+          ]
+        }
+      ]
+    },
+    "GLT": {
+      "title": "GLT-BNN",
+      "summary": "Generalized Pareto coefficient scales share a layer scale and a learned layer-specific tail shape.",
+      "steps": [
+        "model",
+        "initialize",
+        {
+          "id": "glt-setup",
+          "title": "Initialize the GLT scale and tail factors",
+          "summary": "Give each hidden coefficient its own scale and each layer a shared tail shape before the first weight block.",
+          "blocks": [
+            {
+              "text": "In layer $l$, index the $M_l$ incoming weights and biases by $a=(k,j)$. The conditional Gaussian standard deviation is $\\sigma c_l\\lambda_a$, with $c_l=1$ in the fitted regression networks. The output vector uses its separate readout prior."
+            },
+            {
+              "math": "\\begin{aligned}\n\\lambda_a\\mid\\tau_l,\\nu_a&\\sim\\operatorname{Exp}(\\text{mean } \\tau_l\\nu_a),\\\\\n\\nu_a\\mid\\xi_l&\\sim\\operatorname{IG}(1/\\xi_l,1/\\xi_l),\\\\\n\\tau_l\\mid\\xi_l&\\sim\\operatorname{IG}(1+M_l/\\xi_l,1).\n\\end{aligned}"
+            },
+            {
+              "text": "Integrating out $\\nu_a$ yields a generalized Pareto coefficient scale with scale $\\tau_l$ and shape $\\xi_l$. The prior on $\\eta_l=\\log\\xi_l$ is standard normal restricted to $\\eta_l>-\\log 2$. The mean-field fit uses separate factors for $\\tau_l$, $\\xi_l$, and every $\\lambda_a$ and $\\nu_a$."
+            },
+            {
+              "detail": "Starting values used in the fits",
+              "blocks": [
+                {
+                  "math": "q(\\tau_l)=\\operatorname{IG}(2,2),\\qquad q(\\nu_a)=\\operatorname{IG}(2,2)."
+                },
+                {
+                  "text": "Initialize each $q(\\lambda_a)$ with the local kernel below at $A_a=B_a=1$, giving $P_a=\\mathbb E_q(\\lambda_a^{-2})\\simeq1.30312$. Initialize $q(\\eta_l)$ from the tail kernel below using the starting $\\tau_l,\\nu_a$ moments. The first weight block uses these factors before any scale update."
+                }
+              ]
+            }
+          ],
+          "sources": [
+            {
+              "label": ".bnn_coefficient_init",
+              "href": "source.html#bnn-coefficient-init"
+            },
+            {
+              "label": ".bnn_coefficient_tail",
+              "href": "source.html#bnn-coefficient-tail"
+            }
+          ]
+        },
+        "start-cycle",
+        "backpropagation",
+        "weight-updates",
+        "noise",
+        "output",
+        {
+          "id": "glt-local-scales",
+          "title": "Update every coefficient scale",
+          "summary": "The latest expected squared weight and observation precision determine the positive scale density for each connection, including its bias.",
+          "blocks": [
+            {
+              "text": "Write $H_a=m_a^2+s_a^2$, $\\phi=\\mathbb E_q(\\sigma^{-2})$, and $\\phi_X=\\mathbb E_q(X^{-1})$. Use the current factors of $\\tau_l$ and $\\nu_a$, together with the refreshed $H_a$ and $\\phi$ from this cycle."
+            },
+            {
+              "math": "A_a=\\phi_{\\tau_l}\\phi_{\\nu_a},\\qquad B_a=c_l^{-2}\\phi H_a,"
+            },
+            {
+              "math": "q^*(\\lambda_a)\\propto\\lambda_a^{-1}\\exp\\!\\left(-A_a\\lambda_a-\\frac{B_a}{2\\lambda_a^2}\\right),\\qquad \\lambda_a>0."
+            },
+            {
+              "text": "Numerically evaluate $u_a=\\mathbb E_q(\\lambda_a)$ and obtain $P_a=A_a u_a/B_a$ by integration by parts. The next weight block uses $c_l^{-2}\\phi P_a$ as its expected hidden-weight precision. Both $u_a$ and $P_a$ are expectations under the fitted density."
+            },
+            {
+              "detail": "Normalizing the density and computing moments",
+              "blocks": [
+                {
+                  "math": "Z_{a,h}=\\int_{\\mathbb R}\\exp\\!\\left(ht-A_a e^t-\\tfrac12 B_a e^{-2t}\\right)\\,dt,\\qquad \\mathbb E_q(\\lambda_a^h)=Z_{a,h}/Z_{a,0}."
+                },
+                {
+                  "text": "With $t=\\log\\lambda_a$, the Jacobian cancels the factor $\\lambda_a^{-1}$. The log-scale density has mode $(\\log B_a-\\log A_a)/3$. The implementation centers at this mode and uses 32-point Gauss–Legendre panels on both sides. It also computes $\\mathbb E_q(\\log\\lambda_a)$ and the entropy for the full objective."
+                },
+                {
+                  "math": "\\mathcal H\\{q(\\lambda_a)\\}=\\log Z_{a,0}+\\mathbb E_q(\\log\\lambda_a)+A_a u_a+\\tfrac12 B_a P_a."
+                }
+              ]
+            }
+          ],
+          "sources": [
+            {
+              "label": ".bnn_scalar_locals",
+              "href": "source.html#bnn-scalar-locals"
+            },
+            {
+              "label": ".bnn_scalar_rule",
+              "href": "source.html#bnn-scalar-rule"
+            },
+            {
+              "label": ".bnn_coefficient_update",
+              "href": "source.html#bnn-coefficient-update"
+            }
+          ]
+        },
+        {
+          "id": "glt-layer-scale",
+          "title": "Update the shared layer scale",
+          "summary": "Pool the updated coefficient-scale means across all hidden weights and biases in the layer.",
+          "blocks": [
+            {
+              "text": "Use $R_l=\\mathbb E_q(1/\\xi_l)$ and $\\phi_{\\nu_a}$ from before the tail and auxiliary updates in this cycle. The updated local means $u_a$ enter the inverse-gamma rate."
+            },
+            {
+              "math": "q^*(\\tau_l)=\\operatorname{IG}\\!\\left(1+M_l(1+R_l),\\;1+\\sum_{a\\in\\mathcal I_l}u_a\\phi_{\\nu_a}\\right)."
+            },
+            {
+              "text": "For $X\\sim\\operatorname{IG}(\\alpha,\\beta)$ we use density proportional to $x^{-\\alpha-1}e^{-\\beta/x}$, with $\\phi_X=\\alpha/\\beta$ and $\\zeta_X=\\mathbb E_q(\\log X)=\\log\\beta-\\psi(\\alpha)$. Refresh both moments of $\\tau_l$ for the subsequent steps."
+            }
+          ],
+          "sources": [
+            {
+              "label": ".bnn_coefficient_update",
+              "href": "source.html#bnn-coefficient-update"
+            },
+            {
+              "label": ".bnn_ig",
+              "href": "source.html#bnn-ig"
+            }
+          ]
+        },
+        {
+          "id": "glt-auxiliaries",
+          "title": "Update the coefficient auxiliaries",
+          "summary": "Use the newly updated layer precision and the current tail moment to fit one inverse-gamma factor per coefficient.",
+          "blocks": [
+            {
+              "math": "q^*(\\nu_a)=\\operatorname{IG}\\!\\left(1+R_l,\\;u_a\\phi_{\\tau_l}+R_l\\right),\\qquad a\\in\\mathcal I_l."
+            },
+            {
+              "text": "Compute $\\phi_{\\nu_a}$ and $\\zeta_{\\nu_a}$ from these new factors. Together with $\\zeta_{\\tau_l}$, they supply the sufficient quantity for the layer's tail update."
+            }
+          ],
+          "sources": [
+            {
+              "label": ".bnn_coefficient_update",
+              "href": "source.html#bnn-coefficient-update"
+            },
+            {
+              "label": ".bnn_local_ig",
+              "href": "source.html#bnn-local-ig"
+            }
+          ]
+        },
+        {
+          "id": "glt-tail-shape",
+          "title": "Normalize the layer tail-shape factor",
+          "summary": "Use the updated global scale and all local auxiliaries to fit one tail shape for the layer.",
+          "blocks": [
+            {
+              "math": "C_l=M_l\\zeta_{\\tau_l}+\\sum_{a\\in\\mathcal I_l}\\bigl(\\zeta_{\\nu_a}+\\phi_{\\nu_a}\\bigr)."
+            },
+            {
+              "text": "On the log scale $\\eta=\\log\\xi_l$, the Jacobian absorbs the original $1/\\xi_l$ factor. Write $\\varphi$ for the standard-normal density and set"
+            },
+            {
+              "math": "\\begin{aligned}g_l(\\eta)={}&-(M_l\\eta+C_l)e^{-\\eta}\\\\\n &-M_l\\log\\Gamma(e^{-\\eta})-\\log\\Gamma(1+M_l e^{-\\eta}).\\end{aligned}"
+            },
+            {
+              "math": "q^*(\\eta)=\\frac{\\varphi(\\eta)\\,\\exp\\{g_l(\\eta)\\}}{Z_l}\\,\\mathbf 1_{\\{\\eta>-\\log 2\\}}."
+            },
+            {
+              "text": "The two gamma normalizers depend on the tail shape and remain in this kernel. Use adaptive quadrature over $(-\\log 2,\\infty)$ to compute its normalizing constant $Z_l$ and $R_l=\\mathbb E_q(e^{-\\eta})$. The bound $\\xi_l>1/2$ gives $0<R_l<2$. Carry this new moment into the next layer-scale and auxiliary updates."
+            },
+            {
+              "detail": "Computing and monitoring the normalized factor",
+              "blocks": [
+                {
+                  "math": "Z_l=\\int_{-\\log 2}^{\\infty}\\varphi(t)e^{g_l(t)}dt,\\qquad R_l=\\frac{\\int_{-\\log 2}^{\\infty}e^{-t}\\varphi(t)e^{g_l(t)}dt}{Z_l}."
+                },
+                {
+                  "text": "The implementation stabilizes the integrals on the log scale. Its default relative tolerance is $10^{-10}$ with up to 2,000 subdivisions per segment. A roundoff-limited segment can be retried at $10^{-8}$. It also computes the mean of $\\eta$, its entropy, and the expected log-density contributions to the ELBO. The truncation probability of the Gaussian prior is constant in the coordinate update and is restored in the full objective."
+                }
+              ]
+            }
+          ],
+          "sources": [
+            {
+              "label": ".bnn_tail_factor",
+              "href": "source.html#bnn-tail-factor"
+            },
+            {
+              "label": ".bnn_quad_tail_g",
+              "href": "source.html#bnn-quad-tail-g"
+            },
+            {
+              "label": ".bnn_coefficient_terms",
+              "href": "source.html#bnn-coefficient-terms"
+            }
+          ]
+        },
+        "elbo",
+        "controls",
+        {
+          "id": "predict",
+          "title": "Return the fit and predict a new response",
+          "summary": "Average predictions across the final Gaussian weight factors and convert the regression mean back to the response units.",
+          "blocks": [
+            {
+              "math": "\\widehat Y(\\mathbf x_*)=\\bar y+s_y\\left\\{\\frac1S\\sum_{b=1}^{S}f_{\\mathcal W^{(b)}}(\\mathbf x_*^{\\rm std})\\right\\},\\quad\\mathcal W^{(b)}\\sim q_\\theta(\\mathcal W)"
+            },
+            {
+              "text": "Apply the training predictor centers and standard deviations to the new input. For a predictive draw of a future response, also draw an observation variance from its fitted factor and add Gaussian observation noise on the standardized scale. In classification, average the draw-specific class probabilities."
+            },
+            {
+              "code": "library(gltbnn)\nx <- datasets::trees[c(\"Girth\", \"Height\")]\ny <- datasets::trees$Volume\ntest <- seq(5L, nrow(x), by = 5L)\nfit <- gltbnn_fit(x[-test, ], y[-test], hidden = c(3L, 2L),\n                  prior = \"GLT\", seed = 31L,\n                  control = list(outer = 60L, weight_steps = 10L))\npredict(fit, x[test, ], type = \"mean\", draws = 256L, seed = 32L)"
+            }
+          ],
+          "sources": [
+            {
+              "label": "predict.gltbnn_fit",
+              "href": "source.html#predict-gltbnn-fit"
+            },
+            {
+              "label": ".gltbnn_engine_draws",
+              "href": "source.html#gltbnn-engine-draws"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
