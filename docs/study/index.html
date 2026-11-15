@@ -20,7 +20,7 @@
   </div></header>
   <main class="wrap" id="content">
     <header class="page-head"><h1>Coefficient shrinkage in the simulations</h1>
-      <p class="intro">What changes when two weights entering the same neuron can shrink by different amounts? Choose a simulation design and compare fitted scales with prediction error on independent test data.</p>
+      <p class="intro">What changes when two weights entering the same neuron can shrink by different amounts? Choose a simulation design to compare the scales fitted by variational inference under G, GL and GLT. The prediction benchmark compares these Bayesian networks with unpenalized, dropout and L1-penalized frequentist networks on the same test data.</p>
     </header>
     <div class="controls" aria-label="Simulation design">
       <label>Signal design<select id="cell">
@@ -98,12 +98,12 @@
       <p>With gltbnn 0.2.1 installed, run the example directly in R. The package includes the survey data.</p>
       <pre><code>demo("aipw401k", package = "gltbnn", ask = FALSE)</code></pre>
       <p>The ten-layer, 25-unit GLT-BNN gives a cross-fitted, adjusted difference of $8,080 between eligible and ineligible households (standard error $1,135, 95% confidence interval $5,855 to $10,305) in 1991 dollars.</p>
-      <figure><img src="data/eligibility-401k.png" alt="Six adjusted differences in net financial assets from Table 11, with 95% confidence intervals. The highlighted GLT-BNN estimate is $8,080 ($5,855 to $10,305)." style="display:block;max-width:100%;height:auto"><figcaption>Eligible minus ineligible households, in 1991 dollars. All six methods use the same five folds and ten hidden layers of 25 units (Table 11 in Section 6.5, last row). Lines are pointwise 95% confidence intervals.</figcaption></figure>
+      <figure><img src="data/eligibility-401k.png" alt="Six adjusted differences in net financial assets by 401(k) eligibility, with 95% confidence intervals. The highlighted GLT-BNN estimate is $8,080 ($5,855 to $10,305)." style="display:block;max-width:100%;height:auto"><figcaption>Eligible minus ineligible households, in 1991 dollars. All six methods use the same five folds and ten hidden layers of 25 units. Lines are pointwise 95% confidence intervals.</figcaption></figure>
       <p>A total-effect interpretation requires the adjustment assumptions in Supplement S7.1. In particular, the analysis uses current individual retirement account (IRA) participation as a covariate. If eligibility changed whether a household held IRA assets, adjusting for IRA participation could remove part of the effect.</p>
       <ul>
         <li><a href="data/example_401k.R" download>Standalone R example from Section S7.3</a></li>
         <li><a href="data/401k_analysis.csv" download>Public analysis data and fold assignments (CSV)</a></li>
-        <li><a href="data/causal_401k_replication.zip">Full Table 11 replication with the offline package installer</a></li>
+        <li><a href="data/causal_401k_replication.zip">Full 401(k) replication with the offline package installer</a></li>
       </ul>
     </section>
   </main>

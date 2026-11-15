@@ -4,7 +4,7 @@
 
 **Bayesian neural networks with shrinkage on individual hidden weights and biases.**
 
-The R package accompanying *Variational Learning of Bayesian Neural Networks with a family of global–local shrinkage priors* fits fully connected ReLU networks under the global (G), horseshoe (GL), and global–local–tail (GLT) priors. Gaussian regression is the default. A Bernoulli likelihood handles binary outcomes and a categorical likelihood handles unordered classes.
+The R package accompanying *Variational Learning of Bayesian Neural Networks with a family of global–local shrinkage priors* uses variational inference to fit fully connected ReLU networks under the global (G), horseshoe (GL), and global–local–tail (GLT) priors. The manuscript compares these fits with unpenalized, dropout and L1-penalized frequentist networks as prediction benchmarks. Gaussian regression is the default. A Bernoulli likelihood handles binary outcomes and a categorical likelihood handles unordered classes.
 
 [Package website](https://yain22.github.io/Bayesian_NN_GLT/) · [Explore a hidden unit](https://yain22.github.io/Bayesian_NN_GLT/illustration/) · [Explore predictive uncertainty](https://yain22.github.io/Bayesian_NN_GLT/prediction/)
 
@@ -34,7 +34,7 @@ predict(fit, x[holdout, ])
 predict(fit, x[holdout, ], type = "prediction_interval")
 ```
 
-This example uses a proper inverse-gamma prior on the standardized observation variance. The first prediction estimates mean volume at each pair of measurements. The second gives a 95% variational predictive interval for an individual tree, including observation noise. Use `type = "mean_interval"` for uncertainty in the mean. Predictions are returned in the original response units.
+This example uses a proper inverse-gamma prior on the standardized observation variance. The first prediction estimates mean volume at each new input $\mathbf{x}_*$ by averaging the network output over draws from the fitted variational distribution. The manuscript denotes this point prediction by $\widehat{Y}(\mathbf{x}_*)$. The second gives a 95% variational predictive interval for an individual tree, including observation noise. Use `type = "mean_interval"` for uncertainty in the mean. Predictions are returned in the original response units.
 
 Use `gltbnn_shrinkage(fit)` to inspect each incoming weight and bias. The returned columns identify the layer, receiving unit and incoming coordinate. [R reference manual](https://yain22.github.io/Bayesian_NN_GLT/reference.pdf)
 
@@ -57,7 +57,7 @@ head(predict(fit, flowers[holdout, 1:4], type = "prob"))
 
 ## What each prior shrinks
 
-The package website’s computation guide explains the updates for G, GL and GLT. Its [R scripts](docs/computation/) fit all three priors to the same training trees, predict volume for six held-out trees and reproduce the GLT quadrature check in Supplement Section S5.1.
+The package website’s computation guide explains the updates for G, GL and GLT. Its [interactive ELBO replay](https://yain22.github.io/Bayesian_NN_GLT/computation/elbo-replay.html) follows three matched fits for each simulation setting and initialization. Its [R scripts](docs/computation/) fit all three priors to the same training trees, predict volume for six held-out trees and reproduce the GLT quadrature check in Supplement Section S5.1.
 
 For Gaussian regression, the package standardizes the training response and uses the Jeffreys prior $p(\sigma^2)\propto1/\sigma^2$ by default. Posterior propriety with this prior depends on the data. To use the supplement's proper inverse-gamma alternative, pass positive hyperparameters, for example `noise_prior = c(shape = 2, scale = 1)`.
 
@@ -87,9 +87,9 @@ To reproduce one comparison, run the [C2 replication script](tools/replication/c
 
 *The first and second test images for each digit in official file order. [MNIST image credits and license](tools/replication/mnist/data/README.md).*
 
-**Can a network recognize all ten digits?** Section 6.3 trains six methods on **60,000 images** and evaluates them on **10,000 test images**. Across the 36 fits, GLT with two hidden layers of 25 units correctly classified **9,628 digits (96.28%)**. GL with five 25-unit layers gave the lowest mean log loss (0.125).
+**Can a network recognize all ten digits?** Section 5.3 trains six methods on **60,000 images** and evaluates them on **10,000 test images**. Across the 36 fits, GLT with two hidden layers of 25 units correctly classified **9,628 digits (96.28%)**. GL with five 25-unit layers gave the lowest mean log loss (0.125).
 
-[Table 9 scores](tools/replication/mnist/summary/scores.csv) · [Rescore the 36 saved fits](tools/replication/mnist/#rescore-the-36-saved-fits) · [Train all 36 networks from scratch](tools/replication/mnist/#train-all-36-networks-from-scratch) · [Try the small R demo (1,000 training and 300 test images)](docs/classification/mnist.R)
+[MNIST test scores](tools/replication/mnist/summary/scores.csv) · [Rescore the 36 saved fits](tools/replication/mnist/#rescore-the-36-saved-fits) · [Train all 36 networks from scratch](tools/replication/mnist/#train-all-36-networks-from-scratch) · [Try the small R demo (1,000 training and 300 test images)](docs/classification/mnist.R)
 
 ### Fashion-MNIST T-shirts and pullovers
 
@@ -97,9 +97,9 @@ To reproduce one comparison, run the [C2 replication script](tools/replication/c
 
 *The first five T-shirt/top and pullover images in official test-file order. Images from Zalando’s [Fashion-MNIST dataset](https://github.com/zalandoresearch/fashion-mnist), used under its [MIT license](tools/replication/fashion/data/LICENSE).*
 
-**Can a network distinguish a pullover from a T-shirt or top?** Section 6.4 uses **12,000 training images** and **2,000 test images**, evenly split between the two classes. Dropout with ten 10-unit layers correctly classified **1,941 garments (97.05%)**. The most accurate Bayesian fit was GLT with five 25-unit layers (**96.75%**). GL with five 10-unit layers gave the lowest mean log loss (0.092).
+**Can a network distinguish a pullover from a T-shirt or top?** Section 5.4 uses **12,000 training images** and **2,000 test images**, evenly split between the two classes. Dropout with ten 10-unit layers correctly classified **1,941 garments (97.05%)**. The most accurate Bayesian fit was GLT with five 25-unit layers (**96.75%**). GL with five 10-unit layers gave the lowest mean log loss (0.092).
 
-[Table 10 scores](docs/classification/fashion/scores.csv) · [Full replication in R](tools/replication/fashion/)
+[Fashion-MNIST test scores](docs/classification/fashion/scores.csv) · [Full replication in R](tools/replication/fashion/)
 
 ## Double Machine Learning Applications
 
@@ -113,15 +113,15 @@ demo("aipw401k", package = "gltbnn", ask = FALSE)
 
 **Expected result.** GLT-BNN with ten hidden layers of 25 units gives a cross-fitted, adjusted difference in net financial assets of **$8,080** between eligible and ineligible households (standard error **$1,135**, 95% confidence interval **$5,855 to $10,305**), in 1991 dollars.
 
-![Six adjusted differences in net financial assets from Table 11, with 95% confidence intervals. The highlighted GLT-BNN estimate is $8,080 ($5,855 to $10,305).](docs/study/data/eligibility-401k.png)
+![Six adjusted differences in net financial assets by 401(k) eligibility, with 95% confidence intervals. The highlighted GLT-BNN estimate is $8,080 ($5,855 to $10,305).](docs/study/data/eligibility-401k.png)
 
-*Eligible minus ineligible households, in 1991 dollars. All six methods use the same five folds and ten hidden layers of 25 units (Table 11 in Section 6.5, last row). Lines are pointwise 95% confidence intervals.* [Estimates (CSV)](tools/replication/401k/reference/aipw_estimates.csv) · [Plotting script](tools/replication/401k/plot_401k.py)
+*Eligible minus ineligible households, in 1991 dollars. All six methods use the same five folds and ten hidden layers of 25 units. Lines are pointwise 95% confidence intervals.* [Estimates (CSV)](tools/replication/401k/reference/aipw_estimates.csv) · [Plotting script](tools/replication/401k/plot_401k.py)
 
 A total-effect interpretation requires the adjustment assumptions in Supplement S7.1. In particular, the analysis uses current individual retirement account (IRA) participation as a covariate. If eligibility changed whether a household held IRA assets, adjusting for IRA participation could remove part of the effect.
 
 - [Read the standalone R example from S7.3](demo/aipw401k.R) to see the `gltbnn_fit()`, `predict()` and AIPW calculations.
 - [Download the analysis CSV](tools/replication/401k/data/analysis.csv) for the nine adjustment variables and fold assignments, or get the [original Stata file](tools/replication/401k/data/sipp1991.dta) and [data source notes](tools/replication/401k/data/source_notes.txt).
-- [Download the complete Table 11 replication](docs/study/data/causal_401k_replication.zip) for all six methods, their results and an offline package installer.
+- [Download the complete 401(k) replication](docs/study/data/causal_401k_replication.zip) for all six methods, their results and an offline package installer.
 
 ## License
 

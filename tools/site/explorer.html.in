@@ -114,7 +114,7 @@
 <p>For our models, \(\Pr_q(\sigma\lambda_{[[kl]],[[j]]}<\epsilon)\) summarizes mass near a small conditional weight SD. All [[width]] units remain in layer [[l]] of the fitted architecture. ReLU homogeneity allows an outgoing weight to compensate for a rescaling of the incoming weights and bias.</p></section>
 @panel output@
 <span class="section-label">Gaussian regression</span><header class="inspector-head"><h2>The affine output layer</h2></header>
-<p>Each unit in layer 2 supplies an activation. The network multiplies each activation by its output weight and adds the bias \(b_o\) to obtain the predicted mean.</p>
+<p>Each unit in layer 2 supplies an activation. The network multiplies each activation by its output weight and adds the bias \(b_o\) to obtain the regression mean for these weights. The fitted Bayesian point prediction \(\widehat{Y}(\mathbf{x}_*)\) averages that output over variational weight draws at the same input.</p>
 <div class="law">\[f_{\mathcal W}(\mathbf x)=\sum_{j=1}^{8}v_j h_{j2}(\mathbf x)+b_o.\]</div>
 <h3>Selected coefficient</h3>
 <div id="output-contribution" aria-live="polite">@readout-laws@</div>

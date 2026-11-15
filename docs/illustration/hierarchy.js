@@ -21,13 +21,15 @@
     const l = String(layer), kl = String(unit) + l, klj = kl + "," + coordinate;
     const labels = {fixedScale:["1/M",l], fixedIG:["M",l], tau:["τ",l], r:["r",klj],
       w:coordinate === dimension ? ["b",kl] : ["w",klj], lambda:["λ",klj], xi:["ξ",l],
-      nu:["ν",klj], t:["t",l], chiTau:["χ","τ,"+l], tr:["t","r,"+klj], chiR:["χ","r,"+klj],
+      nu:["ν",klj], t:["τ",l], chiTau:["χ","τ,"+l], tr:["r",klj], chiR:["χ","r,"+klj],
       K:["M",l], hyper:["μξ, ρ²ξ",""]};
     svg.setAttribute("viewBox","0 0 345 142");
     svg.setAttribute("role","img");
     svg.setAttribute("aria-labelledby","graph-title graph-description");
     const descriptions = {fixedScale:"fixed prior scale 1 divided by M in layer "+l,
       fixedIG:"fixed squared coefficient count M squared in layer "+l,
+      t:"squared layer scale tau in layer "+l,
+      tr:"squared local multiplier r for coefficient "+klj,
       chiTau:"random layer auxiliary chi, tau, "+l,
       chiR:"random coefficient auxiliary chi, r, "+klj};
     const describe = name=>descriptions[name] || labels[name].join("_");
@@ -53,7 +55,7 @@
           el("tspan",{"baseline-shift":"sub","font-size":10},"ξ"));
       } else {
         text.append(el("tspan",{"baseline-shift":"sub","font-size":10,"font-weight":400},labels[key][1]));
-        if(key==="fixedIG")text.append(el("tspan",{"baseline-shift":"super","font-size":10},"2"));
+        if(key==="fixedIG" || key==="t" || key==="tr")text.append(el("tspan",{"baseline-shift":"super","font-size":10},"2"));
       }
       svg.append(text);
     }

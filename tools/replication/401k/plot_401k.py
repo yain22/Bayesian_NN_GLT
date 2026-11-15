@@ -1,4 +1,4 @@
-"""Plot the worked architecture in Table 11 of Section 6.5. Input: the replication estimates CSV.
+"""Plot the 401(k) eligibility results for ten hidden layers of 25 units. Input: the replication estimates CSV.
 
 Usage: python plot_401k.py aipw_estimates.csv eligibility-401k.png
 Requires matplotlib. No household data are needed.

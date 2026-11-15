@@ -23,11 +23,11 @@ readout_laws = []
 for j in range(1, 10):
     if j == 9:
         coefficient = 'b_o'
-        explanation = r'The square supplies the constant \(1\). Its coefficient adds \(b_o\) to the predicted mean.'
+        explanation = r'The square supplies the constant \(1\). Its coefficient adds \(b_o\) to the regression mean for these weights.'
     else:
         coefficient = rf'v_{{{j}}}'
         activation = rf'h_{{{j}2}}(\mathbf x)'
-        explanation = rf'Unit {j} in layer 2 contributes \({coefficient}\,{activation}\) to the predicted mean.'
+        explanation = rf'Unit {j} in layer 2 contributes \({coefficient}\,{activation}\) to the regression mean for these weights.'
     readout_laws.append(
         rf'<div data-readout-coordinate="{j}" hidden><p>{explanation}</p>'
         rf'\[{coefficient}\mid\kappa\sim\mathcal N(0,\kappa^2).\]</div>'
@@ -47,13 +47,13 @@ def choice(prior, body, form=None):
 
 src = src.replace('@scalelaws@',''.join(choice(p,s) for p,s in scales.items()))
 layer = r'\[\tau_{[[l]]}\sim C^+(0,1/M_{[[l]]}),\quad M_{[[l]]}=[[m]].\] The layer size fixes the prior scale at \(1/[[m]]\).'
-base = r'\[t_{[[l]]}=\tau_{[[l]]}^2,\quad M_{[[l]]}=[[m]],\]\[\chi_{\tau,[[l]]}\sim\operatorname{IG}(1/2,M_{[[l]]}^2),\]\[t_{[[l]]}\mid\chi_{\tau,[[l]]}\sim\operatorname{IG}(1/2,1/\chi_{\tau,[[l]]}).\] '
+base = r'\[M_{[[l]]}=[[m]],\]\[\chi_{\tau,[[l]]}\sim\operatorname{IG}(1/2,M_{[[l]]}^2),\]\[\tau_{[[l]]}^2\mid\chi_{\tau,[[l]]}\sim\operatorname{IG}(1/2,1/\chi_{\tau,[[l]]}).\] '
 tail = r'\[\log\xi_{[[l]]}\sim\mathcal N(0,1)\big|_{(-\log 2,\infty)},\]\[\tau_{[[l]]}\mid\xi_{[[l]]}\sim\operatorname{IG}(1+[[m]]/\xi_{[[l]]},1).\]'
 laws = {
     ('G','original'): layer + r'\[\lambda_{[[kl]],[[j]]}=\tau_{[[l]]}.\] All [[m]] hidden coefficients in this layer share this scale.',
-    ('G','expanded'): base + r'Integrating over the random auxiliary \(\chi_{\tau,[[l]]}\) recovers the half-Cauchy law for \(\sqrt{t_{[[l]]}}\).',
+    ('G','expanded'): base + r'Integrating over the random auxiliary \(\chi_{\tau,[[l]]}\) recovers the half-Cauchy law for \(\tau_{[[l]]}\).',
     ('GL','original'): layer + r'\[r_{[[kl]],[[j]]}\sim C^+(0,1),\quad\lambda_{[[kl]],[[j]]}=\tau_{[[l]]}r_{[[kl]],[[j]]}.\] Each coefficient draws an independent multiplier, independently of the layer scale.',
-    ('GL','expanded'): base + r'\[t_{r,[[kl]],[[j]]}=r_{[[kl]],[[j]]}^2,\quad\chi_{r,[[kl]],[[j]]}\sim\operatorname{IG}(1/2,1),\]\[t_{r,[[kl]],[[j]]}\mid\chi_{r,[[kl]],[[j]]}\sim\operatorname{IG}(1/2,1/\chi_{r,[[kl]],[[j]]}).\] Integrating out the random layer and coefficient auxiliaries recovers the half-Cauchy scales.',
+    ('GL','expanded'): base + r'\[\chi_{r,[[kl]],[[j]]}\sim\operatorname{IG}(1/2,1),\]\[r_{[[kl]],[[j]]}^2\mid\chi_{r,[[kl]],[[j]]}\sim\operatorname{IG}(1/2,1/\chi_{r,[[kl]],[[j]]}).\] Integrating out the random layer and coefficient auxiliaries recovers the half-Cauchy scales.',
     ('GLT','original'): tail + r'\[\lambda_{[[kl]],[[j]]}\mid\tau_{[[l]]},\xi_{[[l]]}\sim\operatorname{GPD}(\tau_{[[l]]},\xi_{[[l]]}).\] Given the layer parameters, its [[m]] scalar local scales are independent.',
     ('GLT','expanded'): tail + r'\[\nu_{[[kl]],[[j]]}\mid\xi_{[[l]]}\sim\operatorname{IG}(1/\xi_{[[l]]},1/\xi_{[[l]]}),\]\[\lambda_{[[kl]],[[j]]}\mid\tau_{[[l]]},\nu_{[[kl]],[[j]]}\sim\operatorname{Exp}(\tau_{[[l]]}\nu_{[[kl]],[[j]]}).\] The exponential has mean \(\tau_{[[l]]}\nu_{[[kl]],[[j]]}\). Integrating out the inverse-gamma mixing variable gives the generalized Pareto law.'
 }
@@ -61,9 +61,9 @@ src = src.replace('@hierarchies@','\n'.join(choice(p,v,f) for (p,f),v in laws.it
 
 # Represent the diagonal compactly; each scalar variance is expanded below.
 global_var = r'\sigma^2\tau_{[[l]]}^2'
-squared_var = r'\sigma^2t_{[[l]]}'
+squared_var = r'\sigma^2\tau_{[[l]]}^2'
 local_var = r'\sigma^2\lambda_{[[kl]],COORD}^2'
-product_var = r'\sigma^2t_{[[l]]}t_{r,[[kl]],COORD}'
+product_var = r'\sigma^2\tau_{[[l]]}^2r_{[[kl]],COORD}^2'
 variances = {'global': global_var, 'squared-layer': squared_var,
              'local': local_var, 'squared-product': product_var}
 
@@ -76,7 +76,7 @@ covariances = {
     'global': global_var+r'\mathbf I_{[[d]]}',
     'squared-layer': squared_var+r'\mathbf I_{[[d]]}',
     'local': r'\sigma^2\operatorname{diag}(\lambda_{[[kl]],1}^2,\ldots,\lambda_{[[kl]],[[d]]}^2)',
-    'squared-product': r'\sigma^2t_{[[l]]}\operatorname{diag}(t_{r,[[kl]],1},\ldots,t_{r,[[kl]],[[d]]})'
+    'squared-product': r'\sigma^2\tau_{[[l]]}^2\operatorname{diag}(r_{[[kl]],1}^2,\ldots,r_{[[kl]],[[d]]}^2)'
 }
 src = src.replace('@selected-vector-laws@', variants({n:vector_head+v+')' for n,v in covariances.items()}))
 src = src.replace('@selected-variances@', variants({n:v.replace('COORD','[[j]]') for n,v in variances.items()}))

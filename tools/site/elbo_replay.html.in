@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Replay variational fitting · gltbnn</title>
+<style>
+:root{color-scheme:light;--ink:#183447;--paper:#fcfaf5;--navy:#214f70;--rust:#98452f;--green:#326852;--muted:#475c65;--rule:#d3d8d2;--sans:Inter,"Segoe UI",Arial,sans-serif;--serif:Baskervville,"Palatino Linotype",Palatino,Georgia,serif}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font:1rem/1.52 var(--sans)}[hidden]{display:none!important}
+header,main{width:min(100% - 2.4rem,960px);margin:auto}header{padding:1.05rem 0;border-bottom:1px solid var(--rule);display:flex;align-items:center;gap:1.6rem}
+.brand{font:bold 1.7rem var(--serif);letter-spacing:-.055em;text-decoration:none}.brand span{color:var(--rust)}a{color:var(--navy);text-underline-offset:.18em}h1{font:500 clamp(2rem,5vw,3.7rem)/1.08 var(--serif);margin:2rem 0 .65rem;letter-spacing:-.035em}p{margin:.5rem 0 1.1rem;max-width:80ch}
+.controls,.timebar{display:flex;align-items:end;flex-wrap:wrap;gap:.6rem 1.1rem}.controls{margin:1.15rem 0}.controls label{display:grid;gap:.22rem;font-weight:600;font-size:.88rem}select,button{font:inherit;border:1px solid #87999b;border-radius:.28rem;background:white;color:var(--ink);padding:.39rem .65rem}button{cursor:pointer;font-weight:600}button:disabled{opacity:.47;cursor:default}button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid #b36e31;outline-offset:3px}
+.sheet{background:#fff;border:1px solid var(--rule);padding:clamp(.7rem,2vw,1.35rem);border-radius:.4rem;margin:.9rem 0 1.25rem}
+.topline{display:flex;align-items:baseline;justify-content:space-between;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem}.topline h2{font:600 1.15rem var(--sans);margin:0}.scale{font-size:.84rem;color:var(--muted)}
+.chartrow{display:grid;grid-template-columns:3.4rem minmax(0,1fr)}.chart{width:100%;min-width:0;height:clamp(185px,29vw,315px);position:relative;border:solid #919f9e;border-width:0 0 1px 1px}
+.axis{position:relative;font-size:.81rem;font-variant-numeric:tabular-nums}.tick{position:absolute;right:.55rem;transform:translateY(-50%);white-space:nowrap}.tick sup{font-size:.74em}
+.chart svg{width:100%;height:100%;position:absolute;inset:0;overflow:visible}.trace,.gridline,.cursor{fill:none;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
+.trace{stroke-width:2.55px}.G{stroke:var(--navy);color:var(--navy)}.GL{stroke:var(--rust);color:var(--rust);stroke-dasharray:8 4}.GLT{stroke:var(--green);color:var(--green);stroke-dasharray:2 4}.gridline{stroke:#e2e6e4;stroke-width:1}.cursor{stroke:#718282;stroke-width:1;stroke-dasharray:2 3}
+.xticks{display:flex;justify-content:space-between;margin:.2rem 0 0 3.4rem;font-size:.8rem}.xlabel{text-align:center;margin:.12rem 0 0 3.4rem;font-size:.85rem;color:var(--muted)}
+.readouts{display:grid;grid-template-columns:minmax(0,1fr) minmax(12rem,.8fr);gap:1.5rem;align-items:center;border-top:1px solid var(--rule);margin-top:1rem;padding-top:.85rem}
+.timebar{align-items:center;gap:.45rem}#play{background:var(--navy);color:white;border-color:var(--navy);min-width:5.5rem}input[type=range]{width:100%;margin:.9rem 0 .25rem;accent-color:var(--navy)}.cycle{font-variant-numeric:tabular-nums;font-weight:700}table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:.91rem}th,td{text-align:right;padding:.22rem .28rem}th:first-child{text-align:left}thead th{font-size:.78rem;color:var(--muted);border-bottom:1px solid var(--rule)}tbody th{font-weight:600}.key{display:inline-block;width:1.6rem;margin:0 .45rem .22rem 0;border-top:3px solid currentColor}.key.GL{border-top-style:dashed}.key.GLT{border-top-style:dotted}
+.notes{font-size:.91rem}.notes p{margin:.5rem 0}.links{border-top:1px solid var(--rule);padding-top:.9rem;margin:1.05rem 0 2rem}.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}@media(max-width:560px){.readouts{grid-template-columns:1fr;gap:.65rem}.controls{gap:.45rem .65rem}.controls label{font-size:.82rem}.chartrow{grid-template-columns:2.8rem minmax(0,1fr)}.xticks,.xlabel{margin-left:2.8rem}.chart{min-height:180px}h1{margin-top:1.15rem}}
+</style></head>
+<body><header><a class="brand" href="../">glt<span>bnn</span></a><a href="index.html#checks">Computation guide</a></header>
+<main><h1>Replay variational fitting</h1>
+<p>Follow three Bayesian neural networks from the same initial weights on the same training data. Each line joins recorded estimates of the evidence lower bound (ELBO) for one shrinkage prior.</p>
+<div class="controls" id="choices" hidden>
+<label>Simulation setting<select id="setting">@@SETTINGS@@</select></label>
+<label>Matched start<select id="start">@@STARTS@@</select></label>
+<label>Cycle window<select id="window"><option value="0">0–60 · full trace</option><option value="1">1–60 · after initialization</option></select></label>
+</div>
+<div class="sheet">
+<div class="topline"><h2 id="chart-title">C2 · Reference additive · Start 1</h2><span class="scale">Monitored ELBO · logarithmic spacing in magnitude</span></div>
+<div class="chartrow"><div id="yticks" class="axis" aria-hidden="true">@@TICKS@@</div>
+<div class="chart"><svg id="chart" viewBox="0 0 100 100" preserveAspectRatio="none" role="img" aria-labelledby="chart-title chart-description">
+<desc id="chart-description">All three monitored objectives rise over 60 fitting cycles. The horizontal axis gives the fitting cycle. The vertical axis gives the monitored ELBO (negative here) on a logarithmically spaced scale, with higher values toward the top.</desc>
+<g id="grid"></g><line id="cursor" class="cursor" x1="100" x2="100" y1="0" y2="100" hidden/>@@PATHS@@</svg></div></div>
+<div class="xticks" id="xticks" aria-hidden="true"><span>0</span><span>15</span><span>30</span><span>45</span><span>60</span></div><div class="xlabel">Fitting cycle</div>
+<div class="readouts"><div>
+<div class="timebar" id="playback" hidden><button id="play" type="button">Play</button><button id="previous" type="button" aria-label="Previous cycle">−1</button><button id="next" type="button" aria-label="Next cycle">+1</button></div>
+<input hidden id="scrub" aria-label="Fitting cycle" type="range" min="0" max="60" value="60">
+<span id="cycle" class="cycle">Cycle 60 of 60</span><span class="sr" role="status" id="status"></span>
+</div><table aria-label="Monitored ELBO at the selected cycle"><thead><tr><th scope="col">Prior</th><th scope="col">Monitored ELBO</th></tr></thead><tbody>@@VALUES@@</tbody></table></div></div>
+<noscript><p>The static graph shows all 61 recorded values for the first start of the reference additive design. The figure and data download below cover all 270 fits.</p></noscript>
+<div class="notes"><p>Each matched start launches a separate full fit under each prior. All ten starts are available in the selector. Cycle 0 follows 600 updates of an unpenalized network, which initializes the weight means. Within each cycle, the optimizer makes ten successive attempts to update the weight means and log standard deviations, starting each attempt from the current fit. It then updates the variance and shrinkage factors. Monitoring uses the full training data and the same 32 antithetic pairs of weight draws throughout each fit. The run stops at its prespecified budget of 60 cycles.</p>
+<p>G uses global shrinkage, GL adds coefficient-specific scales, and GLT estimates a tail shape for each hidden layer. Read each curve as progress within a fit. The study compares predictive performance on held-out data. All 270 monitored traces increased at every recorded cycle.</p></div>
+<p class="links"><a href="elbo-initializations.pdf">View all 270 trajectories in Figure S10</a> · <a href="elbo-initializations.zip" download>Download traces and replication code</a></p>
+</main>
+<script type="application/json" id="recorded">@@DATA@@</script>
+<script>
+"use strict";
+const data = JSON.parse(document.getElementById("recorded").textContent);
+const byId = id => document.getElementById(id);
+const priors = ["G","GL","GLT"];
+const svgNS = "http://www.w3.org/2000/svg";
+const number = new Intl.NumberFormat("en-US", {minimumFractionDigits:1, maximumFractionDigits:1});
+const reduced = matchMedia("(prefers-reduced-motion: reduce)");
+let cycle = 60, first = 0, timer = null, began = false, curves, lower, upper;
+function svgLine(x1,y1,x2,y2) {
+  const e = document.createElementNS(svgNS,"line");
+  for (const [k,v] of Object.entries({x1,y1,x2,y2,class:"gridline"})) e.setAttribute(k,v);
+  return e;
+}
+function x(t) { return 100 * (t - first) / (60 - first); }
+function y(v) { return 100 * (Math.log10(-v)-lower)/(upper-lower); }
+function stop(announce) {
+  if (timer !== null) clearInterval(timer);
+  timer = null;
+  if (announce) byId("status").textContent=announce;
+}
+function draw() {
+  for (const prior of priors) {
+    const a=curves[prior], points=[];
+    for (let t=first;t<=cycle;t++) points.push(x(t)+","+y(a[t]));
+    byId("line-"+prior).setAttribute("points",points.join(" "));
+    byId("value-"+prior).textContent=number.format(a[cycle]);
+  }
+  const cursor=byId("cursor");
+  cursor.setAttribute("x1",x(cycle));cursor.setAttribute("x2",x(cycle));
+  cursor.toggleAttribute("hidden",cycle===60);
+  byId("cycle").textContent="Cycle "+cycle+" of 60";
+  byId("scrub").value=cycle;
+  byId("scrub").setAttribute("aria-valuetext","Cycle "+cycle+" of 60");
+  byId("previous").disabled=cycle===first;
+  byId("next").disabled=cycle===60;
+  byId("play").textContent=timer!==null ? "Pause" : (cycle===60&&began ? "Replay" : "Play");
+}
+function selectCurves() {
+  stop(""); began=false;
+  const choice=byId("setting"), setting=data[choice.value], start=Number(byId("start").value);
+  first=Number(byId("window").value);cycle=60;
+  const all=Object.values(setting).flatMap(starts=>starts.flatMap(curve=>curve.slice(first)));
+  const logs=all.map(v=>Math.log10(-v));
+  lower=Math.floor(Math.min(...logs));upper=Math.ceil(Math.max(...logs));
+  curves=Object.fromEntries(priors.map(p=>[p,setting[p][start-1]]));
+  byId("chart-title").textContent=choice.selectedOptions[0].textContent+" · Start "+start;
+  const ticks=byId("yticks"), grid=byId("grid");ticks.replaceChildren();grid.replaceChildren();
+  for(let power=lower;power<=upper;power++){
+    const pos=100*(power-lower)/(upper-lower), label=document.createElement("span"), sup=document.createElement("sup");
+    label.className="tick";label.style.top=pos+"%";label.textContent="−10";sup.textContent=power;label.append(sup);ticks.append(label);
+    grid.append(svgLine(0,pos,100,pos));
+  }
+  const marks=byId("xticks");marks.style.position="relative";marks.style.height="1.2em";marks.replaceChildren();
+  for(const tick of [first,15,30,45,60]) {
+    const tag=document.createElement("span");tag.textContent=tick;tag.style.position="absolute";tag.style.left=x(tick)+"%";
+    tag.style.transform=tick===first?"none":tick===60?"translateX(-100%)":"translateX(-50%)";marks.append(tag);
+  }
+  byId("scrub").min=first;draw();byId("status").textContent=byId("chart-title").textContent+", full recorded trajectory displayed.";
+}
+function step(t) {stop("");cycle=Math.max(first,Math.min(60,t));draw();byId("status").textContent="Cycle "+cycle+" of 60.";}
+byId("play").addEventListener("click",()=>{
+  if(reduced.matches)return;
+  if(timer!==null){stop("Paused at cycle "+cycle+".");draw();return;}
+  if(cycle===60)cycle=first;
+  began=true;
+  timer=setInterval(()=>{
+    cycle++;
+    if(cycle>=60){cycle=60;stop("Playback complete at cycle 60.");}
+    draw();
+  },145);
+  draw();byId("status").textContent="Playing from cycle "+cycle+".";
+});
+byId("previous").addEventListener("click",()=>step(cycle-1));
+byId("next").addEventListener("click",()=>step(cycle+1));
+byId("scrub").addEventListener("input",e=>step(Number(e.target.value)));
+for(const id of ["setting","start","window"])byId(id).addEventListener("change",selectCurves);
+function motion() {if(reduced.matches)stop("");byId("play").hidden=reduced.matches;draw();}
+reduced.addEventListener("change",motion);
+document.addEventListener("visibilitychange",()=>{if(document.hidden&&timer!==null){stop("Playback paused.");draw();}});
+selectCurves();for(const id of ["choices","playback","scrub"])byId(id).hidden=false;motion();
+</script></body></html>

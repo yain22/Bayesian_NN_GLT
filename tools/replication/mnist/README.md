@@ -1,4 +1,4 @@
-# MNIST handwritten digits · Table 9
+# MNIST handwritten digits
 
 All six methods train on the official 60,000 handwritten digits and predict the labels of the 10,000 official test images. The [36 published scores](summary/scores.csv) give the number classified correctly, accuracy and mean log loss for each combination of method, depth and width. See the [test gallery](../../../docs/classification/mnist-full/test-digits.png) and [data notes](data/README.md) for the image source and pixel order.
 

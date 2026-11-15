@@ -105,7 +105,7 @@ predict(fit, x[test, ], type = "mean", draws = 256L, seed = 32L)
   <div><h2 id="checks-title">Numerical checks</h2></div>
   <div>
     <p>Supplement Section S5.1 compares the GLT coefficient-scale quadrature with independent adaptive integration for nine pairs of local-factor parameters. <a href="check-quadrature.R" download>Download the R quadrature check</a>.</p>
-    <p>The same section plots the variational objective through 60 fitting cycles for all three priors in the first matched replication of each of nine simulation settings, with two hidden layers of 25 units. The 27 traces increased in that replication.</p>
+    <p>Figure S10 follows ten initializations for each of the three priors in nine settings. Within each setting, the networks use the same training data, and all three priors use the same starting weights for each initialization. The 270 trajectories record the monitored ELBO at initialization and after each of 60 fitting cycles. <a href="elbo-replay.html">Replay the recorded fitting cycles</a>, <a href="elbo-initializations.pdf">view Figure S10</a>, or <a href="elbo-initializations.zip" download>download the traces, synthetic training inputs, and code to reproduce the figure or refit the networks</a>.</p>
   </div>
 </section>
 </main>
