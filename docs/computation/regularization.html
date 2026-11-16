@@ -3,11 +3,12 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Compare dropout and penalized neural networks with three Bayesian shrinkage priors using matched R fits for timber volume.">
+  <meta name="description" content="Compare three frequentist neural networks with three Bayesian shrinkage priors using matched R fits for timber volume.">
   <title>Compare Bayesian and frequentist regularization · gltbnn</title>
   <link rel="icon" href="../assets/mark.svg" type="image/svg+xml">
   <link rel="stylesheet" href="../package.css">
   <link rel="stylesheet" href="regularization.css">
+  <script defer src="regularization-math.js"></script>
   <script defer src="regularization.js"></script>
 </head>
 <body>
@@ -35,26 +36,31 @@
     <div class="comparison">
       <section class="lane fnn" aria-labelledby="fnn-title">
         <div class="lane-head"><h3 id="fnn-title">Frequentist network</h3>
-          <select id="fnn" aria-label="Frequentist method"><option value="Dropout">Dropout</option><option value="L1">L₁ penalty</option><option value="FNN">Unpenalized</option></select>
+          <select id="fnn" aria-label="Frequentist method"><option selected value="FNN">Unpenalized</option><option value="Dropout">Dropout</option><option value="L1">L₁ penalty</option></select>
         </div>
-        <div class="lane-content">
-          <p class="state-summary">Fit one value for each weight and bias.</p>
-          <figure><canvas id="fnn-plot" role="img" aria-labelledby="fnn-caption"></canvas><figcaption id="fnn-caption"></figcaption></figure>
-          <p class="formula" id="fnn-formula"></p><p class="description" id="fnn-description"></p><dl id="fnn-values"></dl>
-        </div>
+        <p class="state-summary" id="fnn-summary">Fit one value for each weight and bias.</p>
+        <div class="formula" id="fnn-formula"></div>
+        <figure><canvas id="fnn-plot" role="img" aria-labelledby="fnn-caption"></canvas><figcaption id="fnn-caption"></figcaption></figure>
+        <p class="description" id="fnn-description"></p>
+        <dl id="fnn-values"></dl>
       </section>
       <section class="lane bnn" aria-labelledby="bnn-title">
         <div class="lane-head"><h3 id="bnn-title">Bayesian network</h3>
           <select id="bnn" aria-label="Bayesian prior"><option value="G">G · layer scale</option><option value="GL">GL · horseshoe</option><option selected value="GLT">GLT · generalized Pareto</option></select>
         </div>
-        <div class="lane-content">
-          <p class="state-summary">Fit a Gaussian distribution for each weight and bias, along with the shrinkage factors.</p>
-          <figure><canvas id="bnn-plot" role="img" aria-labelledby="bnn-caption"></canvas><figcaption id="bnn-caption"></figcaption></figure>
-          <p class="formula" id="bnn-formula"></p><p class="description" id="bnn-description"></p><dl id="bnn-values"></dl>
-        </div>
+        <p class="state-summary" id="bnn-summary">Fit a Gaussian distribution for each weight and bias, along with the shrinkage factors.</p>
+        <div class="formula" id="bnn-formula"></div>
+        <figure><canvas id="bnn-plot" role="img" aria-labelledby="bnn-caption"></canvas><figcaption id="bnn-caption"></figcaption></figure>
+        <p class="description" id="bnn-description"></p>
+        <dl id="bnn-values"></dl>
       </section>
     </div>
-    <p class="bridge" id="bridge" hidden><strong>Why compare a penalty with a prior?</strong> For Gaussian regression at fixed observation variance, a Laplace prior gives an L₁ penalty in the negative log posterior. With the penalty strength matched to the prior, minimizing the penalized loss gives a posterior mode. The three BNNs fit Gaussian variational distributions for the weights and separate factors for their scales.</p>
+    <div class="bridge" id="bridge" hidden>
+      <details id="objectives"><summary>Full fitting objectives for the selected networks</summary>
+        <div class="objectives-grid"><div id="fnn-objective"></div><div id="bnn-objective"></div></div>
+        <p>At fixed noise variance, a Laplace prior gives an L₁ penalty in the negative log posterior. Matching the penalty strength gives a posterior mode. The three Bayesian fits here estimate distributions for the weights and shrinkage scales.</p>
+      </details>
+    </div>
   </section>
   <p id="status" role="status" hidden>Loading the six recorded fits…</p>
   <noscript><p>The interactive controls require JavaScript. The companion notes below explain the six methods.</p></noscript>

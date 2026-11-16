@@ -2,6 +2,10 @@
   "dataset": "datasets::trees",
   "n_train": 25,
   "held_out_rows": [5, 10, 15, 20, 25, 30],
+  "response_scaling": {
+    "mean": 30.36,
+    "sd": 17.238184359149
+  },
   "coefficient": {
     "layer": 1,
     "unit": 1,

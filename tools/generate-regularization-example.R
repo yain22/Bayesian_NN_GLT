@@ -157,6 +157,7 @@ stopifnot(methods$Dropout$first_layer_activations[selected_unit] > 0)
 
 fixture <- list(
   dataset = "datasets::trees", n_train = length(train), held_out_rows = holdout,
+  response_scaling = list(mean = prep$y_center, sd = prep$y_scale),
   coefficient = list(layer = 1L, unit = 1L, coordinate = 1L, predictor = "Girth"),
   tree = list(row = test_row, diameter = data$Girth[test_row], height = data$Height[test_row],
               observed_volume = data$Volume[test_row], standardized_input = as.numeric(x_test)),

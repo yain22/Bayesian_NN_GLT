@@ -5,9 +5,9 @@ const fmt = (x, digits = 4) => Number(x.toPrecision(digits)).toString();
 const volume = n => n.toFixed(2) + " ft³";
 const colors = {fnn:"#894725", bnn:"#21645d", ink:"#183447", grid:"#cbd1ca", quiet:"#566a71"};
 const priors = {
-  G:"All hidden coefficients in the layer share its scale τ, so they have the same scale precision P.",
-  GL:"The coefficient scale is λ = τr. Since the layer and multiplier factors are independent under q, P is the product of their expected inverse squares.",
-  GLT:"Each coefficient has its own fitted scale factor. Quadrature gives its mean. Multiplying that mean by the local update ratio A/B gives P."
+  G:"The diameter weight shares its scale with every other incoming weight and bias in layer one.",
+  GL:"The diameter weight has its own local multiplier. Its product with the layer scale gives this weight’s scale.",
+  GLT:"The diameter weight has its own scale. The fit uses quadrature to compute its moments and learns a tail shape for the whole layer."
 };
 let data;
 let view = "train";
@@ -28,6 +28,40 @@ function make(tag, text) {
   const node = document.createElement(tag);
   if (text !== undefined) node.textContent = text;
   return node;
+}
+function equationPanel(title, equations, note, result) {
+  const block=document.createDocumentFragment();
+  block.append(make("h4",title));
+  const lines=make("div");
+  lines.className="formula-math";
+  for (const key of equations) {
+    const line=make("div");
+    line.innerHTML=regularizationMath[key];
+    lines.append(line);
+  }
+  block.append(lines);
+  if (note) {
+    const paragraph=make("p",note);
+    paragraph.className="formula-note"; block.append(paragraph);
+  }
+  if (result) {
+    const value=make("p",result);
+    value.className="formula-result"; block.append(value);
+  }
+  return block;
+}
+function showObjectives() {
+  const method=$("fnn").value;
+  const residual=method==="Dropout" ? "maskedResidual" : "residual";
+  const losses={FNN:"leastSquares",L1:"penalizedLoss",Dropout:"dropoutLoss"};
+  const notes={
+    FNN:"Each residual is a training tree’s standardized volume minus the network prediction.",
+    L1:"The penalty sums over all weights and biases. Each residual is measured on the standardized training scale.",
+    Dropout:"For each training tree, the expectation averages over the masks on all hidden units."
+  };
+  $("fnn-objective").replaceChildren(equationPanel("Minimize the training loss", [residual,losses[method]],notes[method]));
+  $("bnn-objective").replaceChildren(equationPanel("Maximize the evidence lower bound",["elbo"],
+    "The likelihood measures fit to the training data. The joint prior acts on all parameters. The Jeffreys variance prior fixes this objective only up to an additive constant."));
 }
 function showValues(id, rows) {
   $(id).replaceChildren(...rows.map(([label,value]) => {
@@ -52,7 +86,7 @@ function setControls() {
   const controls=$("controls"); controls.replaceChildren();
   if (view==="principle") {
     slider("trial","Trial weight or mean",-2.5,2.5,.05,trial,v=>trial=v);
-    slider("spread","Bayesian spread as a multiple of fitted SD",.25,2,.05,spreadFactor,v=>spreadFactor=v);
+    slider("spread","Trial SD / fitted SD",.25,2,.05,spreadFactor,v=>spreadFactor=v);
   } else if (view==="train") {
     slider("pass","Bayesian draw in the first gradient estimate",1,4,1,pass+1,v=>pass=v-1);
     if ($("fnn").value==="Dropout") {
@@ -66,7 +100,7 @@ function setControls() {
       controls.append(label,select);
     }
   } else {
-    slider("count","Networks included in the Bayesian mean",1,data.control.prediction_draws,1,count,v=>count=v);
+    slider("count","Weight draws in the Bayesian mean (S)",1,data.control.prediction_draws,1,count,v=>count=v);
     const animate=make("button","Play draws"); animate.type="button"; animate.id="animate";
     animate.addEventListener("click",()=>{
       if (timer!==undefined) {stop();return;}
@@ -88,27 +122,32 @@ function principle(kind, key, method) {
   const scale=bayes ? method.sd_after*spreadFactor : undefined;
   const cost=t=>bayes ? omega*(t*t+scale*scale)/2 : penalized ? etaReg*Math.abs(t) : 0;
   const slope=bayes ? omega*trial : penalized ? etaReg*Math.sign(trial) : 0;
-  let formula, description;
+  let formula, description, summary;
   if (bayes) {
-    formula="P = E<sub>q</sub>(λ⁻²), &nbsp; φ<sub>σ</sub> = E<sub>q</sub>(σ⁻²), &nbsp; ω = φ<sub>σ</sub> P.<br>Expected prior cost = ω(m² + s²)/2.";
-    description=priors[key]+" With the scales fixed, the cost derivative with respect to m is ωm. Increasing s raises both the expected prior cost and the Gaussian entropy. The fit maximizes the expected log joint density plus entropy.";
+    summary="The diameter weight has a Gaussian factor with mean m and standard deviation s.";
+    formula=equationPanel("Expected cost from the weight prior",["priorCost","precision"],
+      "Here λ is this weight’s shrinkage scale and σ² is the observation variance.");
+    description=priors[key]+" Increasing the trial standard deviation raises both this cost and the Gaussian entropy. The ELBO accounts for both.";
   } else if (penalized) {
-    formula="Training loss = ½ mean squared error + η<sub>reg</sub> Σ<sub>a</sub> |w<sub>a</sub>|, with η<sub>reg</sub> = 0.001.";
-    description="Adam receives the data gradient plus 0.001 sign(w) for each weight and bias. Moving across zero reverses the penalty’s slope. At zero, this implementation uses subgradient zero.";
+    summary="The fit minimizes half the mean squared training error plus an L₁ penalty on the weights and biases.";
+    formula=equationPanel("Penalty on the diameter weight",["l1Penalty"],"The penalty strength is 0.001.");
+    description="The penalty adds a positive slope above zero and a negative slope below zero. At zero the implementation chooses subgradient zero.";
   } else if (key==="Dropout") {
-    formula="Training target = expected loss over hidden-unit masks";
-    description="A sampled mask changes the prediction and its data gradient. There is no separate coefficient penalty in this fit. The training-pass view shows where the mask acts.";
+    summary="Dropout trains one set of weights by averaging squared error over random hidden-unit masks.";
+    formula=equationPanel("Penalty on the diameter weight",["noPenalty"],"Dropout acts on the hidden activations during training.");
+    description="Changing a mask changes the network prediction and its gradient. The training-pass tab follows one such mask.";
   } else {
-    formula="Training loss = ½ mean squared error";
-    description="The optimizer adjusts one weight vector using prediction errors. This benchmark adds no explicit coefficient penalty or hidden-unit masking.";
+    summary="The fit minimizes half the mean squared training error using one set of weights and biases.";
+    formula=equationPanel("Penalty on the diameter weight",["noPenalty"],"The unpenalized fit assigns zero penalty at every weight value.");
+    description="The weight still receives a gradient from the squared prediction errors on the training trees.";
   }
   const rows=bayes ? [["Scale precision P",fmt(method.scale_precision_after)],["Noise precision",fmt(method.noise_precision_after)],["Weight precision ω",fmt(omega)],["Trial standard deviation s",fmt(scale)],["Entropy change from fitted spread",fmt(Math.log(spreadFactor))+" nats"]] :
                     [["Fitted diameter weight",fmt(method.weight_after)]];
   rows.push(["Local cost at the trial value",fmt(cost(trial))],
             [bayes ? "Cost derivative with respect to m" : "Penalty subgradient at w",fmt(slope)]);
-  return {formula,description,rows,cost,
-    caption:bayes ? "Expected negative log-prior contribution, up to an additive constant, versus the trial Gaussian mean. Each panel has its own vertical scale." :
-                   "Explicit coefficient penalty versus the trial diameter weight. The plotted cost excludes the data loss."};
+  return {formula,description,summary,rows,cost,
+    caption:bayes ? "The point gives the expected negative log-prior contribution at the trial mean, up to a constant. The curve holds the trial SD and the scale and noise factors fixed." :
+                   "The point gives this coefficient’s penalty at the trial weight. The prediction error enters the training objective separately."};
 }
 
 function training(kind,key,method) {
@@ -120,26 +159,30 @@ function training(kind,key,method) {
   const caption = bayes ? "The two inputs and the bias give the weighted sum z in this sampled network. The unit passes its full ReLU activation to layer two." :
       drops ? "The mask acts after ReLU. The two incoming weights and bias still exist when the unit sends zero." :
               "The hidden unit sends its full activation to layer two using the common starting weights.";
-  let formula,description;
+  let formula,description,summary;
   if (bayes) {
-    formula="w = m + sε, with ε ∼ N(0, 1). The activation is h = max(0, z).";
+    summary="Sample the weights and biases, then pass the inputs through that network.";
+    formula=equationPanel("Sample the diameter weight",["draw","relu"],"The sampled weights and bias determine the unit’s weighted sum z.");
     description="The three priors start from the same Gaussian weight factors and four antithetic network draws. Backpropagation estimates the likelihood gradient. Adam combines it with gradients from the prior and the Gaussian entropy to update the means and log standard deviations.";
   } else if (drops) {
-    formula="Activation passed = h/0.8 when kept, or 0 when dropped.";
+    summary="Draw a mask for this tree after computing the unit’s ReLU activation.";
+    formula=equationPanel("Pass the masked activation",["relu","dropout"],"The mask M is 1 with probability 0.8 and 0 otherwise.");
     description=mask==="recorded" ? "The recorded mask on this training tree sets the activation to zero. Use the what-if control to keep this very same unit. A kept unit sends 1.25 times its activation." :
       "This is a counterfactual mask on the same tree and weights. The recorded first pass dropped the unit. Retention has probability 0.8 during training.";
   } else if (key==="L1") {
-    formula="Activation passed = h. The L₁ subgradient is η<sub>reg</sub> sign(w).";
+    summary="Compute the activation at the current weights. The penalty enters the backward pass.";
+    formula=equationPanel("Pass the full activation",["relu"],"Here z is the weighted sum of the two inputs plus the bias.");
     description="The forward computation matches the unpenalized network at the common start. The difference enters in backpropagation, when the penalty gradient is added before the Adam step.";
   } else {
-    formula="Activation passed = h";
+    summary="Compute the activation at the current weights, then update the weights using the training errors.";
+    formula=equationPanel("Pass the full activation",["relu"],"Here z is the weighted sum of the two inputs plus the bias.");
     description="A forward pass computes the training prediction at one weight vector. Backpropagation differentiates the squared-error loss and Adam updates that vector.";
   }
   const rows=[["Starting diameter "+(bayes ? "weight mean" : "weight"),fmt(method.weight_before)]];
   if (bayes) rows.push(["Gaussian perturbation ε",fmt(recorded.epsilon)],["Sampled diameter weight",fmt(recorded.weight)],["Starting weight precision ω",fmt(method.effective_precision_before)]);
   if (key==="L1") rows.push(["Penalty gradient at this weight",fmt(method.penalty_subgradient_before)]);
   rows.push(["ReLU activation before masking",fmt(recorded.activation)],["Activation sent to the next layer",fmt(passed)]);
-  return {formula,description,rows,caption,recorded,multiplier,passed};
+  return {formula,summary,description,rows,caption,recorded,multiplier,passed};
 }
 
 function prediction(kind,key,method) {
@@ -149,13 +192,18 @@ function prediction(kind,key,method) {
   const rows=bayes ? [["Fitted diameter weight, mean ± SD",fmt(method.weight_after)+" ± "+fmt(method.sd_after)],["Latest sampled diameter weight",fmt(latest.weight)],["Latest sampled mean volume",volume(latest.volume)],
                        ["Average of "+count+(count===1 ? " network" : " networks"),volume(mean)],["Full 256-draw average",volume(method.prediction.mean)]] :
                      [["Fitted diameter weight",fmt(method.weight_after)],["Prediction from one fitted network",volume(mean)]];
-  const formula=bayes ? "Volume (ft³) = ȳ + s<sub>y</sub> × average network output over the selected draws." : "Volume (ft³) = ȳ + s<sub>y</sub> × network output at the fitted weights.";
+  const scaling=data.response_scaling;
+  const standardized=(mean-scaling.mean)/scaling.sd;
+  const calculation=scaling.mean.toFixed(2)+" + "+scaling.sd.toFixed(3)+" × "+standardized.toFixed(4)+" ≈ "+volume(mean);
+  const summary=bayes ? "Draw S networks from the fitted weight distribution and average their predictions for this tree." :
+      "Use the fitted weights and biases to predict once at this tree’s standardized diameter and height.";
+  const formula=equationPanel("Predicted mean volume", [bayes ? "bnnVolume" : "fnnVolume"], null,calculation);
   const description=bayes ? "Each draw samples every weight and bias and gives one conditional mean volume. Averaging these volumes estimates the expectation under the fitted Gaussian weight factors. These draws exclude observation noise." :
       key==="Dropout" ? "All hidden units operate with the fitted weights at prediction. Inverted scaling during training lets the benchmark use the ordinary network here." :
-      "Evaluate the fitted network once at the standardized diameter and height. Repeating that evaluation gives the same result.";
-  return {mean,draws,formula,description,rows,
-    caption:bayes ? "Dots show individual network outputs. The green diamond marks their running mean; the vertical rule marks the observed volume." :
-                   "The brown diamond marks the fitted prediction. The vertical rule marks the observed volume on the same scale as the Bayesian panel."};
+      "The same fitted network gives the same predicted mean each time it is evaluated at this tree.";
+  return {mean,draws,formula,summary,description,rows,
+    caption:bayes ? "Each dot is a sampled network’s mean volume. The diamond marks the average of the selected draws." :
+                   "The diamond marks the fitted network’s mean volume. Both charts use the same volume scale."};
 }
 
 function chart(id,kind,result) {
@@ -214,7 +262,7 @@ function chart(id,kind,result) {
     const [lo,hi]=predictionRange, x=v=>left+(right-left)*(v-lo)/(hi-lo);
     const observed=x(data.tree.observed_volume);
     line(observed,top,observed,bottom,colors.quiet,1.3);
-    text("Observed",observed,top-6,"center",colors.quiet);
+    text("Observed "+data.tree.observed_volume+" ft³",observed,top-6,"center",colors.quiet);
     line(left,bottom,right,bottom,colors.grid);
     for(let v=lo;v<=hi;v+=(hi-lo)/4) text(fmt(v,3),x(v),bottom+16);
     if(kind==="bnn") {
@@ -245,7 +293,7 @@ function render() {
   if(view==="principle") {
     $("trial-value").textContent=trial.toFixed(2);
     $("spread-value").textContent=spreadFactor.toFixed(2)+"×";
-    $("instructions").textContent="Move the same trial coefficient in both panels, or change the spread of its Bayesian factor. The curves isolate its direct cost with the shrinkage scales fixed. The FNN uses a mean loss and the BNN uses a full-data ELBO, so the vertical units differ.";
+    $("instructions").textContent="Move the slider to compare the direct cost of one diameter weight. The frequentist curve shows its explicit penalty. The Bayesian curve shows its expected cost under the weight prior, with the noise and shrinkage factors fixed. Each chart uses its own vertical scale.";
   } else if(view==="train") {
     $("pass-value").textContent=(pass+1)+" of 4";
     const t=data.training_tree;
@@ -253,18 +301,25 @@ function render() {
   } else {
     $("count").value=count;$("count-value").textContent=count+" of "+data.control.prediction_draws;
     const t=data.tree;
-    $("instructions").textContent="Held-out tree "+t.row+" has diameter "+t.diameter+" in and height "+t.height+" ft. It contained "+t.observed_volume+" ft³ of timber. The training mean and SD of volume convert the standardized network outputs to cubic feet.";
+    const scaling=data.response_scaling;
+    $("instructions").replaceChildren(
+      "Held-out tree "+t.row+" had a diameter of "+t.diameter+" in and a height of "+t.height+" ft. Their standardized values form ",
+      make("b","x"),make("sub","∗"),". Its observed volume was "+t.observed_volume+" ft³. The training mean was ",
+      make("var","ȳ")," = "+scaling.mean.toFixed(2)+" ft³ and the sample standard deviation was ",
+      make("var","s"),make("sub","y")," = "+scaling.sd.toFixed(3)+" ft³."
+    );
   }
   for (const kind of ["fnn","bnn"]) {
     const key=$(kind).value, method=data.methods[key];
     const result=view==="principle" ? principle(kind,key,method) : view==="train" ? training(kind,key,method) : prediction(kind,key,method);
-    // Formula strings are static markup; recorded values use textContent.
-    $(kind+"-formula").innerHTML=result.formula;
+    $(kind+"-summary").textContent=result.summary;
+    $(kind+"-formula").replaceChildren(result.formula);
     $(kind+"-description").textContent=result.description;
     $(kind+"-caption").textContent=result.caption;
     showValues(kind+"-values",result.rows); chart(kind+"-plot",kind,result);
   }
   $("bridge").hidden=view!=="principle";
+  if (view==="principle" && $("objectives").open) showObjectives();
 }
 
 function changeView(next) {
@@ -283,6 +338,7 @@ async function init() {
   }
   predictionRange=[Math.floor((Math.min(...volumes)-.5)/2)*2,Math.ceil((Math.max(...volumes)+.5)/2)*2];
   $("workbench").hidden=false;$("status").hidden=true;
+  $("objectives").addEventListener("toggle",()=>{if ($("objectives").open) showObjectives();});
   document.querySelectorAll("[data-view]").forEach(b=>b.addEventListener("click",()=>changeView(b.dataset.view)));
   for(const kind of ["fnn","bnn"]) $(kind).addEventListener("change",()=>{stop();setControls();render();});
   document.addEventListener("visibilitychange",()=>{if(document.hidden)stop();});
