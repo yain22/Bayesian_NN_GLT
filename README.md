@@ -6,7 +6,7 @@
 
 The R package accompanying *Variational Learning of Bayesian Neural Networks with a family of global–local shrinkage priors* fits ReLU networks under global (G), horseshoe (GL), and global–local–tail (GLT) priors. It supports continuous, binary, and unordered categorical responses.
 
-[Follow one fitting cycle](https://yain22.github.io/Bayesian_NN_GLT/computation/cycle.html) · [Fit a model in R](#installation) · [Explore the results](#simulation-results) · [Package website](https://yain22.github.io/Bayesian_NN_GLT/)
+[Follow one fitting cycle](https://yain22.github.io/Bayesian_NN_GLT/computation/cycle.html) · [Compare Bayesian and frequentist networks](https://yain22.github.io/Bayesian_NN_GLT/computation/regularization.html) · [Fit a model in R](#installation) · [Explore the results](#simulation-results) · [Package website](https://yain22.github.io/Bayesian_NN_GLT/)
 
 ## How variational fitting works
 

@@ -88,7 +88,7 @@ page = """<!doctype html>
     .guide-intro { padding-block:clamp(2rem,5vw,4rem) 1.75rem; }
     .guide-intro h1 { max-width:17ch; }
     .guide-intro p, .fit-intro p { max-width:72ch; color:var(--muted); }
-    .guide-routes { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); border-block:1px solid var(--rule); }
+    .guide-routes { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); border-block:1px solid var(--rule); }
     .guide-routes a { display:block; padding:1.25rem; text-decoration:none; color:var(--ink); }
     .guide-routes a + a { border-left:1px solid var(--rule); }
     .guide-routes a:first-child { background:#e8f1ef; }
@@ -106,6 +106,11 @@ page = """<!doctype html>
     math[display=block] { min-width:max-content; font-size:1.05rem; }
     .codebar a { color:#fff; }
     @media (max-width:860px) { .section-grid { grid-template-columns:minmax(0,1fr); } }
+    @media (min-width:591px) and (max-width:940px) {
+      .guide-routes { grid-template-columns:repeat(2,minmax(0,1fr)); }
+      .guide-routes a:nth-child(3) { border-left:0; }
+      .guide-routes a:nth-child(n+3) { border-top:1px solid var(--rule); }
+    }
     @media (max-width:590px) { .guide-routes { grid-template-columns:1fr; } .guide-routes a + a { border-left:0; border-top:1px solid var(--rule); } }
   </style>
 </head>
@@ -118,10 +123,11 @@ page = """<!doctype html>
 <main id="content" class="wrap">
 <header class="guide-intro">
   <h1>How the networks are fitted</h1>
-  <p class="intro">To predict timber volume, a network learns how strongly to weight trunk diameter and height. Each cycle updates the weights, uses their expected squares to learn shrinkage scales, and returns a precision for the next weight update.</p>
+  <p class="intro">To predict timber volume, a network learns how strongly to weight trunk diameter and height. Each Bayesian fitting cycle updates the weights, uses their expected squares to learn shrinkage scales, and returns a precision for the next weight update.</p>
 </header>
 <div class="guide-routes" role="navigation" aria-label="Explore the computation">
   <a href="cycle.html"><strong>Follow one fitting cycle →</strong><span>Trace the diameter weight in a real fit, from its Gaussian factor to its next prior precision.</span></a>
+  <a href="regularization.html"><strong>Compare BNNs and FNNs →</strong><span>See how all six methods fit a weight and predict for a new observation.</span></a>
   <a href="#examples"><strong>Fit the networks in R →</strong><span>Run the same timber example with a global, horseshoe or global–local–tail prior.</span></a>
   <a href="algorithms.html"><strong>Check an update equation →</strong><span>Compare the three algorithms with their R implementation and the supplement.</span></a>
 </div>

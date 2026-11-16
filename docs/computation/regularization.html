@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Compare dropout and penalized neural networks with three Bayesian shrinkage priors using matched R fits for timber volume.">
+  <title>Compare Bayesian and frequentist regularization · gltbnn</title>
+  <link rel="icon" href="../assets/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../package.css">
+  <link rel="stylesheet" href="regularization.css">
+  <script defer src="regularization.js"></script>
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<header class="topbar"><div class="wrap bar-inner">
+  <a class="wordmark" href="../" aria-label="gltbnn home">glt<span>bnn</span></a>
+  <nav aria-label="Computation"><a href="./">Computation</a><a href="cycle.html">Variational fitting cycle</a><a href="#reading">Reading and R code</a></nav>
+</div></header>
+<main id="content" class="wrap">
+  <header class="lead">
+    <h1>How do Bayesian and frequentist networks regularize?</h1>
+    <p>Follow the connection from trunk diameter to one hidden unit in a network predicting timber volume. All six methods start with the same weights and training trees. Choose a frequentist fit and a Bayesian fit to see what each learns, what happens during a training pass, and how it predicts for a new tree.</p>
+  </header>
+
+  <section class="workbench" id="workbench" aria-label="Compare two fitted networks" hidden>
+    <div class="views" role="group" aria-label="Comparison view">
+      <button type="button" data-view="principle">Fitting principle</button>
+      <button type="button" data-view="train">Training pass</button>
+      <button type="button" data-view="predict">Held-out prediction</button>
+    </div>
+    <div class="prompt">
+      <div><h2 id="question"></h2><p id="instructions"></p></div>
+      <div id="controls"></div>
+    </div>
+    <div class="comparison">
+      <section class="lane fnn" aria-labelledby="fnn-title">
+        <div class="lane-head"><h3 id="fnn-title">Frequentist network</h3>
+          <select id="fnn" aria-label="Frequentist method"><option value="Dropout">Dropout</option><option value="L1">L₁ penalty</option><option value="FNN">Unpenalized</option></select>
+        </div>
+        <div class="lane-content">
+          <p class="state-summary">Fit one value for each weight and bias.</p>
+          <figure><canvas id="fnn-plot" role="img" aria-labelledby="fnn-caption"></canvas><figcaption id="fnn-caption"></figcaption></figure>
+          <p class="formula" id="fnn-formula"></p><p class="description" id="fnn-description"></p><dl id="fnn-values"></dl>
+        </div>
+      </section>
+      <section class="lane bnn" aria-labelledby="bnn-title">
+        <div class="lane-head"><h3 id="bnn-title">Bayesian network</h3>
+          <select id="bnn" aria-label="Bayesian prior"><option value="G">G · layer scale</option><option value="GL">GL · horseshoe</option><option selected value="GLT">GLT · generalized Pareto</option></select>
+        </div>
+        <div class="lane-content">
+          <p class="state-summary">Fit a Gaussian distribution for each weight and bias, along with the shrinkage factors.</p>
+          <figure><canvas id="bnn-plot" role="img" aria-labelledby="bnn-caption"></canvas><figcaption id="bnn-caption"></figcaption></figure>
+          <p class="formula" id="bnn-formula"></p><p class="description" id="bnn-description"></p><dl id="bnn-values"></dl>
+        </div>
+      </section>
+    </div>
+    <p class="bridge" id="bridge" hidden><strong>Why compare a penalty with a prior?</strong> With matching scales, an L₁ penalty can be written as the negative log density of a Laplace prior, up to a constant. Minimizing the penalized loss then gives a posterior mode. The Bayesian fits here learn distributions for the weights and shrinkage scales, and use those distributions for prediction.</p>
+  </section>
+  <p id="status" role="status" hidden>Loading the six recorded fits…</p>
+  <noscript><p>The interactive controls require JavaScript. The companion notes below explain the six methods.</p></noscript>
+
+  <div class="afterword">
+    <section aria-labelledby="matched"><h2 id="matched">What the fits have in common</h2>
+      <p>Diameter and height enter a ReLU network with three units in the first hidden layer and two in the second. Every fifth tree in <code>datasets::trees</code> is held out. The remaining 25 trees supply the standardization and the common starting weights, obtained with 600 squared-error updates (seed 7). Each FNN then takes 600 Adam steps. Each BNN attempts ten weight updates per cycle for 60 cycles, alternating with scale updates. These are separate matched fits for this comparison.</p>
+    </section>
+    <section id="reading" aria-labelledby="sources"><h2 id="sources">Reading and R code</h2>
+      <p>Bishop and Bishop explain the connection between a penalty and a prior in §§2.6.2–2.6.3 and introduce dropout in §9.6.1. Goodfellow, Bengio and Courville treat the L₁ penalty and dropout in §§7.1.2 and 7.12. The paper’s comparison appears in §§3.4 and 4.1.</p>
+      <div class="reading-links"><a href="https://github.com/yain22/Bayesian_NN_GLT/blob/main/docs/computation/regularization-notes.md">Companion notes</a><a href="https://github.com/yain22/Bayesian_NN_GLT/blob/main/tools/generate-regularization-example.R">Reproduce the six fits in R</a><a href="../data/regularization-example.json">Recorded values</a><a href="https://www.bishopbook.com/">Bishop &amp; Bishop</a><a href="https://www.deeplearningbook.org/contents/regularization.html">Goodfellow et al., chapter 7</a></div>
+    </section>
+  </div>
+</main>
+</body>
+</html>
