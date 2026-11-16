@@ -8,7 +8,8 @@ select:focus-visible {outline:3px solid #af5a32;outline-offset:2px}
 .design {margin:.8rem 0 2rem}
 .panel {padding:2rem 0;border-top:1px solid var(--rule)}
 .panel p {max-width:78ch}
-.toggle {width:fit-content;margin:1.2rem 0 .8rem}
+.toggle {width:fit-content;max-width:100%;grid-template-columns:minmax(0,1fr);margin:1.2rem 0 .8rem}
+.panel code {overflow-wrap:anywhere}
 .definition {margin:.8rem 0 1rem}
 .graph {max-width:52rem;padding:1.1rem clamp(.8rem,3vw,1.8rem);border:1px solid var(--rule);border-radius:.45rem;background:#fffefa}
 .graph strong {display:block;margin-bottom:1rem}

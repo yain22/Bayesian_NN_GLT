@@ -19,7 +19,7 @@ function stageContent() {
       return {
         title: "Fit the Gaussian weight factor", plot: "The diameter weight",
         text: "Each draw gives a possible network and a likelihood gradient. The weight block updates its mean and log standard deviation while the current prior precision stays fixed.",
-        eq: "w = m + sε,   ε ∼ N(0, 1)",
+        formula: "draw",
         rows: [["Mean, before → after", format(before.mean)+" → "+format(after.mean)],
                ["Standard deviation, before → after", format(before.sd)+" → "+format(after.sd)],
                ["Accepted Adam proposals", update.accepted_steps+" of "+fixture.control.weight_steps]],
@@ -29,7 +29,7 @@ function stageContent() {
       return {
         title: "Carry forward an expected square", plot: "Two parts of the second moment",
         text: "The scale update needs the expected squared weight. The Gaussian factor supplies this exactly, including the contribution from its remaining uncertainty.",
-        eq: "H = 𝔼[w²] = m² + s²",
+        formula: "moment",
         rows: [["Squared mean, m²", format(after.mean**2)], ["Variance, s²", format(after.sd**2)],
                ["Expected square, H", format(after.second_moment)]],
         caption: "The width of each segment is its share of the expected square. Each hidden weight and bias supplies a moment of its own."
@@ -38,7 +38,7 @@ function stageContent() {
       return {
         title: "Update the Gaussian noise variance", plot: "What enters the noise update",
         text: "Use fresh weight draws for the expected residual sum of squares. Add the new hidden-weight moments weighted by the old scale precisions. In this Jeffreys-prior fit, half that total gives the inverse-gamma scale b.",
-        eq: "q(σ²) = IG(a, b),   𝔼[σ⁻²] = a / b",
+        formula: "noise",
         rows: [["Residual sum of squares ("+fixture.control.noise_draws+" draws)", format(update.expected_sse)],
                ["Hidden-weight contribution", format(update.hidden_penalty)],
                ["Shape a / scale b", format(update.noise_shape)+" / "+format(update.noise_scale)],
@@ -54,34 +54,34 @@ function stageContent() {
       if (prior === "G") {
         content.title = "Pool the first layer’s weights";
         content.text = "G assigns one scale to all nine incoming weights and biases in layer one. Their expected squares enter the inverse-gamma layer update. The resulting scale precision is shared by all nine.";
-        content.eq = "D = 𝔼[λ⁻²] = 𝔼[τ⁻²]";
+        content.formula = "global";
         content.rows = [["Sum of the layer’s expected squares",format(update.layer_second_moment_sum)],
-                        ["Shared scale precision, D",format(after.scale_precision)]];
+                        ["Shared scale precision, P",format(after.scale_precision)]];
       } else if (prior === "GL") {
         content.title = "Combine the local and layer scales";
         content.text = "GL updates a squared local multiplier and its auxiliary for each coefficient, then the squared layer scale and its auxiliary. The two inverse moments multiply because their variational factors are independent.";
-        content.eq = "D = 𝔼[τ⁻²] × 𝔼[r⁻²]";
+        content.formula = "horseshoe";
         content.rows = [["Layer inverse moment",format(u.layer_inverse_squared_scale)],
                         ["Local inverse moment",format(u.multiplier_inverse_squared_scale)],
-                        ["Scale precision, D",format(after.scale_precision)]];
+                        ["Scale precision, P",format(after.scale_precision)]];
       } else {
         content.title = "Integrate the GLT local scale";
-        content.text = "For this connection, the new noise precision times H gives B. The current layer and mixing factors give A. Normalize the local-scale density by quadrature and integrate its inverse squared scale. The layer, auxiliary and log-shape updates follow.";
-        content.eq = "q(λ) ∝ λ⁻¹ exp[−Aλ − B/(2λ²)],   λ > 0";
-        content.rows = [["A",format(u.kernel_A)], ["B = 𝔼[σ⁻²] × H",format(u.kernel_B)],
-                        ["Scale precision, D = 𝔼[λ⁻²]",format(after.scale_precision)]];
+        content.text = "For this connection, the new noise precision times H gives B. The current layer and mixing factors give A. Quadrature gives the expected local scale. Multiply this mean by A/B to obtain the scale precision P. The layer, auxiliary and log-shape updates follow.";
+        content.formula = "tail";
+        content.rows = [["A",format(u.kernel_A)], ["B",format(u.kernel_B)], ["Expected local scale",format(u.mean_local_scale)],
+                        ["Scale precision, P",format(after.scale_precision)]];
       }
       return content;
     }
     case 4:
       return {
         title: "Return the precision to the weights", plot: "Shrinkage in the next weight block",
-        text: "Multiply the updated noise and scale precisions. In the next block the prior contributes −Pm to the gradient for this weight’s mean. The data contribute their own likelihood gradient.",
-        eq: "P = 𝔼[σ⁻²] × 𝔼[λ⁻²]",
+        text: "Multiply the updated noise and scale precisions. In the next block the prior contributes −ωm to the gradient for this weight’s mean. The data contribute their own likelihood gradient.",
+        formula: "return",
         rows: [["Noise × scale precision",format(noise)+" × "+format(after.scale_precision)],
                ["Effective precision, before → after",format(before.effective_precision)+" → "+format(after.effective_precision)],
                ["Next prior gradient at the current m",format(-after.effective_precision*after.mean)]],
-        caption: "The curves show the penalty Pm²/2 as the mean varies at fixed variance. Gray uses the starting precision and green uses the precision handed to the next block."
+        caption: "The curves show the penalty ωm²/2 as the mean varies at fixed variance. Gray uses the starting precision and green uses the precision handed to the next block."
       };
   }
 }
@@ -183,7 +183,7 @@ function render() {
   element("plot-title").textContent = content.plot;
   element("plot-caption").textContent = content.caption;
   element("explanation").textContent = content.text;
-  element("equation").textContent = content.eq;
+  element("equation").replaceChildren(element("formula-" + content.formula).content.cloneNode(true));
   element("position").textContent = prior+" · Step "+(step+1)+" of 5";
   element("announce").textContent = element("position").textContent+". "+content.title;
   element("readout").replaceChildren(...content.rows.map(([name,value]) => {

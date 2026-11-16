@@ -71,14 +71,34 @@ def variants(expressions):
     return ''.join(f'<span data-weight-law="{kind}" hidden>\\({tex}\\)</span>'
                    for kind,tex in expressions.items())
 
-vector_head = r'\mathbf w_{[[kl]]}\sim\mathcal N(\mathbf0,'
+def conditional_law(name, variable, scales, normal):
+    conditioned = variable + r'\mid' + scales + r',\sigma^2'
+    # Separate inline expressions wrap at the relation when space is short.
+    return rf'<span data-weight-law="{name}" hidden>\({conditioned}\) \(\sim{normal}\)</span>'
+
+coefficient_scales = {
+    'global': r'\tau_{[[l]]}',
+    'squared-layer': r'\tau_{[[l]]}^2',
+    'local': r'\lambda_{[[kl]],COORD}',
+    'squared-product': r'\tau_{[[l]]}^2,r_{[[kl]],COORD}^2'
+}
+vector_scales = {
+    'global': coefficient_scales['global'],
+    'squared-layer': coefficient_scales['squared-layer'],
+    'local': r'\boldsymbol{\lambda}_{[[kl]]}',
+    'squared-product': r'\tau_{[[l]]}^2,(r_{[[kl]],j}^2)_j'
+}
 covariances = {
     'global': global_var+r'\mathbf I_{[[d]]}',
     'squared-layer': squared_var+r'\mathbf I_{[[d]]}',
-    'local': r'\sigma^2\operatorname{diag}(\lambda_{[[kl]],1}^2,\ldots,\lambda_{[[kl]],[[d]]}^2)',
-    'squared-product': r'\sigma^2\tau_{[[l]]}^2\operatorname{diag}(r_{[[kl]],1}^2,\ldots,r_{[[kl]],[[d]]}^2)'
+    'local': r'\sigma^2\operatorname{diag}_{j=1}^{[[d]]}(\lambda_{[[kl]],j}^2)',
+    'squared-product': r'\sigma^2\tau_{[[l]]}^2\operatorname{diag}_{j=1}^{[[d]]}(r_{[[kl]],j}^2)'
 }
-src = src.replace('@selected-vector-laws@', variants({n:vector_head+v+')' for n,v in covariances.items()}))
+vector_laws = []
+for name, covariance in covariances.items():
+    normal = r'\mathcal N(\mathbf0,' + covariance + ')'
+    vector_laws.append(conditional_law(name, r'\mathbf w_{[[kl]]}', vector_scales[name], normal))
+src = src.replace('@selected-vector-laws@', ''.join(vector_laws))
 src = src.replace('@selected-variances@', variants({n:v.replace('COORD','[[j]]') for n,v in variances.items()}))
 leaves = []
 for j in [1, 2, 3, 4, None]:
@@ -89,10 +109,14 @@ for j in [1, 2, 3, 4, None]:
         input_source = rf'<span data-source-layer="1">Input \(x_{{{j}}}\)</span>' if j <= 3 else ''
         hidden_source = rf'<span data-source-layer="2">Activation \(h_{{{j}1}}(\mathbf x)\)</span>'
         origin = input_source + hidden_source
-    normal = variants({n:variable+r'\sim\mathcal N(0,'+v.replace('COORD',coordinate)+')' for n,v in variances.items()})
+    scalar_laws = []
+    for name, variance in variances.items():
+        selected_scales = coefficient_scales[name].replace('COORD', coordinate)
+        normal = r'\mathcal N(0,' + variance.replace('COORD', coordinate) + ')'
+        scalar_laws.append(conditional_law(name, variable, selected_scales, normal))
     layer_attr = ' data-source-layer="2"' if j == 4 else ''
     leaves.append(f'<li class="coordinate-leaf" data-coordinate="{j or "bias"}"{layer_attr}><span class="coordinate-source">{origin}</span>'
-                  f'<span class="coordinate-law">{normal}</span></li>')
+                  f'<span class="coordinate-law">{"".join(scalar_laws)}</span></li>')
 src = src.replace('@selected-leaves@', ''.join(leaves))
 initial = {'k':'2', 'l':'1', 'kl':'21', 'prev':'0', 'width':'4', 'd':'4', 'inputs':'3', 'j':'1', 'm':'16', 'head':'1', 'edge':'1'}
 slot = re.compile(r'\[\[(\w+)\]\]')

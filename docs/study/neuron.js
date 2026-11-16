@@ -71,7 +71,7 @@
     body.replaceChildren(...rows);
     status.textContent = "Layer " + l + ", neuron " + k + ". Showing coordinates " + first +
       "–" + last + " and bias " + d + ".";
-    document.getElementById("neuron-caption").replaceChildren("Conditional prior scale ",
+    document.getElementById("neuron-caption").replaceChildren("Geometric mean of the conditional prior SD, ",
       indexed("δ", String(k)+l+",j"), ". Bars span 0 to "+number.format(maximum)+
       ", the largest scale across this neuron’s incoming coordinates and the three fits.");
   }

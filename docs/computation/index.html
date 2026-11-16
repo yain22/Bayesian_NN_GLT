@@ -58,7 +58,7 @@
   <h2 id="examples-title">Fit the timber example in R</h2>
   <p>All three examples predict timber volume from trunk diameter (the <code>Girth</code> column) and height in <code>datasets::trees</code>. They share the training split, starting weights and two hidden layers. Every fifth tree is held out for prediction. <a href="../#install">Install the package</a>, then run the <a href="#g">G</a>, <a href="#gl">GL</a> or <a href="#glt">GLT</a> script.</p>
   <details><summary>Fitting budget and notation</summary>
-  <p>The examples use 600 initialization steps, 60 fitting cycles and the Jeffreys prior on the standardized observation variance. They return predictions in cubic feet. The scale precision <i>P</i><sub>kl,j</sub> in the equations below is 𝔼<sub>q</sub>[λ<sub>kl,j</sub><sup>−2</sup>]. Multiplying by 𝔼<sub>q</sub>[σ<sup>−2</sup>] gives the effective precision for a hidden coefficient in Gaussian regression.</p>
+  <p>The examples use 600 initialization steps, 60 fitting cycles and the Jeffreys prior on the standardized observation variance. They return predictions in cubic feet. The scale precision <i>P</i><sub>kl,j</sub> in the equations below is 𝔼<sub>q</sub>[λ<sub>kl,j</sub><sup>−2</sup>]. The noise precision is φ<sub>σ</sub> = 𝔼<sub>q</sub>[σ<sup>−2</sup>]. In these Gaussian fits, <i>c</i><sub>l</sub> = 1, so the effective hidden-weight precision is ω<sub>kl,j</sub> = φ<sub>σ</sub><i>P</i><sub>kl,j</sub>.</p>
   <p>To fit a GLT network for 180 cycles, supply the predictor matrix <code>x</code> and response <code>y</code>, and set the cycle budget in <code>control</code>.</p>
   <pre><code>gltbnn_fit(x, y, prior = "GLT",
            control = list(outer = 180L, weight_steps = 10L))</code></pre>

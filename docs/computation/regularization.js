@@ -5,9 +5,9 @@ const fmt = (x, digits = 4) => Number(x.toPrecision(digits)).toString();
 const volume = n => n.toFixed(2) + " ft³";
 const colors = {fnn:"#894725", bnn:"#21645d", ink:"#183447", grid:"#cbd1ca", quiet:"#566a71"};
 const priors = {
-  G:"All incoming weights and biases in this layer share one scale. Their expected squares jointly determine the layer’s next precision.",
-  GL:"A local half-Cauchy multiplier lets this coefficient depart from its layer scale. The two fitted inverse moments determine its next precision.",
-  GLT:"Each coefficient has a generalized Pareto scale under a shared layer scale and shape. A one-dimensional integral supplies this weight’s expected inverse squared scale."
+  G:"All hidden coefficients in the layer share its scale τ, so they have the same scale precision P.",
+  GL:"The coefficient scale is λ = τr. Since the layer and multiplier factors are independent under q, P is the product of their expected inverse squares.",
+  GLT:"Each coefficient has its own fitted scale factor. Quadrature gives its mean. Multiplying that mean by the local update ratio A/B gives P."
 };
 let data;
 let view = "train";
@@ -84,16 +84,16 @@ function setControls() {
 
 function principle(kind, key, method) {
   const bayes=kind==="bnn", penalized=key==="L1";
-  const lambda=data.l1.coefficient, P=method.effective_precision_after;
+  const etaReg=data.l1.coefficient, omega=method.effective_precision_after;
   const scale=bayes ? method.sd_after*spreadFactor : undefined;
-  const cost=t=>bayes ? P*(t*t+scale*scale)/2 : penalized ? lambda*Math.abs(t) : 0;
-  const slope=bayes ? P*trial : penalized ? lambda*Math.sign(trial) : 0;
+  const cost=t=>bayes ? omega*(t*t+scale*scale)/2 : penalized ? etaReg*Math.abs(t) : 0;
+  const slope=bayes ? omega*trial : penalized ? etaReg*Math.sign(trial) : 0;
   let formula, description;
   if (bayes) {
-    formula="Expected prior cost = P(m² + s²)/2";
-    description=priors[key]+" Hold P fixed and vary the spread s. More spread increases both the expected prior cost and Gaussian entropy. The whole fit maximizes expected log likelihood plus expected log prior and entropy.";
+    formula="P = E<sub>q</sub>(λ⁻²), &nbsp; φ<sub>σ</sub> = E<sub>q</sub>(σ⁻²), &nbsp; ω = φ<sub>σ</sub> P.<br>Expected prior cost = ω(m² + s²)/2.";
+    description=priors[key]+" With the scales fixed, the cost derivative with respect to m is ωm. Increasing s raises both the expected prior cost and the Gaussian entropy. The fit maximizes the expected log joint density plus entropy.";
   } else if (penalized) {
-    formula="Training loss = ½ mean squared error + 0.001 Σ |w|";
+    formula="Training loss = ½ mean squared error + η<sub>reg</sub> Σ<sub>a</sub> |w<sub>a</sub>|, with η<sub>reg</sub> = 0.001.";
     description="Adam receives the data gradient plus 0.001 sign(w) for each weight and bias. Moving across zero reverses the penalty’s slope. At zero, this implementation uses subgradient zero.";
   } else if (key==="Dropout") {
     formula="Training target = expected loss over hidden-unit masks";
@@ -102,9 +102,10 @@ function principle(kind, key, method) {
     formula="Training loss = ½ mean squared error";
     description="The optimizer adjusts one weight vector using prediction errors. This benchmark adds no explicit coefficient penalty or hidden-unit masking.";
   }
-  const rows=bayes ? [["Fitted effective precision P",fmt(P)],["Trial standard deviation s",fmt(scale)],["Entropy change from fitted spread",fmt(Math.log(spreadFactor))+" nats"]] :
+  const rows=bayes ? [["Scale precision P",fmt(method.scale_precision_after)],["Noise precision",fmt(method.noise_precision_after)],["Weight precision ω",fmt(omega)],["Trial standard deviation s",fmt(scale)],["Entropy change from fitted spread",fmt(Math.log(spreadFactor))+" nats"]] :
                     [["Fitted diameter weight",fmt(method.weight_after)]];
-  rows.push(["Local cost at the trial value",fmt(cost(trial))],["Contribution to the cost gradient",fmt(slope)]);
+  rows.push(["Local cost at the trial value",fmt(cost(trial))],
+            [bayes ? "Cost derivative with respect to m" : "Penalty subgradient at w",fmt(slope)]);
   return {formula,description,rows,cost,
     caption:bayes ? "Expected negative log-prior contribution, up to an additive constant, versus the trial Gaussian mean. Each panel has its own vertical scale." :
                    "Explicit coefficient penalty versus the trial diameter weight. The plotted cost excludes the data loss."};
@@ -118,24 +119,24 @@ function training(kind,key,method) {
   const passed=recorded.activation*multiplier;
   const caption = bayes ? "The two inputs and the bias give the weighted sum z in this sampled network. The unit passes its full ReLU activation to layer two." :
       drops ? "The mask acts after ReLU. The two incoming weights and bias still exist when the unit sends zero." :
-              "The hidden unit sends its full activation to layer two using the current fitted weights.";
+              "The hidden unit sends its full activation to layer two using the common starting weights.";
   let formula,description;
   if (bayes) {
-    formula="w = m + sε;   h = max(0, z)";
+    formula="w = m + sε, with ε ∼ N(0, 1). The activation is h = max(0, z).";
     description="The three priors start from the same Gaussian weight factors and four antithetic network draws. Backpropagation estimates the likelihood gradient. Adam combines it with gradients from the prior and the Gaussian entropy to update the means and log standard deviations.";
   } else if (drops) {
-    formula="Activation passed = M h / 0.8";
+    formula="Activation passed = h/0.8 when kept, or 0 when dropped.";
     description=mask==="recorded" ? "The recorded mask on this training tree sets the activation to zero. Use the what-if control to keep this very same unit. A kept unit sends 1.25 times its activation." :
       "This is a counterfactual mask on the same tree and weights. The recorded first pass dropped the unit. Retention has probability 0.8 during training.";
   } else if (key==="L1") {
-    formula="Activation passed = h;   penalty gradient = 0.001 sign(w)";
+    formula="Activation passed = h. The L₁ subgradient is η<sub>reg</sub> sign(w).";
     description="The forward computation matches the unpenalized network at the common start. The difference enters in backpropagation, when the penalty gradient is added before the Adam step.";
   } else {
     formula="Activation passed = h";
     description="A forward pass computes the training prediction at one weight vector. Backpropagation differentiates the squared-error loss and Adam updates that vector.";
   }
   const rows=[["Starting diameter "+(bayes ? "weight mean" : "weight"),fmt(method.weight_before)]];
-  if (bayes) rows.push(["Gaussian perturbation ε",fmt(recorded.epsilon)],["Sampled diameter weight",fmt(recorded.weight)],["Starting effective prior precision",fmt(method.effective_precision_before)]);
+  if (bayes) rows.push(["Gaussian perturbation ε",fmt(recorded.epsilon)],["Sampled diameter weight",fmt(recorded.weight)],["Starting weight precision ω",fmt(method.effective_precision_before)]);
   if (key==="L1") rows.push(["Penalty gradient at this weight",fmt(method.penalty_subgradient_before)]);
   rows.push(["ReLU activation before masking",fmt(recorded.activation)],["Activation sent to the next layer",fmt(passed)]);
   return {formula,description,rows,caption,recorded,multiplier,passed};
@@ -148,8 +149,8 @@ function prediction(kind,key,method) {
   const rows=bayes ? [["Fitted diameter weight, mean ± SD",fmt(method.weight_after)+" ± "+fmt(method.sd_after)],["Latest sampled diameter weight",fmt(latest.weight)],["Latest sampled mean volume",volume(latest.volume)],
                        ["Average of "+count+(count===1 ? " network" : " networks"),volume(mean)],["Full 256-draw average",volume(method.prediction.mean)]] :
                      [["Fitted diameter weight",fmt(method.weight_after)],["Prediction from one fitted network",volume(mean)]];
-  const formula=bayes ? "Prediction = average of f(x) over the selected weight draws" : "Prediction = f(x) at the fitted weights";
-  const description=bayes ? "Each draw samples every weight and bias and gives one conditional mean volume. Averaging the network outputs estimates the variational mean. These draws exclude observation noise." :
+  const formula=bayes ? "Volume (ft³) = ȳ + s<sub>y</sub> × average network output over the selected draws." : "Volume (ft³) = ȳ + s<sub>y</sub> × network output at the fitted weights.";
+  const description=bayes ? "Each draw samples every weight and bias and gives one conditional mean volume. Averaging these volumes estimates the expectation under the fitted Gaussian weight factors. These draws exclude observation noise." :
       key==="Dropout" ? "All hidden units operate with the fitted weights at prediction. Inverted scaling during training lets the benchmark use the ordinary network here." :
       "Evaluate the fitted network once at the standardized diameter and height. Repeating that evaluation gives the same result.";
   return {mean,draws,formula,description,rows,
@@ -187,9 +188,14 @@ function chart(id,kind,result) {
     dot(x(trial),y(result.cost(trial)),5,accent);
     text(kind==="bnn"?"Trial Gaussian mean m":"Trial weight w",(left+right)/2,H-4);
   } else if (view==="train") {
-    const center=W*.50, leftNode=W*.14, rightNode=W*.86, mid=H*.53;
-    line(leftNode+12,mid-25,center-16,mid,accent,2.8);
-    line(leftNode+12,mid+25,center-16,mid,colors.quiet,1.4);
+    const center=W*.52, leftNode=W*.21, rightNode=W*.86, mid=H*.53;
+    const inputs=[["Diameter",-30],["Height",0],["1",30]];
+    for (const [label,dy] of inputs) {
+      const color=dy<0 ? accent : colors.quiet;
+      line(leftNode+8,mid+dy,center-15,mid,color,dy<0 ? 2.8 : 1.4);
+      dot(leftNode,mid+dy,dy<0 ? 7 : 5,color);
+      text(label,leftNode-10,mid+dy+4,"right");
+    }
     const end=rightNode-13;
     line(center+17,mid,end,mid,result.multiplier===0 ? colors.grid : accent,2.8);
     if (result.multiplier===0) {
@@ -198,10 +204,9 @@ function chart(id,kind,result) {
     } else {
       line(end-7,mid-4,end,mid,accent,2);line(end-7,mid+4,end,mid,accent,2);
     }
-    dot(leftNode,mid-25,9,accent); dot(leftNode,mid+25,7,colors.quiet);
     dot(center,mid,16,accent);dot(rightNode,mid,10,result.multiplier===0 ? colors.quiet : accent);
-    text("Diameter",leftNode,mid-45);text("Height, bias",leftNode,mid+50);
     text("w = "+fmt(result.recorded.weight),W*.35,mid-35);
+    text("bias",W*.35,mid+37,"center",colors.quiet);
     text("ReLU",center,mid+4,"center","white",true);
     text("× "+fmt(result.multiplier),W*.69,mid-9,"center",accent,true);
     text("Layer 2",rightNode,mid-23);text(fmt(result.passed),rightNode,mid+34,"center",accent,true);
@@ -248,12 +253,13 @@ function render() {
   } else {
     $("count").value=count;$("count-value").textContent=count+" of "+data.control.prediction_draws;
     const t=data.tree;
-    $("instructions").textContent="Held-out tree "+t.row+" has diameter "+t.diameter+" in and height "+t.height+" ft. It contained "+t.observed_volume+" ft³ of timber. Add network draws to see how the Bayesian mean forms alongside a single frequentist prediction.";
+    $("instructions").textContent="Held-out tree "+t.row+" has diameter "+t.diameter+" in and height "+t.height+" ft. It contained "+t.observed_volume+" ft³ of timber. The training mean and SD of volume convert the standardized network outputs to cubic feet.";
   }
   for (const kind of ["fnn","bnn"]) {
     const key=$(kind).value, method=data.methods[key];
     const result=view==="principle" ? principle(kind,key,method) : view==="train" ? training(kind,key,method) : prediction(kind,key,method);
-    $(kind+"-formula").textContent=result.formula;
+    // Formula strings are static markup; recorded values use textContent.
+    $(kind+"-formula").innerHTML=result.formula;
     $(kind+"-description").textContent=result.description;
     $(kind+"-caption").textContent=result.caption;
     showValues(kind+"-values",result.rows); chart(kind+"-plot",kind,result);

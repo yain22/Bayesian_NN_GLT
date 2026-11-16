@@ -27,7 +27,7 @@
   <section id="mnist" class="application" aria-labelledby="mnist-heading">
     <p class="kicker">Categorical outcome</p>
     <h2 id="mnist-heading">Reading handwritten digits</h2>
-    <p class="lead">Select a test image to see how the network divides its probability among the ten digits. The label above each image is the digit recorded in MNIST.</p>
+    <p class="lead">Select a test image to see the fitted probability for each digit. This small example uses 1,000 training images and 300 test images. The paper’s <a href="https://github.com/yain22/Bayesian_NN_GLT/tree/main/tools/replication/mnist">full MNIST comparison</a> uses 60,000 and 10,000, respectively.</p>
     <noscript><p>Enable JavaScript to inspect predictions, or run the <a href="mnist.R">MNIST example in R</a>.</p></noscript>
     <div class="interactive" hidden id="digit-explorer">
       <div class="numbers"><div><span>Training images</span><strong id="digit-training"></strong></div><div><span>Test images</span><strong id="digit-testing"></strong></div><div><span>Test accuracy</span><strong id="digit-accuracy"></strong></div><div><span>Test log loss</span><strong id="digit-loss"></strong></div></div>
@@ -41,13 +41,13 @@
           <div class="card-head"><h3 id="prob-heading">Class probabilities</h3></div>
           <p class="selection" id="selection" role="status"></p>
           <div class="probabilities" id="probabilities"></div>
-          <p class="small">The predicted digit has the largest posterior predictive probability. Values are rounded for display.</p>
+          <p class="small">The predicted digit has the largest average probability across the sampled networks. Values are rounded for display.</p>
         </section>
       </div>
     </div>
     <details class="method"><summary>Model and sampling design</summary>
       <p>We sampled 100 images per digit from the official training split and 30 per digit from the separate test split. The balanced test accuracy gives each digit equal weight. The gallery displays the original 28 × 28 pixels. For fitting, we average each 2 × 2 block to obtain 196 predictors and standardize using the training images.</p>
-      <p>A GLT network with one hidden layer of 20 units uses <code>outcome = "categorical"</code>. Its nine free scores are log odds relative to digit 9, whose score is zero. At each weight draw, the probability of digit <i>c</i> is exp(η<sub><i>c</i></sub>)/∑<sub><i>j</i></sub> exp(η<sub><i>j</i></sub>). We average 128 draws. Test log loss is the mean negative log probability assigned to the recorded digit.</p>
+      <p>A GLT network with one hidden layer of 20 units uses <code>outcome = "categorical"</code>. In the paper’s notation, classes <i>c</i> = 1, …, 10 correspond to digits 0, …, 9. For image <i>i</i>, digit 9 is the reference, with score η<sub><i>i</i>,10</sub> = 0. At each weight draw, the probability for class <i>c</i> is <i>p</i><sub><i>ic</i></sub> = exp(η<sub><i>ic</i></sub>)/∑<sub><i>m</i>=1</sub><sup>10</sup> exp(η<sub><i>im</i></sub>). We average each class probability over 128 draws. Test log loss is the mean negative log probability assigned to the recorded digit.</p>
     </details>
     <p class="download"><a href="mnist.R" download>Download the MNIST R example</a></p>
   </section>
@@ -75,7 +75,7 @@
       </div>
     </div>
     <details class="method"><summary>Model and sampling design</summary>
-      <p>We reserved about one fifth of each diagnosis group for testing and excluded the record identifier from the predictors. A GLT network with eight units in one hidden layer uses <code>outcome = "binary"</code>. The second factor level is malignant. For a network score η, the probability of this class is 1/(1 + exp(−η)). We average 256 draws before applying the threshold.</p>
+      <p>We reserved about one fifth of each diagnosis group for testing and excluded the record identifier from the predictors. A GLT network with eight units in one hidden layer uses <code>outcome = "binary"</code>. Malignant is the second factor level, coded <i>Y</i><sub><i>i</i></sub> = 1. For case <i>i</i>, the network score <i>f</i><sub>𝒲</sub>(<b><i>x</i></b><sub><i>i</i></sub>) is the log odds of malignancy. Applying the logistic function gives the event probability <i>p</i><sub><i>i</i></sub> for that draw. We average these probabilities over 256 draws before applying the threshold.</p>
       <p>Log loss is the mean negative log probability of the recorded diagnosis. The binary Brier score is the mean squared difference between the malignant probability and the indicator of malignancy. Lower values are better for both.</p>
     </details>
     <p class="download"><a href="wisconsin.R" download>Download the Wisconsin R example</a></p>

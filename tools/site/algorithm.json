@@ -8,16 +8,16 @@
       "summary": "Use the training rows to define the scales of the inputs and response. Carry those same scales forward to prediction.",
       "blocks": [
         {
-          "text": "Let $K_0=p$ and let $K_l$ be the width of hidden layer $l$. Its $M_l=K_l(K_{l-1}+1)$ coefficients include a bias for every receiving unit. Within a layer write $a=(k,j)$ for one of these coefficients. The output vector $\\mathbf v$ includes its intercept and has length $d_o=K_L+1$."
+          "text": "Let $K_0=p$ and let $K_l$ be the width of hidden layer $l$. Its $M_l=K_l(K_{l-1}+1)$ coefficients include a bias for every receiving unit. For coefficient $w_{kl,j}$ in layer $l$, abbreviate $(k,j)$ by $a$, so $w_a=w_{kl,j}$ within that layer. The output vector $\\mathbf{v}$ includes its intercept and has length $d_o=K_L+1$."
         },
         {
-          "math": "\\mathbf h_0=\\mathbf x,\\qquad \\mathbf h_l=\\max\\{0,\\mathbf W_l(\\mathbf h_{l-1}^\\top,1)^\\top\\}"
+          "math": "\\mathbf{h}_0=\\mathbf{x},\\qquad \\mathbf{h}_l=\\max\\{0,\\mathbf{W}_l(\\mathbf{h}_{l-1}^\\top,1)^\\top\\}"
         },
         {
-          "math": "f_{\\mathcal W}(\\mathbf x)=\\mathbf v^\\top(\\mathbf h_L^\\top,1)^\\top,\\qquad Y_i\\mid\\mathcal W,\\sigma^2\\sim N(f_{\\mathcal W}(\\mathbf x_i),\\sigma^2)"
+          "math": "f_{\\mathcal{W}}(\\mathbf{x})=\\mathbf{v}^\\top(\\mathbf{h}_L^\\top,1)^\\top,\\qquad Y_i\\mid\\mathcal{W},\\sigma^2\\sim N(f_{\\mathcal{W}}(\\mathbf{x}_i),\\sigma^2)"
         },
         {
-          "text": "Fit on predictors and responses standardized by their training sample means and standard deviations. The paper uses a Jeffreys prior $p(\\sigma^2)\\propto 1/\\sigma^2$. The hidden-weight prior conditional on the scales is $w_a\\sim N(0,\\sigma^2\\lambda_a^2)$. The output prior is $\\mathbf v\\mid u\\sim N(\\mathbf 0,u\\mathbf I)$ with $\\sqrt u=\\kappa\\sim C^+(0,5)$."
+          "text": "Fit on predictors and responses standardized by their training sample means and standard deviations. The paper uses a Jeffreys prior $p(\\sigma^2)\\propto 1/\\sigma^2$. With $c_l=1$ as in the fitted networks, the conditional hidden-weight prior is $w_a\\sim N(0,\\sigma^2\\lambda_a^2)$. The output prior is $\\mathbf{v}\\mid u\\sim N(\\mathbf 0,u\\mathbf{I})$ with $\\sqrt u=\\kappa\\sim C^+(0,5)$."
         },
         {
           "detail": "Variational factors and inverse-gamma convention",
@@ -29,7 +29,7 @@
               "math": "\\operatorname{IG}(a,b):\\quad q(z)=\\frac{b^a}{\\Gamma(a)}z^{-a-1}\\exp(-b/z),\\quad z>0"
             },
             {
-              "text": "For $q(X)=\\operatorname{IG}(a,b)$, write $\\phi_X=E_q[X^{-1}]=a/b$ and $\\zeta_X=E_q[\\log X]=\\log b-\\psi(a)$. We abbreviate the noise precision $\\phi_{\\sigma^2}$ to $\\phi$. The same inverse-gamma shape and scale convention is used throughout."
+              "text": "For $q(X)=\\operatorname{IG}(a,b)$, write $\\phi_X=\\mathbb{E}_q[X^{-1}]=a/b$ and $\\zeta_X=\\mathbb{E}_q[\\log X]=\\log b-\\psi(a)$. For the observation and readout precisions we use the paper’s notation $\\phi_\\sigma=\\mathbb{E}_q[\\sigma^{-2}]$ and $\\phi_o=\\mathbb{E}_q[u^{-1}]$. The same inverse-gamma shape and scale convention is used throughout."
             }
           ]
         }
@@ -61,7 +61,7 @@
           "math": "q(\\sigma^2)=\\operatorname{IG}(3,1),\\quad q(u)=\\operatorname{IG}(2,2),\\quad q(\\rho_\\kappa)=\\operatorname{IG}(1,1.04)"
         },
         {
-          "text": "The starting value of $\\phi$ is therefore 3. The output-scale auxiliary $\\rho_\\kappa$ comes from $u\\mid\\rho_\\kappa\\sim\\operatorname{IG}(1/2,1/\\rho_\\kappa)$ and $\\rho_\\kappa\\sim\\operatorname{IG}(1/2,5^{-2})$. The next step initializes the hidden scales for the selected prior."
+          "text": "The starting value of $\\phi_\\sigma$ is therefore 3. The output-scale auxiliary $\\rho_\\kappa$ comes from $u\\mid\\rho_\\kappa\\sim\\operatorname{IG}(1/2,1/\\rho_\\kappa)$ and $\\rho_\\kappa\\sim\\operatorname{IG}(1/2,5^{-2})$. The next step initializes the hidden scales for the selected prior."
         },
         {
           "detail": "Where the ten starting values in Figure S11 enter",
@@ -89,10 +89,10 @@
       "summary": "Record the full-batch objective at initialization. At the beginning of each cycle, read the latest variance and scale moments.",
       "blocks": [
         {
-          "math": "P_a=E_q[\\lambda_a^{-2}],\\qquad \\pi_a=\\phi P_a,\\qquad \\pi_{o,j}=E_q[u^{-1}]"
+          "math": "P_a=\\mathbb{E}_q[\\lambda_a^{-2}],\\qquad \\omega_a=\\phi_\\sigma P_a,\\qquad \\phi_o=\\mathbb{E}_q[u^{-1}]"
         },
         {
-          "text": "The selected hierarchy supplies $P_a$ for each hidden weight or bias. The noise precision multiplies hidden-weight precisions in Gaussian regression. All output coefficients have precision $\\pi_{o,j}$, independent of the observation variance. Keep these precisions fixed during this cycle’s weight updates."
+          "text": "The selected hierarchy supplies the scale precision $P_a=P_{kl,j}$ for each hidden weight or bias. Its effective precision is $\\omega_a=\\omega_{kl,j}$. The noise precision multiplies hidden-weight precisions in Gaussian regression. All output coefficients have precision $\\phi_o$, independent of the observation variance. The vector $\\mathbf{d}_w$ stacks these precisions in coefficient order. Its entry $d_{w,j}$ is $\\omega_a$ for a hidden coefficient and $\\phi_o$ for a readout coefficient. Keep them fixed during this cycle’s weight updates."
         },
         {
           "text": "For the baseline full-batch ELBO at cycle 0, generate 32 independent standard-normal perturbation vectors and pair each with its negative. Save this monitoring bank. The weight optimizer and the variance update use separate draws. The objective-monitoring step below shows the calculation at cycle 0 and every subsequent checkpoint."
@@ -119,19 +119,19 @@
       "summary": "Each proposed update changes the variational means and log standard deviations of all hidden and output coefficients together.",
       "blocks": [
         {
-          "text": "Write $\\ell_j=\\log s_j$. For one attempt, generate two independent standard-normal vectors and their negatives, giving four perturbations $\\epsilon^{(b)}$. Draw a complete set of weights $\\mathcal W^{(b)}=m+s\\odot\\epsilon^{(b)}$ for each forward pass. The sampled weight objective, up to terms fixed in this block, is"
+          "text": "Write $\\rho_j=\\log s_j$. For one attempt, generate two independent standard-normal vectors and their negatives, giving four perturbations $\\epsilon^{(b)}$. Draw the stacked coefficients $\\mathbf{w}^{(b)}=\\mathbf{m}+\\mathbf{s}\\odot\\boldsymbol{\\epsilon}^{(b)}$ and reshape them into the network weights $\\mathcal{W}^{(b)}$ for each forward pass. The sampled weight objective, up to terms fixed in this block, is"
         },
         {
-          "math": "\\widehat J=-\\frac{\\phi}{2B}\\sum_{b=1}^B\\sum_{i=1}^n\\{y_i-f_{\\mathcal W^{(b)}}(\\mathbf x_i)\\}^2-\\frac12\\sum_j\\pi_j(m_j^2+s_j^2)+\\sum_j\\ell_j."
+          "math": "\\widehat{\\mathcal{L}}_{\\mathcal{W}}=-\\frac{\\phi_\\sigma}{2B}\\sum_{b=1}^B\\sum_{i=1}^n\\{y_i-f_{\\mathcal{W}^{(b)}}(\\mathbf{x}_i)\\}^2-\\frac12\\sum_j d_{w,j}(m_j^2+s_j^2)+\\sum_j\\rho_j."
         },
         {
-          "text": "At draw $b$, begin at the output with the residual score $\\phi(y_i-f_{\\mathcal W^{(b)}}(\\mathbf x_i))$. Backpropagate this score through the sampled weights and the active ReLU gates. Denote the resulting derivative of the sampled data log likelihood with respect to weight $w_j^{(b)}$ by $g_j^{(b)}$."
+          "text": "At draw $b$, begin at the output with the residual score $\\phi_\\sigma(y_i-f_{\\mathcal{W}^{(b)}}(\\mathbf{x}_i))$. Backpropagate this score through the sampled weights and the active ReLU gates. Denote the resulting derivative of the sampled data log likelihood with respect to weight $w_j^{(b)}$ by $g_j^{(b)}$."
         },
         {
-          "math": "\\frac{\\partial\\widehat J}{\\partial m_j}=\\frac1B\\sum_b g_j^{(b)}-\\pi_jm_j,\\qquad \\frac{\\partial\\widehat J}{\\partial\\ell_j}=\\frac1B\\sum_b g_j^{(b)}s_j\\epsilon_j^{(b)}+1-\\pi_js_j^2."
+          "math": "\\frac{\\partial\\widehat{\\mathcal{L}}_{\\mathcal{W}}}{\\partial m_j}=\\frac1B\\sum_b g_j^{(b)}-d_{w,j}m_j,\\qquad \\frac{\\partial\\widehat{\\mathcal{L}}_{\\mathcal{W}}}{\\partial\\rho_j}=\\frac1B\\sum_b g_j^{(b)}s_j\\epsilon_j^{(b)}+1-d_{w,j}s_j^2."
         },
         {
-          "text": "The factors $1$ and $s_j\\epsilon_j^{(b)}$ are the derivatives of $w_j^{(b)}$ with respect to $m_j$ and $\\ell_j$. The terms outside the averages are the exact Gaussian prior and entropy gradients. ReLU activations and their composition across layers generally prevent a closed-form Gaussian weight update."
+          "text": "The factors $1$ and $s_j\\epsilon_j^{(b)}$ are the derivatives of $w_j^{(b)}$ with respect to $m_j$ and $\\rho_j$. The terms outside the averages are the exact Gaussian prior and entropy gradients. ReLU activations and their composition across layers generally prevent a closed-form Gaussian weight update."
         },
         {
           "detail": "Trace one hidden connection",
@@ -140,7 +140,7 @@
               "text": "For a unit with preactivation $z$ and activation $h=\\max(0,z)$, multiply the derivative arriving from the next layer by $\\mathbf{1}\\{z>0\\}$. Multiply that result by the sending activation to obtain the derivative for its incoming weight. Use a sending activation of one for a bias. Sum over training rows. The implementation uses derivative zero at $z=0$."
             },
             {
-              "text": "As an illustration, let $f=v\\max(0,wx)$ on one row with $x=2$, $y=3$, $w=0.5$, $v=1$ and $\\phi=1$. The forward pass gives $f=1$. The output score is $3-1=2$, the gate is open, and the derivative for $w$ is $2\\times1\\times1\\times2=4$. If $s=0.1$ and $\\epsilon=1$, this draw contributes 4 to the likelihood gradient for the mean and 0.4 to that for the log standard deviation."
+              "text": "As an illustration, let $f=v\\max(0,wx)$ on one row with $x=2$, $y=3$, $w=0.5$, $v=1$ and $\\phi_\\sigma=1$. The forward pass gives $f=1$. The output score is $3-1=2$, the gate is open, and the derivative for $w$ is $2\\times1\\times1\\times2=4$. If $s=0.1$ and $\\epsilon=1$, this draw contributes 4 to the likelihood gradient for the mean and 0.4 to that for the log standard deviation."
             }
           ]
         }
@@ -170,7 +170,7 @@
       "summary": "Adam converts the weight gradients into a proposed change. Each attempt starts from the accepted or retained state of the preceding attempt.",
       "blocks": [
         {
-          "text": "Divide the gradient of $\\widehat J$ by $n$, clip its Euclidean norm at 10, and form the bias-corrected Adam direction. The defaults use moments with decay 0.9 and 0.999, a denominator stabilizer of $10^{-8}$ and an initial step size of 0.003. If the direction has nonpositive inner product with the gradient, use the gradient divided by the Adam denominator."
+          "text": "Divide the gradient of $\\widehat{\\mathcal{L}}_{\\mathcal{W}}$ by $n$, clip its Euclidean norm at 10, and form the bias-corrected Adam direction. The defaults use moments with decay 0.9 and 0.999, a denominator stabilizer of $10^{-8}$ and an initial step size of 0.003. If the direction has nonpositive inner product with the gradient, use the gradient divided by the Adam denominator."
         },
         {
           "math": "\\theta_{\\rm trial}=\\theta+0.003\\,2^{-b}d,\\qquad b=0,\\ldots,10,\\quad \\theta=(m,\\log s)"
@@ -203,16 +203,16 @@
       "summary": "Use the new weight moments, the current hidden-scale precisions, and a fresh estimate of the residual sum of squares.",
       "blocks": [
         {
-          "math": "H_a=m_a^2+s_a^2,\\qquad D_G=\\sum_l M_l,\\qquad \\mathcal R\\approx\\frac1{16}\\sum_{b=1}^{16}\\sum_i(y_i-f_{\\mathcal W^{(b)}}(\\mathbf x_i))^2"
+          "math": "H_a=m_a^2+s_a^2,\\qquad D_G=\\sum_l M_l,\\qquad R\\approx\\frac1{16}\\sum_{b=1}^{16}\\sum_i(y_i-f_{\\mathcal{W}^{(b)}}(\\mathbf{x}_i))^2"
         },
         {
-          "text": "Use eight fresh antithetic pairs for $\\mathcal R$. With the Jeffreys prior on $\\sigma^2$ and fitted layer multipliers equal to one, the update is"
+          "text": "Use eight fresh antithetic pairs for $R$. With the Jeffreys prior on $\\sigma^2$ and fitted layer multipliers equal to one, the update is"
         },
         {
-          "math": "q(\\sigma^2)=\\operatorname{IG}\\!\\left(\\frac{n+D_G}{2},\\frac{\\mathcal R+\\sum_l\\sum_{a\\in\\mathcal I_l}P_aH_a}{2}\\right)."
+          "math": "q(\\sigma^2)=\\operatorname{IG}\\!\\left(\\frac{n+D_G}{2},\\frac{R+\\sum_l\\sum_{a\\in\\mathcal{I}_l}P_aH_a}{2}\\right)."
         },
         {
-          "text": "The conditional normal priors on hidden coefficients supply the $D_G$ contribution to the shape and the shrinkage-weighted sum in the scale. The output coefficients have their own prior scale. Use the new $\\phi=E_q[1/\\sigma^2]$ in the hidden-hierarchy updates that follow."
+          "text": "The conditional normal priors on hidden coefficients supply the $D_G$ contribution to the shape and the shrinkage-weighted sum in the scale. The output coefficients have their own prior scale. Use the new $\\phi_\\sigma=\\mathbb{E}_q[1/\\sigma^2]$ in the hidden-hierarchy updates that follow."
         },
         {
           "detail": "Proper noise prior and classification",
@@ -247,10 +247,10 @@
           "math": "H_o=\\sum_{j=1}^{d_o}(m_{o,j}^2+s_{o,j}^2),\\qquad q(u)=\\operatorname{IG}\\!\\left(\\frac{d_o+1}{2},\\frac{H_o}{2}+\\phi_{\\rho_\\kappa}\\right)"
         },
         {
-          "math": "q(\\rho_\\kappa)=\\operatorname{IG}\\!\\left(1,\\phi_u+5^{-2}\\right)"
+          "math": "q(\\rho_\\kappa)=\\operatorname{IG}\\!\\left(1,\\phi_o+5^{-2}\\right)"
         },
         {
-          "text": "Update $q(u)$ first and use its new inverse moment $\\phi_u$ in the auxiliary update. The next weight block uses $\\phi_u$ for all readout weights. Each hidden layer now updates the scale factors specific to the selected prior."
+          "text": "Update $q(u)$ first and use its new inverse moment $\\phi_o$ in the auxiliary update. The next weight block uses $\\phi_o$ for all readout weights. Each hidden layer now updates the scale factors specific to the selected prior."
         }
       ],
       "sources": [
@@ -270,25 +270,25 @@
       "summary": "After updating all factors, record one ELBO estimate for the entire network. This is the value shown in the replay.",
       "blocks": [
         {
-          "math": "\\mathcal L(q)=E_q[\\log p(y\\mid\\mathcal W,\\sigma^2)]+E_q[\\log p(\\mathcal W,z)]+H(q)"
+          "math": "\\mathcal{L}(q)=\\mathbb{E}_q[\\log p(y\\mid\\mathcal{W},\\sigma^2)]+\\mathbb{E}_q[\\log p(\\mathcal{W},z)]+H(q)"
         },
         {
           "text": "Here $z$ includes the observation variance, scale variables and auxiliaries. For the Gaussian likelihood use the fixed monitoring bank from cycle 0. With the current $m,s$, form the 64 weight draws $m+s\\odot\\epsilon^{(b)}$ and evaluate the expected log likelihood as"
         },
         {
-          "math": "\\widehat L_y=-\\frac{n}{2}\\{\\log(2\\pi)+\\zeta_{\\sigma^2}\\}-\\frac{\\phi}{2B}\\sum_{b=1}^{B}\\sum_{i=1}^n\\{y_i-f_{\\mathcal W^{(b)}}(\\mathbf x_i)\\}^2,\\quad B=64."
+          "math": "\\widehat L_y=-\\frac{n}{2}\\{\\log(2\\pi)+\\zeta_{\\sigma^2}\\}-\\frac{\\phi_\\sigma}{2B}\\sum_{b=1}^{B}\\sum_{i=1}^n\\{y_i-f_{\\mathcal{W}^{(b)}}(\\mathbf{x}_i)\\}^2,\\quad B=64."
         },
         {
-          "text": "Add the expected log densities of the Gaussian weights and their scale hierarchy, the noise log prior and the entropy of every fitted factor. The likelihood is the sole Monte Carlo term. G and GL use their inverse-gamma moments. GLT also uses normalized scalar quadrature. Under the Jeffreys variance prior use $E_q[\\log p(\\sigma^2)]=-\\zeta_{\\sigma^2}$ with the arbitrary additive constant set to zero."
+          "text": "Add the expected log densities of the Gaussian weights and their scale hierarchy, the noise log prior and the entropy of every fitted factor. The likelihood is the sole Monte Carlo term. G and GL use their inverse-gamma moments. GLT also uses normalized scalar quadrature. Under the Jeffreys variance prior use $\\mathbb{E}_q[\\log p(\\sigma^2)]=-\\zeta_{\\sigma^2}$ with the arbitrary additive constant set to zero."
         },
         {
           "detail": "Contributions from a hidden weight and an output weight",
           "blocks": [
             {
-              "math": "E_q[\\log p(w_a\\mid\\sigma^2,\\lambda_a)]=-\\tfrac12\\{\\log(2\\pi)+\\zeta_{\\sigma^2}+E_q[\\log\\lambda_a^2]+\\phi P_a H_a\\}"
+              "math": "\\mathbb{E}_q[\\log p(w_a\\mid\\sigma^2,\\lambda_a)]=-\\tfrac12\\{\\log(2\\pi)+\\zeta_{\\sigma^2}+\\mathbb{E}_q[\\log\\lambda_a^2]+\\phi_\\sigma P_a H_a\\}"
             },
             {
-              "math": "E_q[\\log p(v_j\\mid u)]=-\\tfrac12\\{\\log(2\\pi)+\\zeta_u+\\phi_u H_{o,j}\\}"
+              "math": "\\mathbb{E}_q[\\log p(v_j\\mid u)]=-\\tfrac12\\{\\log(2\\pi)+\\zeta_u+\\phi_o H_{o,j}\\}"
             },
             {
               "text": "Here $H_{o,j}=m_{o,j}^2+s_{o,j}^2$. Each Gaussian weight or bias adds entropy $\\tfrac12\\log(2\\pi e s_j^2)$. Each inverse-gamma factor contributes $a+\\log b+\\log\\Gamma(a)-(1+a)\\psi(a)$ to the entropy. Include conditional-prior normalizers that depend on a random parent, especially the GLT tail shape. The source link gives the full sum, including the scale priors and auxiliaries."
@@ -392,7 +392,7 @@
               "text": "Initialize $q(T_l)=\\operatorname{IG}(2,2)$ and $q(\\chi_{\\tau,l})=\\operatorname{IG}(1,1)$."
             },
             {
-              "text": "Every coefficient in this layer has $\\lambda_a=\\tau_l$ and $P_a=\\phi_{T_l}$. Initially $P_a=1$ and $\\phi P_a=3$."
+              "text": "Every coefficient in this layer has $\\lambda_a=\\tau_l$ and $P_a=\\phi_{\\tau,l}=\\mathbb{E}_q[\\tau_l^{-2}]$. Initially $P_a=1$ and $\\phi_\\sigma P_a=3$."
             }
           ],
           "sources": [
@@ -417,16 +417,16 @@
           "summary": "Pool the expected squares of every hidden weight and bias in the layer.",
           "blocks": [
             {
-              "math": "q(T_l)=\\operatorname{IG}\\!\\left(\\frac{M_l+1}{2},\\phi_{\\chi_{\\tau,l}}+\\frac{\\phi}{2}\\sum_{a\\in\\mathcal I_l} H_a\\right)"
+              "math": "q(T_l)=\\operatorname{IG}\\!\\left(\\frac{M_l+1}{2},\\phi_{\\chi_\\tau,l}+\\frac{\\phi_\\sigma}{2}\\sum_{a\\in\\mathcal{I}_l} H_a\\right)"
             },
             {
-              "math": "q(\\chi_{\\tau,l})=\\operatorname{IG}(1,M_l^2+\\phi_{T_l})."
+              "math": "q(\\chi_{\\tau,l})=\\operatorname{IG}(1,M_l^2+\\phi_{\\tau,l})."
             },
             {
-              "text": "Update the layer auxiliary using the new inverse moment of $T_l$. The $M_l^2$ term comes from the inverse square of the half-Cauchy prior scale $1/M_l$."
+              "text": "Here $\\phi_{\\chi_\\tau,l}=\\mathbb{E}_q[1/\\chi_{\\tau,l}]$. Update the layer auxiliary using the new inverse moment of $T_l$. The $M_l^2$ term comes from the inverse square of the half-Cauchy prior scale $1/M_l$."
             },
             {
-              "text": "For the next cycle every coefficient in this layer receives the same $P_a=\\phi_{T_l}$. The ELBO uses $E_q[\\log\\lambda_a^2]=\\zeta_{T_l}$."
+              "text": "For the next cycle every coefficient in this layer receives the same $P_a=\\phi_{\\tau,l}$. The ELBO uses $\\mathbb{E}_q[\\log\\lambda_a^2]=\\zeta_{T_l}$."
             }
           ],
           "sources": [
@@ -448,7 +448,7 @@
           "summary": "Average predictions across the final Gaussian weight factors and convert the regression mean back to the response units.",
           "blocks": [
             {
-              "math": "\\widehat Y(\\mathbf x_*)=\\bar y+s_y\\left\\{\\frac1S\\sum_{b=1}^{S}f_{\\mathcal W^{(b)}}(\\mathbf x_*^{\\rm std})\\right\\},\\quad\\mathcal W^{(b)}\\sim q_\\theta(\\mathcal W)"
+              "math": "\\widehat Y(\\mathbf{x}_*)=\\bar y+s_y\\left\\{\\frac1S\\sum_{b=1}^{S}f_{\\mathcal{W}^{(b)}}(\\mathbf{x}_*^{\\rm std})\\right\\},\\quad\\mathcal{W}^{(b)}\\sim q_\\theta(\\mathcal{W})"
             },
             {
               "text": "Apply the training predictor centers and standard deviations to the new input. For a predictive draw of a future response, also draw an observation variance from its fitted factor and add Gaussian observation noise on the standardized scale. In classification, average the draw-specific class probabilities."
@@ -497,7 +497,7 @@
               "math": "\\lambda_a=\\tau_l r_a,\\qquad U_a\\mid\\chi_{r,a}\\sim\\operatorname{IG}(1/2,1/\\chi_{r,a}),\\quad\\chi_{r,a}\\sim\\operatorname{IG}(1/2,1)."
             },
             {
-              "text": "Initialize $q(U_a)=\\operatorname{IG}(2,2)$ and $q(\\chi_{r,a})=\\operatorname{IG}(1,1)$. For this factorization $P_a=\\phi_{T_l}\\phi_{U_a}$, initially one. The first weight block uses $\\phi P_a=3$."
+              "text": "Initialize $q(U_a)=\\operatorname{IG}(2,2)$ and $q(\\chi_{r,a})=\\operatorname{IG}(1,1)$. With $\\phi_{\\tau,l}=\\mathbb{E}_q[\\tau_l^{-2}]$ and $\\phi_{r,a}=\\mathbb{E}_q[r_a^{-2}]$, independence gives $P_a=\\phi_{\\tau,l}\\phi_{r,a}$, initially one. The first weight block uses $\\phi_\\sigma P_a=3$."
             }
           ],
           "sources": [
@@ -522,13 +522,13 @@
           "summary": "Refresh each squared multiplier using the corresponding weight’s expected square and the current shared layer precision.",
           "blocks": [
             {
-              "math": "q(U_a)=\\operatorname{IG}\\!\\left(1,\\phi_{\\chi_{r,a}}+\\tfrac12\\phi H_a\\phi_{T_l}\\right)"
+              "math": "q(U_a)=\\operatorname{IG}\\!\\left(1,\\phi_{\\chi_r,a}+\\tfrac12\\phi_\\sigma H_a\\phi_{\\tau,l}\\right)"
             },
             {
-              "math": "q(\\chi_{r,a})=\\operatorname{IG}(1,1+\\phi_{U_a})."
+              "math": "q(\\chi_{r,a})=\\operatorname{IG}(1,1+\\phi_{r,a})."
             },
             {
-              "text": "Use the newly computed $\\phi_{U_a}$ in the auxiliary update. A larger $H_a$ increases the scale parameter of $q(U_a)$ and decreases its inverse moment when the other factors are fixed. The layer update then pools the locally weighted moments."
+              "text": "Here $\\phi_{\\chi_r,a}=\\mathbb{E}_q[1/\\chi_{r,a}]$. Use the newly computed $\\phi_{r,a}$ in the auxiliary update. A larger $H_a$ increases the scale parameter of $q(U_a)$ and decreases its inverse moment when the other factors are fixed. The layer update then pools the locally weighted moments."
             }
           ],
           "sources": [
@@ -548,16 +548,16 @@
           "summary": "Pool the expected squares across the layer using the latest local multipliers.",
           "blocks": [
             {
-              "math": "q(T_l)=\\operatorname{IG}\\!\\left(\\frac{M_l+1}{2},\\phi_{\\chi_{\\tau,l}}+\\frac{\\phi}{2}\\sum_{a\\in\\mathcal I_l} H_a\\phi_{U_a}\\right)"
+              "math": "q(T_l)=\\operatorname{IG}\\!\\left(\\frac{M_l+1}{2},\\phi_{\\chi_\\tau,l}+\\frac{\\phi_\\sigma}{2}\\sum_{a\\in\\mathcal{I}_l} H_a\\phi_{r,a}\\right)"
             },
             {
-              "math": "q(\\chi_{\\tau,l})=\\operatorname{IG}(1,M_l^2+\\phi_{T_l})."
+              "math": "q(\\chi_{\\tau,l})=\\operatorname{IG}(1,M_l^2+\\phi_{\\tau,l})."
             },
             {
-              "text": "Update the layer auxiliary using the new inverse moment of $T_l$. The $M_l^2$ term comes from the inverse square of the half-Cauchy prior scale $1/M_l$."
+              "text": "Here $\\phi_{\\chi_\\tau,l}=\\mathbb{E}_q[1/\\chi_{\\tau,l}]$. Update the layer auxiliary using the new inverse moment of $T_l$. The $M_l^2$ term comes from the inverse square of the half-Cauchy prior scale $1/M_l$."
             },
             {
-              "text": "For the next cycle $P_a=\\phi_{T_l}\\phi_{U_a}$. The ELBO uses $E_q[\\log\\lambda_a^2]=\\zeta_{T_l}+\\zeta_{U_a}$. The common $T_l$ couples the effective scales within a layer."
+              "text": "For the next cycle $P_a=\\phi_{\\tau,l}\\phi_{r,a}$. The ELBO uses $\\mathbb{E}_q[\\log\\lambda_a^2]=\\zeta_{T_l}+\\zeta_{U_a}$. The common $T_l$ couples the effective scales within a layer."
             }
           ],
           "sources": [
@@ -579,7 +579,7 @@
           "summary": "Average predictions across the final Gaussian weight factors and convert the regression mean back to the response units.",
           "blocks": [
             {
-              "math": "\\widehat Y(\\mathbf x_*)=\\bar y+s_y\\left\\{\\frac1S\\sum_{b=1}^{S}f_{\\mathcal W^{(b)}}(\\mathbf x_*^{\\rm std})\\right\\},\\quad\\mathcal W^{(b)}\\sim q_\\theta(\\mathcal W)"
+              "math": "\\widehat Y(\\mathbf{x}_*)=\\bar y+s_y\\left\\{\\frac1S\\sum_{b=1}^{S}f_{\\mathcal{W}^{(b)}}(\\mathbf{x}_*^{\\rm std})\\right\\},\\quad\\mathcal{W}^{(b)}\\sim q_\\theta(\\mathcal{W})"
             },
             {
               "text": "Apply the training predictor centers and standard deviations to the new input. For a predictive draw of a future response, also draw an observation variance from its fitted factor and add Gaussian observation noise on the standardized scale. In classification, average the draw-specific class probabilities."
@@ -628,7 +628,7 @@
                   "math": "q(\\tau_l)=\\operatorname{IG}(2,2),\\qquad q(\\nu_a)=\\operatorname{IG}(2,2)."
                 },
                 {
-                  "text": "Initialize each $q(\\lambda_a)$ with the local kernel below at $A_a=B_a=1$, giving $P_a=\\mathbb E_q(\\lambda_a^{-2})\\simeq1.30312$. Initialize $q(\\eta_l)$ from the tail kernel below using the starting $\\tau_l,\\nu_a$ moments. The first weight block uses these factors before any scale update."
+                  "text": "Initialize each $q(\\lambda_a)$ with the local kernel below at $A_a=B_a=1$, giving $P_a=\\mathbb{E}_q(\\lambda_a^{-2})\\simeq1.30312$. Initialize $q(\\eta_l)$ from the tail kernel below using the starting $\\tau_l,\\nu_a$ moments. The first weight block uses these factors before any scale update."
                 }
               ]
             }
@@ -655,28 +655,28 @@
           "summary": "The latest expected squared weight and observation precision determine the positive scale density for each connection, including its bias.",
           "blocks": [
             {
-              "text": "Write $H_a=m_a^2+s_a^2$, $\\phi=\\mathbb E_q(\\sigma^{-2})$, and $\\phi_X=\\mathbb E_q(X^{-1})$. Use the current factors of $\\tau_l$ and $\\nu_a$, together with the refreshed $H_a$ and $\\phi$ from this cycle."
+              "text": "Write $H_a=m_a^2+s_a^2$, $\\phi_\\sigma=\\mathbb{E}_q(\\sigma^{-2})$, and $\\phi_X=\\mathbb{E}_q(X^{-1})$. Use the current factors of $\\tau_l$ and $\\nu_a$, together with the updated $H_a$ and $\\phi_\\sigma$ from this cycle."
             },
             {
-              "math": "A_a=\\phi_{\\tau_l}\\phi_{\\nu_a},\\qquad B_a=c_l^{-2}\\phi H_a,"
+              "math": "A_a=\\phi_{\\tau_l}\\phi_{\\nu_a},\\qquad B_a=c_l^{-2}\\phi_\\sigma H_a,"
             },
             {
               "math": "q^*(\\lambda_a)\\propto\\lambda_a^{-1}\\exp\\!\\left(-A_a\\lambda_a-\\frac{B_a}{2\\lambda_a^2}\\right),\\qquad \\lambda_a>0."
             },
             {
-              "text": "Numerically evaluate $u_a=\\mathbb E_q(\\lambda_a)$ and obtain $P_a=A_a u_a/B_a$ by integration by parts. The next weight block uses $c_l^{-2}\\phi P_a$ as its expected hidden-weight precision. Both $u_a$ and $P_a$ are expectations under the fitted density."
+              "text": "For this coefficient write $u_a=u_{kl,j}$. Numerically evaluate $u_a=\\mathbb{E}_q(\\lambda_a)$ and obtain $P_a=A_a u_a/B_a$ by integration by parts. The next weight block uses $c_l^{-2}\\phi_\\sigma P_a$ as its expected hidden-weight precision. Both $u_a$ and $P_a$ are expectations under the fitted density."
             },
             {
               "detail": "Normalizing the density and computing moments",
               "blocks": [
                 {
-                  "math": "Z_{a,h}=\\int_{\\mathbb R}\\exp\\!\\left(ht-A_a e^t-\\tfrac12 B_a e^{-2t}\\right)\\,dt,\\qquad \\mathbb E_q(\\lambda_a^h)=Z_{a,h}/Z_{a,0}."
+                  "math": "Z_{a,h}=\\int_{\\mathbb{R}}\\exp\\!\\left(ht-A_a e^t-\\tfrac12 B_a e^{-2t}\\right)\\,dt,\\qquad \\mathbb{E}_q(\\lambda_a^h)=Z_{a,h}/Z_{a,0}."
                 },
                 {
-                  "text": "With $t=\\log\\lambda_a$, the Jacobian cancels the factor $\\lambda_a^{-1}$. The log-scale density has mode $(\\log B_a-\\log A_a)/3$. The implementation centers at this mode and uses 32-point Gauss–Legendre panels on both sides. It also computes $\\mathbb E_q(\\log\\lambda_a)$ and the entropy for the full objective."
+                  "text": "With $t=\\log\\lambda_a$, the Jacobian cancels the factor $\\lambda_a^{-1}$. The log-scale density has mode $(\\log B_a-\\log A_a)/3$. The implementation centers at this mode and uses 32-point Gauss–Legendre panels on both sides. It also computes $\\mathbb{E}_q(\\log\\lambda_a)$ and the entropy for the full objective."
                 },
                 {
-                  "math": "\\mathcal H\\{q(\\lambda_a)\\}=\\log Z_{a,0}+\\mathbb E_q(\\log\\lambda_a)+A_a u_a+\\tfrac12 B_a P_a."
+                  "math": "\\mathcal{H}\\{q(\\lambda_a)\\}=\\log Z_{a,0}+\\mathbb{E}_q(\\log\\lambda_a)+A_a u_a+\\tfrac12 B_a P_a."
                 }
               ]
             }
@@ -702,13 +702,13 @@
           "summary": "Pool the updated coefficient-scale means across all hidden weights and biases in the layer.",
           "blocks": [
             {
-              "text": "Use $R_l=\\mathbb E_q(1/\\xi_l)$ and $\\phi_{\\nu_a}$ from before the tail and auxiliary updates in this cycle. The updated local means $u_a$ enter the inverse-gamma scale parameter."
+              "text": "Use $r_l=\\mathbb{E}_q(1/\\xi_l)$ and $\\phi_{\\nu_a}$ from before the tail and auxiliary updates in this cycle. The updated local means $u_a$ enter the inverse-gamma scale parameter."
             },
             {
-              "math": "q^*(\\tau_l)=\\operatorname{IG}\\!\\left(1+M_l(1+R_l),\\;1+\\sum_{a\\in\\mathcal I_l}u_a\\phi_{\\nu_a}\\right)."
+              "math": "q^*(\\tau_l)=\\operatorname{IG}\\!\\left(1+M_l(1+r_l),\\;1+\\sum_{a\\in\\mathcal{I}_l}u_a\\phi_{\\nu_a}\\right)."
             },
             {
-              "text": "For $X\\sim\\operatorname{IG}(\\alpha,\\beta)$ we use density proportional to $x^{-\\alpha-1}e^{-\\beta/x}$, with $\\phi_X=\\alpha/\\beta$ and $\\zeta_X=\\mathbb E_q(\\log X)=\\log\\beta-\\psi(\\alpha)$. Refresh both moments of $\\tau_l$ for the subsequent steps."
+              "text": "For $X\\sim\\operatorname{IG}(\\alpha,\\beta)$ we use density proportional to $x^{-\\alpha-1}e^{-\\beta/x}$, with $\\phi_X=\\alpha/\\beta$ and $\\zeta_X=\\mathbb{E}_q(\\log X)=\\log\\beta-\\psi(\\alpha)$. Refresh both moments of $\\tau_l$ for the subsequent steps."
             }
           ],
           "sources": [
@@ -728,7 +728,7 @@
           "summary": "Use the newly updated layer precision and the current tail moment to fit one inverse-gamma factor per coefficient.",
           "blocks": [
             {
-              "math": "q^*(\\nu_a)=\\operatorname{IG}\\!\\left(1+R_l,\\;u_a\\phi_{\\tau_l}+R_l\\right),\\qquad a\\in\\mathcal I_l."
+              "math": "q^*(\\nu_a)=\\operatorname{IG}\\!\\left(1+r_l,\\;u_a\\phi_{\\tau_l}+r_l\\right),\\qquad a\\in\\mathcal{I}_l."
             },
             {
               "text": "Compute $\\phi_{\\nu_a}$ and $\\zeta_{\\nu_a}$ from these new factors. Together with $\\zeta_{\\tau_l}$, they supply the sufficient quantity for the layer's tail update."
@@ -751,7 +751,7 @@
           "summary": "Use the updated global scale and all local auxiliaries to fit one tail shape for the layer.",
           "blocks": [
             {
-              "math": "C_l=M_l\\zeta_{\\tau_l}+\\sum_{a\\in\\mathcal I_l}\\bigl(\\zeta_{\\nu_a}+\\phi_{\\nu_a}\\bigr)."
+              "math": "C_l=M_l\\zeta_{\\tau_l}+\\sum_{a\\in\\mathcal{I}_l}\\bigl(\\zeta_{\\nu_a}+\\phi_{\\nu_a}\\bigr)."
             },
             {
               "text": "On the log scale $\\eta=\\log\\xi_l$, the Jacobian absorbs the original $1/\\xi_l$ factor. Write $\\varphi$ for the standard-normal density and set"
@@ -763,13 +763,13 @@
               "math": "q^*(\\eta)=\\frac{\\varphi(\\eta)\\,\\exp\\{g_l(\\eta)\\}}{Z_l}\\,\\mathbf 1_{\\{\\eta>-\\log 2\\}}."
             },
             {
-              "text": "The two gamma normalizers depend on the tail shape and remain in this kernel. Use adaptive quadrature over $(-\\log 2,\\infty)$ to compute its normalizing constant $Z_l$ and $R_l=\\mathbb E_q(e^{-\\eta})$. The bound $\\xi_l>1/2$ gives $0<R_l<2$. Carry this new moment into the next layer-scale and auxiliary updates."
+              "text": "The two gamma normalizers depend on the tail shape and remain in this kernel. Use adaptive quadrature over $(-\\log 2,\\infty)$ to compute its normalizing constant $Z_l$ and $r_l=\\mathbb{E}_q(e^{-\\eta})$. The bound $\\xi_l>1/2$ gives $0<r_l<2$. Carry this new moment into the next layer-scale and auxiliary updates."
             },
             {
               "detail": "Computing and monitoring the normalized factor",
               "blocks": [
                 {
-                  "math": "Z_l=\\int_{-\\log 2}^{\\infty}\\varphi(t)e^{g_l(t)}dt,\\qquad R_l=\\frac{\\int_{-\\log 2}^{\\infty}e^{-t}\\varphi(t)e^{g_l(t)}dt}{Z_l}."
+                  "math": "Z_l=\\int_{-\\log 2}^{\\infty}\\varphi(t)e^{g_l(t)}dt,\\qquad r_l=\\frac{\\int_{-\\log 2}^{\\infty}e^{-t}\\varphi(t)e^{g_l(t)}dt}{Z_l}."
                 },
                 {
                   "text": "The implementation stabilizes the integrals on the log scale. Its default relative tolerance is $10^{-10}$ with up to 2,000 subdivisions per segment. A roundoff-limited segment can be retried at $10^{-8}$. It also computes the mean of $\\eta$, its entropy, and the expected log-density contributions to the ELBO. The truncation probability of the Gaussian prior is constant in the coordinate update and is restored in the full objective."
@@ -800,7 +800,7 @@
           "summary": "Average predictions across the final Gaussian weight factors and convert the regression mean back to the response units.",
           "blocks": [
             {
-              "math": "\\widehat Y(\\mathbf x_*)=\\bar y+s_y\\left\\{\\frac1S\\sum_{b=1}^{S}f_{\\mathcal W^{(b)}}(\\mathbf x_*^{\\rm std})\\right\\},\\quad\\mathcal W^{(b)}\\sim q_\\theta(\\mathcal W)"
+              "math": "\\widehat Y(\\mathbf{x}_*)=\\bar y+s_y\\left\\{\\frac1S\\sum_{b=1}^{S}f_{\\mathcal{W}^{(b)}}(\\mathbf{x}_*^{\\rm std})\\right\\},\\quad\\mathcal{W}^{(b)}\\sim q_\\theta(\\mathcal{W})"
             },
             {
               "text": "Apply the training predictor centers and standard deviations to the new input. For a predictive draw of a future response, also draw an observation variance from its fitted factor and add Gaussian observation noise on the standardized scale. In classification, average the draw-specific class probabilities."

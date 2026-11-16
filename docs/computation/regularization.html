@@ -19,7 +19,7 @@
 <main id="content" class="wrap">
   <header class="lead">
     <h1>How do Bayesian and frequentist networks regularize?</h1>
-    <p>Follow the connection from trunk diameter to one hidden unit in a network predicting timber volume. All six methods start with the same weights and training trees. Choose a frequentist fit and a Bayesian fit to see what each learns, what happens during a training pass, and how it predicts for a new tree.</p>
+    <p>Follow the weight <i>w</i><sub>11,1</sub> from trunk diameter to the first unit in the first hidden layer. All six networks start with the same weights and training trees. Choose a frequentist and a Bayesian fit to compare how they update this weight and predict timber volume for a new tree.</p>
   </header>
 
   <section class="workbench" id="workbench" aria-label="Compare two fitted networks" hidden>
@@ -54,7 +54,7 @@
         </div>
       </section>
     </div>
-    <p class="bridge" id="bridge" hidden><strong>Why compare a penalty with a prior?</strong> With matching scales, an L₁ penalty can be written as the negative log density of a Laplace prior, up to a constant. Minimizing the penalized loss then gives a posterior mode. The Bayesian fits here learn distributions for the weights and shrinkage scales, and use those distributions for prediction.</p>
+    <p class="bridge" id="bridge" hidden><strong>Why compare a penalty with a prior?</strong> For Gaussian regression at fixed observation variance, a Laplace prior gives an L₁ penalty in the negative log posterior. With the penalty strength matched to the prior, minimizing the penalized loss gives a posterior mode. The three BNNs fit Gaussian variational distributions for the weights and separate factors for their scales.</p>
   </section>
   <p id="status" role="status" hidden>Loading the six recorded fits…</p>
   <noscript><p>The interactive controls require JavaScript. The companion notes below explain the six methods.</p></noscript>
@@ -64,7 +64,7 @@
       <p>Diameter and height enter a ReLU network with three units in the first hidden layer and two in the second. Every fifth tree in <code>datasets::trees</code> is held out. The remaining 25 trees supply the standardization and the common starting weights, obtained with 600 squared-error updates (seed 7). Each FNN then takes 600 Adam steps. Each BNN attempts ten weight updates per cycle for 60 cycles, alternating with scale updates. These are separate matched fits for this comparison.</p>
     </section>
     <section id="reading" aria-labelledby="sources"><h2 id="sources">Reading and R code</h2>
-      <p>Bishop and Bishop explain the connection between a penalty and a prior in §§2.6.2–2.6.3 and introduce dropout in §9.6.1. Goodfellow, Bengio and Courville treat the L₁ penalty and dropout in §§7.1.2 and 7.12. The paper’s comparison appears in §§3.4 and 4.1.</p>
+      <p>Sections 2.2, 3.4 and 4.1 of the paper describe the frequentist objectives, variational fit and six-way comparison. Supplement Eq. (S8) gives the weight precision. Bishop and Bishop discuss penalties and priors in §§2.6.2–2.6.3 and dropout in §9.6.1. Goodfellow, Bengio and Courville treat L₁ regularization and dropout in §§7.1.2 and 7.12.</p>
       <div class="reading-links"><a href="https://github.com/yain22/Bayesian_NN_GLT/blob/main/docs/computation/regularization-notes.md">Companion notes</a><a href="https://github.com/yain22/Bayesian_NN_GLT/blob/main/tools/generate-regularization-example.R">Reproduce the six fits in R</a><a href="../data/regularization-example.json">Recorded values</a><a href="https://www.bishopbook.com/">Bishop &amp; Bishop</a><a href="https://www.deeplearningbook.org/contents/regularization.html">Goodfellow et al., chapter 7</a></div>
     </section>
   </div>

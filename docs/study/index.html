@@ -81,7 +81,7 @@
         <thead><tr><th scope="col">Incoming coefficient</th><th scope="col">G</th><th scope="col">GL</th><th scope="col">GLT</th></tr></thead>
         <tbody id="neuron-coefficients"></tbody>
       </table>
-      <p class="note">Given the scales, a Gaussian weight prior with a smaller standard deviation puts more mass in every interval centered at zero. Each bar summarizes that standard deviation across the fitted scale values. The Gaussian variational distribution for the weight has its own posterior standard deviation.</p>
+      <p class="note">A smaller conditional prior standard deviation concentrates more mass near zero. Each bar gives the geometric mean of this standard deviation under the fitted scale factors. The Gaussian variational factor for the weight has its own fitted standard deviation <i>s</i><sub><i>kl,j</i></sub>.</p>
       <p class="note">The fits share their starting weights. Neurons with the same index can learn different features as fitting proceeds.</p>
       <p class="note">C2 uses predictors 1–10 in its true regression function. Activity is a property of a predictor in that function. Different hidden weights can represent the same function.</p>
     </section>

@@ -68,7 +68,7 @@
       <p>Unit <i>k</i> receives one input weight and a bias. Their conditional prior standard deviations are σλ<sub><i>k</i>1,1</sub> and σλ<sub><i>k</i>1,2</sub>. The paired bars show the geometric means of these quantities under the fitted variational distribution, in standardized fitting units.</p>
       <div class="legend"><span><i class="key coefficient-key" aria-hidden="true"></i>Input weight</span><span><i class="key bias-key" aria-hidden="true"></i>Bias</span></div>
       <ol id="unit-scales" aria-label="Conditional prior standard deviations of the input weight and bias for each hidden unit"></ol>
-      <p class="layer-summary">Fitted geometric means in layer 1 · Layer scale τ<sub>1</sub> = <strong id="layer-scale"></strong><span id="tail-summary"> · Tail shape ξ<sub>1</sub> = <strong id="tail-shape"></strong></span></p>
+      <p class="layer-summary">Layer scale exp{𝔼<sub><i>q</i></sub>[log τ<sub>1</sub>]} = <strong id="layer-scale"></strong><span id="tail-summary"> · Tail shape exp{𝔼<sub><i>q</i></sub>[log ξ<sub>1</sub>]} = <strong id="tail-shape"></strong></span></p>
       <p class="setting-hint">Unit numbers label neurons within each fit. The same number can correspond to different learned features when you switch priors.</p>
     </section>
     <details class="details-box reproduce">
