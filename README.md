@@ -4,9 +4,13 @@
 
 **Bayesian neural networks with shrinkage on individual hidden weights and biases.**
 
-The R package accompanying *Variational Learning of Bayesian Neural Networks with a family of global–local shrinkage priors* uses variational inference to fit fully connected ReLU networks under the global (G), horseshoe (GL), and global–local–tail (GLT) priors. The manuscript compares these fits with unpenalized, dropout and L1-penalized frequentist networks as prediction benchmarks. Gaussian regression is the default. A Bernoulli likelihood handles binary outcomes and a categorical likelihood handles unordered classes.
+The R package accompanying *Variational Learning of Bayesian Neural Networks with a family of global–local shrinkage priors* fits ReLU networks under global (G), horseshoe (GL), and global–local–tail (GLT) priors. It supports continuous, binary, and unordered categorical responses.
 
-[Package website](https://yain22.github.io/Bayesian_NN_GLT/) · [Explore a hidden unit](https://yain22.github.io/Bayesian_NN_GLT/illustration/) · [Explore predictive uncertainty](https://yain22.github.io/Bayesian_NN_GLT/prediction/)
+[Follow one fitting cycle](https://yain22.github.io/Bayesian_NN_GLT/computation/cycle.html) · [Fit a model in R](#installation) · [Explore the results](#simulation-results) · [Package website](https://yain22.github.io/Bayesian_NN_GLT/)
+
+## How variational fitting works
+
+Suppose we want to predict a tree’s timber volume from its diameter and height. In one fitting cycle, the network updates a distribution for each weight. Its expected square helps determine the amount of shrinkage the weight receives next. The [interactive walkthrough](https://yain22.github.io/Bayesian_NN_GLT/computation/cycle.html) follows the diameter weight of one hidden unit through Figure 8 of the paper. Switch priors to see which calculations change, or use the [R examples and update equations](https://yain22.github.io/Bayesian_NN_GLT/computation/) to reproduce the fits.
 
 ## Installation
 
@@ -40,7 +44,7 @@ Use `gltbnn_shrinkage(fit)` to inspect each incoming weight and bias. The return
 
 ## Fit a classifier
 
-Set `outcome = "binary"` to model the log odds of the second response level or `outcome = "categorical"` to model multiple classes. In the categorical model the last level is the reference. Supply a factor to choose the level order. Each option returns posterior predictive class probabilities in that order.
+Set `outcome = "binary"` to model the log odds of the second response level or `outcome = "categorical"` to model multiple classes. In the categorical model the last level is the reference. Supply a factor to choose the level order. Predictions average class probabilities over variational weight draws and return them in that order.
 
 ```r
 flowers <- droplevels(subset(iris, Species != "setosa"))
@@ -57,7 +61,7 @@ head(predict(fit, flowers[holdout, 1:4], type = "prob"))
 
 ## What each prior shrinks
 
-The [step-by-step fitting algorithms](https://yain22.github.io/Bayesian_NN_GLT/computation/algorithms.html) show the equations, R implementation and fitting budget for G, GL and GLT. The [interactive ELBO replay](https://yain22.github.io/Bayesian_NN_GLT/computation/elbo-replay.html) follows three matched fits for each simulation setting and initialization. The [R scripts](docs/computation/) fit all three priors to the same training trees, predict volume for six held-out trees and reproduce the GLT quadrature check in Supplement Section S5.1.
+The [fitting cycle guide](https://yain22.github.io/Bayesian_NN_GLT/computation/cycle.html) follows a hidden coefficient through the weight and scale updates for the tree-volume example. The [step-by-step fitting algorithms](https://yain22.github.io/Bayesian_NN_GLT/computation/algorithms.html) show the equations, R implementation and fitting budget for G, GL and GLT. The [interactive ELBO replay](https://yain22.github.io/Bayesian_NN_GLT/computation/elbo-replay.html) follows three matched fits for each simulation setting and initialization. The [R scripts](docs/computation/) fit all three priors to the same training trees, predict volume for six held-out trees and reproduce the GLT quadrature check in Supplement Section S5.1.
 
 For Gaussian regression, the package standardizes the training response and uses the Jeffreys prior $p(\sigma^2)\propto1/\sigma^2$ by default. Posterior propriety with this prior depends on the data. To use the supplement's proper inverse-gamma alternative, pass positive hyperparameters, for example `noise_prior = c(shape = 2, scale = 1)`.
 

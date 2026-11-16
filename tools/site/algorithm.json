@@ -1,6 +1,6 @@
 {
   "title": "Variational fitting, step by step",
-  "intro": "Follow a full-batch Gaussian regression fit from initialization to prediction. Choose a prior to see its shrinkage updates within the common fitting cycle.",
+  "intro": "Follow a full-batch Gaussian regression fit from initialization to prediction. The three walkthroughs follow Supplement Algorithms S1 (G), S2 (GL) and S3 (GLT).",
   "shared_steps": {
     "model": {
       "id": "model",
@@ -64,10 +64,10 @@
           "text": "The starting value of $\\phi$ is therefore 3. The output-scale auxiliary $\\rho_\\kappa$ comes from $u\\mid\\rho_\\kappa\\sim\\operatorname{IG}(1/2,1/\\rho_\\kappa)$ and $\\rho_\\kappa\\sim\\operatorname{IG}(1/2,5^{-2})$. The next step initializes the hidden scales for the selected prior."
         },
         {
-          "detail": "Where the ten starting values in Figure S10 enter",
+          "detail": "Where the ten starting values in Figure S11 enter",
           "blocks": [
             {
-              "text": "Each start in Figure S10 generates a complete fit. A given setting and start use the same data and starting weights across the three priors. Ten such starts for each of nine settings and three priors give 270 trajectories. Each trajectory has its own 60 outer cycles."
+              "text": "Each start in Figure S11 generates a complete fit. A given setting and start use the same data and starting weights across the three priors. Ten such starts for each of nine settings and three priors give 270 trajectories. Each trajectory has its own 60 outer cycles."
             }
           ]
         }

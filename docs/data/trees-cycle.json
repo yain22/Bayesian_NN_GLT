@@ -1,0 +1,118 @@
+{
+  "dataset": "datasets::trees",
+  "n_train": 25,
+  "held_out_rows": [5, 10, 15, 20, 25, 30],
+  "predictors": ["Girth", "Height"],
+  "response": "Volume",
+  "coefficient": {
+    "layer": 1,
+    "unit": 1,
+    "coordinate": 1,
+    "predictor": "Girth"
+  },
+  "control": {
+    "hidden": [3, 2],
+    "seed": 31,
+    "init_steps": 600,
+    "outer": 1,
+    "weight_steps": 10,
+    "learning_rate": 0.003,
+    "weight_draws": 4,
+    "noise_draws": 16,
+    "monitor_draws": 64,
+    "endpoint_draws": 256
+  },
+  "priors": {
+    "G": {
+      "before": {
+        "mean": 0.04537291303591,
+        "sd": 0.01,
+        "second_moment": 0.002158701237364,
+        "noise_precision": 3,
+        "scale_precision": 1,
+        "effective_precision": 3
+      },
+      "after": {
+        "mean": 0.01649511241106,
+        "sd": 0.01030454507961,
+        "second_moment": 0.0003782723827512,
+        "noise_precision": 1.331529006689,
+        "scale_precision": 1.090438373822,
+        "effective_precision": 1.45195032475
+      },
+      "update": {
+        "expected_sse": 24.003850941598,
+        "hidden_penalty": 7.538834038616,
+        "noise_shape": 21,
+        "noise_scale": 15.771342490107,
+        "accepted_steps": 10,
+        "layer_second_moment_sum": 5.385255348666,
+        "scale_update": {
+          "layer_inverse_squared_scale": 1.090438373822
+        }
+      }
+    },
+    "GL": {
+      "before": {
+        "mean": 0.04537291303591,
+        "sd": 0.01,
+        "second_moment": 0.002158701237364,
+        "noise_precision": 3,
+        "scale_precision": 1,
+        "effective_precision": 3
+      },
+      "after": {
+        "mean": 0.01649511241106,
+        "sd": 0.01030454507961,
+        "second_moment": 0.0003782723827512,
+        "noise_precision": 1.331529006689,
+        "scale_precision": 1.623905235863,
+        "effective_precision": 2.162276925666
+      },
+      "update": {
+        "expected_sse": 24.003850941598,
+        "hidden_penalty": 7.538834038616,
+        "noise_shape": 21,
+        "noise_scale": 15.771342490107,
+        "accepted_steps": 10,
+        "layer_second_moment_sum": 5.385255348666,
+        "scale_update": {
+          "layer_inverse_squared_scale": 1.624314200686,
+          "multiplier_inverse_squared_scale": 0.9997482230825
+        }
+      }
+    },
+    "GLT": {
+      "before": {
+        "mean": 0.04537291303591,
+        "sd": 0.01,
+        "second_moment": 0.002158701237364,
+        "noise_precision": 3,
+        "scale_precision": 1.303120294924,
+        "effective_precision": 3.909360884773
+      },
+      "after": {
+        "mean": 0.01649548354276,
+        "sd": 0.01030454502409,
+        "second_moment": 0.0003782846254631,
+        "noise_precision": 1.241581405962,
+        "scale_precision": 621.057923958631,
+        "effective_precision": 771.093970412498
+      },
+      "update": {
+        "expected_sse": 24.003856125502,
+        "hidden_penalty": 9.823970063191,
+        "noise_shape": 21,
+        "noise_scale": 16.913913094346,
+        "accepted_steps": 10,
+        "layer_second_moment_sum": 5.385255265932,
+        "scale_update": {
+          "kernel_A": 1,
+          "kernel_B": 0.0004696711571363,
+          "mean_local_scale": 0.2916929937943,
+          "geometric_tail_shape": 2.42304424974
+        }
+      }
+    }
+  }
+}

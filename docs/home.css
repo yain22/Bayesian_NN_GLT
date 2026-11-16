@@ -1,0 +1,135 @@
+.hero {
+  padding-block: clamp(2.25rem, 4vw, 3.6rem);
+}
+.hero h1 {
+  max-width: 22ch;
+  font-size: clamp(2.7rem, 5.15vw, 4.6rem);
+}
+.hero .intro {
+  max-width: 58ch;
+}
+.method-section {
+  border-block-start: 1px solid var(--rule);
+  padding-block: clamp(1.7rem, 3vw, 2.6rem);
+}
+.method-section h2 {
+  font-size: clamp(1.7rem, 2.9vw, 2.3rem);
+}
+.method-links {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 1.15rem;
+}
+.method-links a {
+  min-width: 0;
+  text-decoration: none;
+}
+.method-links a:not(:first-child) {
+  padding-inline-start: clamp(1rem, 2.3vw, 2.1rem);
+  border-inline-start: 1px solid var(--rule);
+}
+.method-links a:not(:last-child) {
+  padding-inline-end: clamp(1rem, 2.3vw, 2.1rem);
+}
+.method-links h3 {
+  justify-content: start;
+  align-items: baseline;
+  gap: .45rem;
+  color: var(--navy);
+  font-size: clamp(1.22rem, 2vw, 1.55rem);
+}
+.method-links h3 span {
+  color: var(--rust);
+  font: 1rem var(--sans);
+}
+.method-links a:hover h3,
+.method-links a:focus-visible h3 {
+  color: var(--rust);
+  text-decoration: underline;
+}
+.method-links p,
+.results-groups li span {
+  color: var(--muted);
+  font-size: .91rem;
+  line-height: 1.48;
+}
+.method-links p {
+  margin: .35rem 0 0;
+  max-width: 39ch;
+}
+.results-groups {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(2rem, 6vw, 5rem);
+  margin-top: 1.6rem;
+}
+.results-groups h3 {
+  font-size: 1.5rem;
+}
+.results-groups ul {
+  margin: .8rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+.results-groups li {
+  padding-block: .7rem;
+  border-block-start: 1px solid var(--rule);
+}
+.results-groups li a {
+  font-weight: 600;
+}
+.results-groups li span {
+  display: block;
+  margin-block-start: .1rem;
+}
+.footer-links {
+  display: flex;
+  gap: 1.25rem;
+}
+@media (max-width: 660px) {
+  .method-links, .results-groups {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+  .method-links {
+    margin-top: .5rem;
+  }
+  .method-links a,
+  .method-links a:not(:first-child),
+  .method-links a:not(:last-child) {
+    padding: .65rem 0;
+    border-inline-start: 0;
+  }
+  .method-links a + a {
+    border-block-start: 1px solid var(--rule);
+  }
+  .method-links p {
+    max-width: none;
+  }
+  .results-groups > div + div {
+    margin-top: 1.5rem;
+  }
+}
+@media (max-width: 560px) {
+  .bar-inner {
+    gap: .8rem 1.2rem;
+  }
+  .hero .kicker {
+    margin-bottom: 1rem;
+  }
+  .hero-mark {
+    display: none;
+  }
+  .hero h1 {
+    font-size: clamp(2.35rem, 8.6vw, 3rem);
+  }
+}
+@media (max-width: 360px) {
+  .hero {
+    padding-top: 1.4rem;
+  }
+  .hero .intro {
+    font-size: 1rem;
+    line-height: 1.45;
+  }
+}

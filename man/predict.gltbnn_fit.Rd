@@ -24,11 +24,11 @@ Classification predictions retain the training labels and class order.
   and \code{"prediction_interval"} return equal-tailed pointwise intervals
   for the conditional mean and a future response, respectively.
   For classification, the default \code{"class"} gives the class with the
-  largest posterior mean probability, breaking ties in training level order.
+  largest variational mean probability, breaking ties in training level order.
   Use \code{"prob"} for those mean probabilities and \code{"prob_draws"} for
   class probabilities under each sampled network.}
-  \item{draws}{Positive integer number of posterior draws. At least two are
-  required for intervals.}
+  \item{draws}{Positive integer number of draws from the fitted variational
+  distribution. At least two are required for intervals.}
   \item{level}{Probability within each pointwise interval, strictly between
   zero and one.}
   \item{seed}{Nonnegative integer random seed. The previous \code{.Random.seed}

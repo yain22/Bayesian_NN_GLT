@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Follow one hidden weight through a variational fitting cycle using measured updates from the timber-volume example.">
+  <title>One variational fitting cycle · gltbnn</title>
+  <link rel="icon" href="../assets/mark.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="../package.css">
+  <link rel="stylesheet" href="cycle.css">
+  <script src="cycle.js" defer></script>
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<header class="topbar"><div class="wrap bar-inner">
+  <a class="wordmark" href="../" aria-label="gltbnn home">glt<span>bnn</span></a>
+  <nav aria-label="Computation"><a href="./">Computation</a><a href="algorithms.html">Fitting algorithms</a><a href="elbo-replay.html">ELBO replay</a></nav>
+</div></header>
+<main id="content" class="wrap">
+  <header class="lead">
+    <h1>One variational fitting cycle</h1>
+    <p>What happens to the weight connecting trunk diameter to the first hidden unit when a network learns to predict timber volume? Follow that weight through the first fitting cycle in Figure 8 of the paper. Each value comes from fitting the network to the same 25 black cherry trees.</p>
+  </header>
+
+  <section id="replay" aria-label="Interactive fitting cycle" hidden>
+    <div class="cycle-tools">
+      <div class="prior-picker" role="group" aria-label="Shrinkage prior">
+        <strong>Prior</strong>
+        <button type="button" data-prior="G" aria-pressed="false">G</button>
+        <button type="button" data-prior="GL" aria-pressed="false">GL</button>
+        <button type="button" data-prior="GLT" aria-pressed="true">GLT</button>
+      </div>
+      <div class="playback" role="group" aria-label="Cycle playback">
+        <button type="button" id="play">Play cycle</button>
+        <button type="button" id="back">Back</button>
+        <button type="button" id="next">Next</button>
+      </div>
+    </div>
+    <div class="stages" role="group" aria-label="Go to a fitting step">
+      <button type="button" data-step="0">1. Update weights</button>
+      <button type="button" data-step="1">2. Take moments</button>
+      <button type="button" data-step="2">3. Update variance</button>
+      <button type="button" data-step="3">4. Update hidden scales</button>
+      <button type="button" data-step="4">5. Return precision</button>
+    </div>
+    <div class="cycle-body">
+      <figure>
+        <h2 id="plot-title"></h2>
+        <canvas id="plot" role="img" aria-labelledby="plot-title plot-caption"></canvas>
+        <figcaption id="plot-caption"></figcaption>
+      </figure>
+      <section class="calculation" aria-labelledby="stage-title">
+        <p id="position"></p>
+        <h2 id="stage-title"></h2>
+        <p id="explanation"></p>
+        <div id="equation" class="equation"></div>
+        <dl id="readout"></dl>
+      </section>
+    </div>
+    <p id="announce" class="sr-only" aria-live="polite" aria-atomic="true"></p>
+  </section>
+  <p id="load-status" role="status" hidden></p>
+  <noscript><p>The interactive replay uses JavaScript. The guide below describes the complete cycle.</p></noscript>
+
+  <article class="manual" id="guide">
+    <h2>Reading the cycle</h2>
+    <div>
+      <h3>What are we fitting?</h3>
+      <p>A regression network with a given set of weights predicts one mean volume for each tree. During fitting, we allow each weight and bias to vary. We approximate its posterior distribution by a Gaussian with a fitted mean <i>m</i> and standard deviation <i>s</i>. The scales that determine shrinkage have their own variational factors. Section 3.4 and Figure 7 show this factorization.</p>
+      <p>All factors contribute to one objective, the evidence lower bound (ELBO). It combines the expected log likelihood, the expected log prior and the entropy of the approximation. Holding the scale factors fixed lets us update the weights. Holding the new weight factors fixed then gives us the information needed to update the scales.</p>
+      <h3>How do the updates fit together?</h3>
+      <ol>
+        <li><strong>Update the weights and biases.</strong> Draw a standard Gaussian value ε for each coefficient and form <i>w</i> = <i>m</i> + <i>s</i>ε. Run the sampled network on the training trees. Backpropagation gives the likelihood gradient. Adam uses it together with the Gaussian prior and entropy gradients to propose updates to <i>m</i> and log <i>s</i>. Backtracking compares each proposal with the current weights using the same draws.</li>
+        <li><strong>Compute two kinds of moments.</strong> For each coefficient, the Gaussian factor gives its expected square exactly, <i>H</i> = <i>m</i>² + <i>s</i>². For the nonlinear network, use fresh weight draws to estimate the expected sum of squared residuals across the training trees. Squaring the error of the mean prediction would miss variation between sampled networks.</li>
+        <li><strong>Update the observation and output scales.</strong> The regression noise update combines the expected residual sum of squares with a sum over hidden coefficients. Each term in that sum is the coefficient’s new <i>H</i> times its current expected inverse squared scale. It appears because the regression prior variance of a hidden coefficient is σ²λ². The output weights have their own shared scale κ. Their expected squares update its squared scale <i>u</i> = κ² and then its auxiliary factor.</li>
+        <li><strong>Update the hidden scales.</strong> G pools expected squares within a layer to update one shared scale. GL updates a local multiplier for each incoming coefficient and a common layer scale. Both priors give inverse-gamma coordinate updates. For GLT, integrate the one-dimensional local-scale density on the log scale, update the layer scale and mixing auxiliaries in closed form, then integrate the log-shape density. Supplement Algorithms S1–S3 give the three sets of updates.</li>
+        <li><strong>Pass the new precision to the next weight update.</strong> For a Gaussian response the effective hidden-weight precision is <i>P</i> = 𝔼[σ⁻²] 𝔼[λ⁻²]. With these factors held fixed, the coefficient’s contribution to the expected log prior includes −<i>P</i>(<i>m</i>² + <i>s</i>²)/2. A larger <i>P</i> pulls its mean more strongly toward zero in the next weight block. For binary and categorical responses, the likelihood supplies class probabilities and the corresponding precision is simply 𝔼[λ⁻²].</li>
+      </ol>
+      <p>For example, after the first GLT weight block the diameter weight has mean 0.01650 and standard deviation 0.01030. Its expected square is 0.0003783. The variance update gives a noise precision of 1.242, and the local-scale integral gives an inverse moment of 621.1. Their product, about 771.1 using unrounded values, will enter the <em>next</em> weight block. The mean measured above was fitted using the starting precision of 3.909.</p>
+      <h3>Reproduce the numbers</h3>
+      <p>The fits use <code>datasets::trees</code>. Every fifth tree is held out. The other 25 determine the input and response standardization and the common starting weights. The network has two hidden layers with three and two units. The selected connection receives standardized diameter (the <code>Girth</code> column). Its coefficient is on the fitted network scale.</p>
+      <p>To inspect the selected coefficient after one cycle in R, run</p>
+      <pre><code>trees_train &lt;- datasets::trees[-seq(5, 31, by = 5), ]
+fit &lt;- gltbnn::gltbnn_fit(
+  trees_train[c("Girth", "Height")], trees_train$Volume,
+  hidden = c(3L, 2L), prior = "GLT", seed = 31L,
+  control = list(outer = 1L)
+)
+subset(gltbnn::gltbnn_shrinkage(fit),
+       layer == 1 &amp; unit == 1 &amp; coordinate == 1)</code></pre>
+      <p>The <code>scale_precision</code> column reports the local inverse moment (621.1 here). To reproduce the intermediate values for all three priors, run the following from the repository root with R and <code>jsonlite</code> installed.</p>
+      <pre><code>Rscript tools/generate-trees-cycle.R</code></pre>
+      <p><a href="https://github.com/yain22/Bayesian_NN_GLT/blob/main/tools/generate-trees-cycle.R">Read the R calculation</a> · <a href="../data/trees-cycle.json">Download the recorded values</a> · <a href="algorithms.html">See the full update equations</a></p>
+    </div>
+  </article>
+</main>
+</body>
+</html>

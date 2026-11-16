@@ -10,7 +10,8 @@ destination = Path(__file__).resolve().parents[2] / "docs" / "computation"
 
 
 def equation(tex):
-    return convert(tex, display="block").replace("<math ", f'<math alttext="{escape(tex, quote=True)}" ', 1)
+    markup = convert(tex, display="block").replace("<math ", f'<math alttext="{escape(tex, quote=True)}" ', 1)
+    return f'<div class="formula">{markup}</div>'
 
 
 def model_section(prior, title, explanation, formulas, interpretation):
@@ -55,7 +56,7 @@ sections = [
         [r"\lambda_{kl,j}=\tau_l r_{kl,j},\qquad r_{kl,j}\sim C^+(0,1).",
          r"P_{kl,j}=\mathbb{E}_q(\tau_l^{-2})\,\mathbb{E}_q(r_{kl,j}^{-2}).",
          r"\chi_{r,kl,j}\sim\operatorname{IG}(1/2,1),\qquad r_{kl,j}^2\mid\chi_{r,kl,j}\sim\operatorname{IG}(1/2,1/\chi_{r,kl,j})."],
-        "For the first hidden unit the example displays the girth weight, height weight and bias "
+        "For the first hidden unit the example displays the diameter weight, height weight and bias "
         "in that order. Each has its own scale precision. <code>geometric_prior_sd</code> "
         "is the geometric mean of its conditional prior standard deviation on the standardized scale.",
     ),
@@ -84,40 +85,65 @@ page = """<!doctype html>
   <link rel="icon" href="../assets/mark.svg" type="image/svg+xml">
   <link rel="stylesheet" href="../package.css">
   <style>
-    .guide-intro { padding-block:clamp(2rem,5vw,4rem); max-width:56rem; }
-    .guide-intro p { max-width:72ch; color:var(--muted); }
+    .guide-intro { padding-block:clamp(2rem,5vw,4rem) 1.75rem; }
+    .guide-intro h1 { max-width:17ch; }
+    .guide-intro p, .fit-intro p { max-width:72ch; color:var(--muted); }
+    .guide-routes { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); border-block:1px solid var(--rule); }
+    .guide-routes a { display:block; padding:1.25rem; text-decoration:none; color:var(--ink); }
+    .guide-routes a + a { border-left:1px solid var(--rule); }
+    .guide-routes a:first-child { background:#e8f1ef; }
+    .guide-routes a:hover { background:white; }
+    .guide-routes strong { display:block; font:600 1.3rem/1.25 var(--serif); }
+    .guide-routes span { display:block; margin-top:.45rem; color:var(--muted); font-size:.93rem; }
+    .fit-intro { padding:2.5rem 0 1.5rem; }
+    .fit-intro details { margin:1rem 0; }
+    .fit-intro summary { cursor:pointer; color:var(--navy); font-weight:600; }
+    .fit-intro pre { max-width:44rem; background:#efece5; }
     .section-grid { grid-template-columns:minmax(0,.95fr) minmax(0,1.3fr); gap:clamp(1.25rem,4vw,3.5rem); }
     .section-grid h3 { font:600 1.07rem/1.5 var(--sans); letter-spacing:0; }
-    math[display=block] { margin:1rem 0; font-size:1.05rem; }
+    .section-grid > div { min-width:0; }
+    .formula { overflow-x:auto; margin:1rem 0; }
+    math[display=block] { min-width:max-content; font-size:1.05rem; }
     .codebar a { color:#fff; }
     @media (max-width:860px) { .section-grid { grid-template-columns:minmax(0,1fr); } }
+    @media (max-width:590px) { .guide-routes { grid-template-columns:1fr; } .guide-routes a + a { border-left:0; border-top:1px solid var(--rule); } }
   </style>
 </head>
 <body>
 <a class="skip" href="#content">Skip to content</a>
 <header class="topbar"><div class="wrap bar-inner">
   <a class="wordmark" href="../" aria-label="gltbnn home">glt<span>bnn</span></a>
-  <nav aria-label="Computational methods"><a href="#g">G-BNN</a><a href="#gl">GL-BNN</a><a href="#glt">GLT-BNN</a><a href="algorithms.html">Fitting algorithms</a><a href="#checks">Numerical checks</a><a href="../reference.pdf">R reference</a></nav>
+  <nav aria-label="Computational methods"><a href="../">Package home</a><a href="#examples">R examples</a><a href="#checks">Numerical checks</a><a href="../reference.pdf">R reference</a></nav>
 </div></header>
 <main id="content" class="wrap">
 <header class="guide-intro">
-  <h1>Fitting G, GL and GLT networks in R</h1>
-  <p>Each example predicts timber volume from trunk girth and height in the R <code>trees</code> dataset. Every fifth tree is held out. All three fits use the same two hidden layers, starting weights and training split, so you can inspect how changing the prior affects shrinkage.</p>
-  <p>With Gaussian outcomes, each hidden weight or bias has conditional variance σ²λ². In a fitting cycle, the Gaussian weight factors supply an expected square for each coefficient. After updating the observation variance and output scale, the algorithm updates the hidden scales. Their expected inverse squares, denoted by <i>P</i> below, multiply the fitted noise precision in the next weight update.</p>
-  <p>These examples use the package defaults of 600 initialization steps, 60 fitting cycles and the Jeffreys prior on the standardized observation variance. Each fits the model on the training trees and predicts mean volume in cubic feet for the held-out trees. <a href="../#install">Install gltbnn</a> to run the scripts.</p>
+  <h1>How the networks are fitted</h1>
+  <p class="intro">To predict timber volume, a network learns how strongly to weight trunk diameter and height. Each cycle updates the weights, uses their expected squares to learn shrinkage scales, and returns a precision for the next weight update.</p>
+</header>
+<div class="guide-routes" role="navigation" aria-label="Explore the computation">
+  <a href="cycle.html"><strong>Follow one fitting cycle →</strong><span>Trace the diameter weight in a real fit, from its Gaussian factor to its next prior precision.</span></a>
+  <a href="#examples"><strong>Fit the networks in R →</strong><span>Run the same timber example with a global, horseshoe or global–local–tail prior.</span></a>
+  <a href="algorithms.html"><strong>Check an update equation →</strong><span>Compare the three algorithms with their R implementation and the supplement.</span></a>
+</div>
+<section id="examples" class="fit-intro" aria-labelledby="examples-title">
+  <h2 id="examples-title">Fit the timber example in R</h2>
+  <p>All three examples predict timber volume from trunk diameter (the <code>Girth</code> column) and height in <code>datasets::trees</code>. They share the training split, starting weights and two hidden layers. Every fifth tree is held out for prediction. <a href="../#install">Install the package</a>, then run the <a href="#g">G</a>, <a href="#gl">GL</a> or <a href="#glt">GLT</a> script.</p>
+  <details><summary>Fitting budget and notation</summary>
+  <p>The examples use 600 initialization steps, 60 fitting cycles and the Jeffreys prior on the standardized observation variance. They return predictions in cubic feet. The scale precision <i>P</i><sub>kl,j</sub> in the equations below is 𝔼<sub>q</sub>[λ<sub>kl,j</sub><sup>−2</sup>]. Multiplying by 𝔼<sub>q</sub>[σ<sup>−2</sup>] gives the effective precision for a hidden coefficient in Gaussian regression.</p>
   <p>To fit a GLT network for 180 cycles, supply the predictor matrix <code>x</code> and response <code>y</code>, and set the cycle budget in <code>control</code>.</p>
   <pre><code>gltbnn_fit(x, y, prior = "GLT",
            control = list(outer = 180L, weight_steps = 10L))</code></pre>
   <p>Increasing <code>outer</code> extends the run while keeping ten successive weight-update attempts per cycle. The variance and shrinkage factors are still updated once per cycle.</p>
   <p>In the supplement, Section S1 derives the shared variational updates. Section S2 gives the G-BNN algorithm, S3 the GL-BNN algorithm and S4 the GLT-BNN algorithm.</p>
   <p>These half-Cauchy expansions use random auxiliaries χ<sub>τ,l</sub> for the layer and χ<sub>r,kl,j</sub> for the GL coefficient. In a fitted layer’s R state, <code>$aux</code> stores the G or GL layer auxiliary factor and <code>$nu</code> stores the GL coefficient auxiliary factors. Under GLT, <code>$nu</code> stores the generalized Pareto mixing factors. Within an inverse-gamma factor, <code>a</code> is its shape parameter.</p>
-</header>
+  </details>
+</section>
 """ + "\n".join(sections) + """
 <section id="checks" class="section-grid" aria-labelledby="checks-title">
   <div><h2 id="checks-title">Numerical checks</h2></div>
   <div>
     <p>Supplement Section S5.1 compares the GLT coefficient-scale quadrature with independent adaptive integration for nine pairs of local-factor parameters. <a href="check-quadrature.R" download>Download the R quadrature check</a>.</p>
-    <p>Figure S10 follows ten initializations for each of the three priors in nine settings. Within each setting, the networks use the same training data, and all three priors use the same starting weights for each initialization. The 270 trajectories record the monitored ELBO at initialization and after each of 60 fitting cycles. <a href="elbo-replay.html">Replay the recorded fitting cycles</a>, <a href="elbo-initializations.pdf">view Figure S10</a>, or <a href="elbo-initializations.zip" download>download the traces, synthetic training inputs, and code to reproduce the figure or refit the networks</a>.</p>
+    <p>Figure S11 follows ten initializations for each of the three priors in nine settings. Within each setting, the networks use the same training data, and all three priors use the same starting weights for each initialization. The 270 trajectories record the monitored ELBO at initialization and after each of 60 fitting cycles. <a href="elbo-replay.html">Replay the recorded fitting cycles</a>, <a href="elbo-initializations.pdf">view Figure S11</a>, or <a href="elbo-initializations.zip" download>download the traces, synthetic training inputs, and code to reproduce the figure or refit the networks</a>.</p>
   </div>
 </section>
 </main>
