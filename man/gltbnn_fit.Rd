@@ -60,8 +60,8 @@ The final coordinate \eqn{j=d_l}{j = d[l]} is the unit's bias. The weights
 are independent given their scales and the observation variance. The quantity
 \eqn{\sigma^2}{sigma^2} is the Gaussian observation noise variance on the
 standardized training scale. The same \eqn{\sigma}{sigma} sets the units
-for the hidden weight prior. The default uses the improper density kernel
-\eqn{1/\sigma^2}{1/sigma^2}. Its posterior is proper almost surely when the
+for the hidden weight prior. The default is the improper Jeffreys prior
+\eqn{\pi(\sigma^2)\propto 1/\sigma^2}{pi(sigma^2) proportional to 1/sigma^2}. Its posterior is proper almost surely when the
 responses have a joint density conditional on the predictors. Some
 nonconstant data can yield an improper posterior. For example, under G with
 one hidden layer, three or more distinct univariate inputs and exactly affine
@@ -70,8 +70,8 @@ draws as approximate posterior draws when the posterior is proper.
 
 The alternative inverse-gamma prior gives a proper posterior for every finite
 dataset accepted by this function. For variance \eqn{s}, shape \eqn{a} and
-scale \eqn{b}, its density is proportional to
-\eqn{s^{-(a+1)}\exp(-b/s)}{s^(-a-1) * exp(-b/s)}. The prior uses
+scale \eqn{b}, its density satisfies
+\eqn{\pi(s)\propto s^{-(a+1)}\exp(-b/s)}{pi(s) proportional to s^(-a-1) * exp(-b/s)}. The prior uses
 standardized fitting units. Its scale parameter on the original response
 scale equals \eqn{b} times the training sample variance of \code{y}.
 

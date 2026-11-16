@@ -17,7 +17,7 @@
           "math": "f_{\\mathcal{W}}(\\mathbf{x})=\\mathbf{v}^\\top(\\mathbf{h}_L^\\top,1)^\\top,\\qquad Y_i\\mid\\mathcal{W},\\sigma^2\\sim N(f_{\\mathcal{W}}(\\mathbf{x}_i),\\sigma^2)"
         },
         {
-          "text": "Fit on predictors and responses standardized by their training sample means and standard deviations. The paper uses a Jeffreys prior $p(\\sigma^2)\\propto 1/\\sigma^2$. With $c_l=1$ as in the fitted networks, the conditional hidden-weight prior is $w_a\\sim N(0,\\sigma^2\\lambda_a^2)$. The output prior is $\\mathbf{v}\\mid u\\sim N(\\mathbf 0,u\\mathbf{I})$ with $\\sqrt u=\\kappa\\sim C^+(0,5)$."
+          "text": "Fit on predictors and responses standardized by their training sample means and standard deviations. The paper uses a Jeffreys prior $\\pi(\\sigma^2)\\propto 1/\\sigma^2$. With $c_l=1$ as in the fitted networks, the conditional hidden-weight prior is $w_a\\sim N(0,\\sigma^2\\lambda_a^2)$. The output prior is $\\mathbf{v}\\mid u\\sim N(\\mathbf 0,u\\mathbf{I})$ with $\\sqrt u=\\kappa\\sim C^+(0,5)$."
         },
         {
           "detail": "Variational factors and inverse-gamma convention",
@@ -270,25 +270,25 @@
       "summary": "After updating all factors, record one ELBO estimate for the entire network. This is the value shown in the replay.",
       "blocks": [
         {
-          "math": "\\mathcal{L}(q)=\\mathbb{E}_q[\\log p(y\\mid\\mathcal{W},\\sigma^2)]+\\mathbb{E}_q[\\log p(\\mathcal{W},z)]+H(q)"
+          "math": "\\mathcal{L}(q)=\\mathbb{E}_q[\\log p(y\\mid\\mathcal{W},\\sigma^2)]+\\mathbb{E}_q[\\log \\pi(\\mathcal{W},z)]+H(q)"
         },
         {
-          "text": "Here $z$ includes the observation variance, scale variables and auxiliaries. For the Gaussian likelihood use the fixed monitoring bank from cycle 0. With the current $m,s$, form the 64 weight draws $m+s\\odot\\epsilon^{(b)}$ and evaluate the expected log likelihood as"
+          "text": "The first term is the expected log likelihood. The second is the expected log prior for the weights $\\mathcal{W}$ and the remaining parameters $z$, which include the observation variance, scales and auxiliaries. For the Gaussian likelihood use the fixed monitoring bank from cycle 0. With the current $m,s$, form the 64 weight draws $m+s\\odot\\epsilon^{(b)}$ and evaluate the expected log likelihood as"
         },
         {
           "math": "\\widehat L_y=-\\frac{n}{2}\\{\\log(2\\pi)+\\zeta_{\\sigma^2}\\}-\\frac{\\phi_\\sigma}{2B}\\sum_{b=1}^{B}\\sum_{i=1}^n\\{y_i-f_{\\mathcal{W}^{(b)}}(\\mathbf{x}_i)\\}^2,\\quad B=64."
         },
         {
-          "text": "Add the expected log densities of the Gaussian weights and their scale hierarchy, the noise log prior and the entropy of every fitted factor. The likelihood is the sole Monte Carlo term. G and GL use their inverse-gamma moments. GLT also uses normalized scalar quadrature. Under the Jeffreys variance prior use $\\mathbb{E}_q[\\log p(\\sigma^2)]=-\\zeta_{\\sigma^2}$ with the arbitrary additive constant set to zero."
+          "text": "Add the expected log densities of the Gaussian weights and their scale hierarchy, the noise log prior and the entropy of every fitted factor. The likelihood is the sole Monte Carlo term. G and GL use their inverse-gamma moments. GLT also uses normalized scalar quadrature. Under the Jeffreys variance prior use $\\mathbb{E}_q[\\log \\pi(\\sigma^2)]=-\\zeta_{\\sigma^2}$ with the arbitrary additive constant set to zero."
         },
         {
           "detail": "Contributions from a hidden weight and an output weight",
           "blocks": [
             {
-              "math": "\\mathbb{E}_q[\\log p(w_a\\mid\\sigma^2,\\lambda_a)]=-\\tfrac12\\{\\log(2\\pi)+\\zeta_{\\sigma^2}+\\mathbb{E}_q[\\log\\lambda_a^2]+\\phi_\\sigma P_a H_a\\}"
+              "math": "\\mathbb{E}_q[\\log \\pi(w_a\\mid\\sigma^2,\\lambda_a)]=-\\tfrac12\\{\\log(2\\pi)+\\zeta_{\\sigma^2}+\\mathbb{E}_q[\\log\\lambda_a^2]+\\phi_\\sigma P_a H_a\\}"
             },
             {
-              "math": "\\mathbb{E}_q[\\log p(v_j\\mid u)]=-\\tfrac12\\{\\log(2\\pi)+\\zeta_u+\\phi_o H_{o,j}\\}"
+              "math": "\\mathbb{E}_q[\\log \\pi(v_j\\mid u)]=-\\tfrac12\\{\\log(2\\pi)+\\zeta_u+\\phi_o H_{o,j}\\}"
             },
             {
               "text": "Here $H_{o,j}=m_{o,j}^2+s_{o,j}^2$. Each Gaussian weight or bias adds entropy $\\tfrac12\\log(2\\pi e s_j^2)$. Each inverse-gamma factor contributes $a+\\log b+\\log\\Gamma(a)-(1+a)\\psi(a)$ to the entropy. Include conditional-prior normalizers that depend on a random parent, especially the GLT tail shape. The source link gives the full sum, including the scale priors and auxiliaries."
