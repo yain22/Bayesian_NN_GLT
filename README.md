@@ -10,7 +10,7 @@ The R package accompanying *Variational Learning of Bayesian Neural Networks wit
 
 ## How variational fitting works
 
-Suppose we want to predict a tree’s timber volume from its diameter and height. In one fitting cycle, the network updates a distribution for each weight. Its expected square helps determine the amount of shrinkage the weight receives next. The [interactive walkthrough](https://yain22.github.io/Bayesian_NN_GLT/computation/cycle.html) follows the diameter weight of one hidden unit through Figure 8 of the paper. Switch priors to see which calculations change, or use the [R examples and update equations](https://yain22.github.io/Bayesian_NN_GLT/computation/) to reproduce the fits.
+Suppose we want to predict a tree’s timber volume from its diameter and height. In one fitting cycle, the network updates a distribution for each weight. Its expected square helps determine the amount of shrinkage the weight receives next. The [interactive walkthrough](https://yain22.github.io/Bayesian_NN_GLT/computation/cycle.html) traces the diameter weight of one hidden unit through the fitting cycle diagrammed in Section 3.4 of the paper. Switch priors to see which calculations change, or use the [R examples and update equations](https://yain22.github.io/Bayesian_NN_GLT/computation/) to reproduce the fits.
 
 ## Installation
 

@@ -19,7 +19,7 @@
 <main id="content" class="wrap">
   <header class="lead">
     <h1>One variational fitting cycle</h1>
-    <p>What happens to the weight connecting trunk diameter to the first hidden unit when a network learns to predict timber volume? Follow that weight through the first fitting cycle in Figure 8 of the paper. Each value comes from fitting the network to the same 25 black cherry trees.</p>
+    <p>What happens to the weight connecting trunk diameter to the first hidden unit when a network learns to predict timber volume? Follow that weight through one cycle of the fitting algorithm diagrammed in Section 3.4 of the paper. Each value comes from fitting the network to the same 25 black cherry trees.</p>
   </header>
 
   <section id="replay" aria-label="Interactive fitting cycle" hidden>
@@ -66,7 +66,7 @@
     <h2>Reading the cycle</h2>
     <div>
       <h3>What are we fitting?</h3>
-      <p>A regression network with a given set of weights predicts one mean volume for each tree. During fitting, we allow each weight and bias to vary. We approximate its posterior distribution by a Gaussian with a fitted mean <i>m</i> and standard deviation <i>s</i>. Here <i>w</i> is the diameter coefficient <i>w</i><sub>11,1</sub>. We omit its subscripts while following this one connection. The scales that determine shrinkage have their own variational factors. Section 3.4 and Figure 7 show this factorization.</p>
+      <p>A regression network with a given set of weights predicts one mean volume for each tree. During fitting, we allow each weight and bias to vary. We approximate its posterior distribution by a Gaussian with a fitted mean <i>m</i> and standard deviation <i>s</i>. Here <i>w</i> is the diameter coefficient <i>w</i><sub>11,1</sub>. We omit its subscripts while following this one connection. The scales that determine shrinkage have their own variational factors. The factor diagram in Section 3.4 shows how these factors differ across the three priors.</p>
       <p>All factors contribute to one objective, the evidence lower bound (ELBO). It combines the expected log likelihood, the expected log prior and the entropy of the approximation. With the Jeffreys variance prior used here, it is defined up to an additive constant. Holding the scale factors fixed lets us update the weights. Holding the new weight factors fixed then gives us the information needed to update the scales.</p>
       <h3>How do the updates fit together?</h3>
       <ol>
